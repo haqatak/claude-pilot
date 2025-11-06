@@ -1,13 +1,13 @@
 {
-  "name": "Claude Code Pro",
+  "name": "Claude CodePro",
   "build": {
     "dockerfile": "Dockerfile"
   },
   "runArgs": [
     "--name",
-    "claude-code-pro"
+    "claude-codepro"
   ],
-  "workspaceFolder": "/workspaces/claude-code-pro",
+  "workspaceFolder": "/workspaces/claude-codepro",
   "customizations": {
     "vscode": {
       "extensions": [

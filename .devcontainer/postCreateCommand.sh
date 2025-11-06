@@ -49,6 +49,6 @@ docker-compose -f .devcontainer/docker-compose.yml up -d
 
 # Add cc alias for quick Claude Code access
 echo -e "\n# Claude Code quick alias" >>~/.bashrc
-echo 'alias cc="cd /workspaces/claude-code-pro/ && clear && dotenvx run claude"' >>~/.bashrc
+echo 'alias cc="cd /workspaces/claude-codepro/ && clear && dotenvx run claude"' >>~/.bashrc
 echo -e "\n# Claude Code quick alias" >>~/.zshrc
-echo 'alias cc="cd /workspaces/claude-code-pro/ && clear && dotenvx run claude"' >>~/.zshrc
+echo 'alias cc="cd /workspaces/claude-codepro/ && clear && dotenvx run claude"' >>~/.zshrc

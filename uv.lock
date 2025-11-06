@@ -247,7 +247,7 @@ wheels = [
 ]
 
 [[package]]
-name = "claude-code-pro"
+name = "claude-codepro"
 version = "1.0.0"
 source = { virtual = "." }
 dependencies = [

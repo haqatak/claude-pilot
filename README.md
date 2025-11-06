@@ -1,10 +1,10 @@
 <div align="center">
 
-<img src="https://www.claude-code.pro/assets/logo-CmqK1gGn.png" alt="Claude Code Pro" width="400">
+<img src="https://www.claude-code.pro/assets/logo-CmqK1gGn.png" alt="Claude CodePro" width="400">
 
-### Professional System for Building Quality Software ⚙️💻
+### Claude CodePro is a Professional System for Building Quality Code ⚙️💻
 
-**Transforms Claude Code from a junior assistant into a senior software engineer.**
+**A structured approach to software development with specs, tests, and professional workflows.**
 
 **Stop vibe coding, start shipping systematically with Spec-Driven Development, TDD, and much more!**
 
@@ -14,44 +14,42 @@
 ![TDD](https://img.shields.io/badge/TDD-Test--Driven--Development-green.svg)
 [![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen.svg)](http://makeapullrequest.com)
 
-#### 🎬 Join the Upcoming Masterclass ➡️ [www.claude-code.pro](https://www.claude-code.pro)
+#### 🎬 Join the Upcoming Masterclass to Learn More ➡️ [www.claude-code.pro](https://www.claude-code.pro)
 
 ---
 
 ## ⚡ What's Inside
 
-**Claude Code Pro is token-optimized and built using latest techniques such as the new skills feature:**
+**Claude CodePro is token-optimized and built using latest techniques such as the new skills feature:**
 
-### 📋 4 Slash Commands (Token-Optimized Spec-Driven Workflow)
-- `/plan` - Your sparring partner that asks the right questions → Detailed spec with exact code
-- `/implement` - Execute spec with mandatory TDD → Auto-manages context when full
-- `/remember` - Updates plan & stores learnings in cross-session memory → Continue after /clear
-- `/verify` - E2E verification → All tests, data integrity, quality checks
+### 📋 Token-Optimized Spec-Driven Workflow via Slash Commands
+- `/plan` - Based on your input asks the right questions → Detailed spec with exact code (Opus 4.1)
+- `/implement` - Execute spec with mandatory TDD → Auto-manages context when full (Sonnet 4.5)
+- `/remember` - Stores learnings in cross-session memory → Continue after /clear (Sonnet 4.5)
+- `/verify` - E2E spec verification → All tests, data integrity, quality checks (Sonnet 4.5)
 
-### 🎨 19 Skills (Auto-Enforce Best Practices)
+### 🎨 Auto-Enforce Best Practices and Standards via Skills
 - **6 Testing Skills** - TDD, test writing, anti-patterns, debugging, verification, code review
 - **5 Global Skills** - Coding style, commenting, conventions, error handling, validation
 - **4 Backend Skills** - API design, models, queries, migrations
 - **4 Frontend Skills** - Components, CSS, accessibility, responsive design
 
-### 🔌 9 MCP Servers (Context & Capabilities)
-- **Cipher** - Cross-session memory
-- **Claude Context** - Semantic codebase search
-- **Context7 + Ref** - Up-to-date library documentation
-- **IDE Diagnostics** - Real-time error detection
-- **Database (dbhub)** - PostgreSQL integration
-- **FireCrawl** - Web scraping and search
-- **MCP Funnel** - Tool filtering for token optimization
+### 🔌 Enhanced Context and Capabilities via MCP Servers
+- **Cipher** - Cross-session memory so context is never lost between /clear commands
+- **Claude Context** - Semantic codebase search for optimal context retrieval
+- **Context7 & Ref** - Up-to-date library documentation with limited context blur
+- **DBHub & FireCrawl** - Database access and web scraping for dynamic data retrieval
+- **MCP Funnel** - Allows to plug-in more MCP servers as needed without wasting context
 
-### 🛠️ Testing & Quality Tools
-- **pytest** - Unit and integration testing with uv
+### 🛠️ Testing and Quality via Automated Tool Installation
+- **uv/pytest** - Unit and integration testing with uv
 - **Newman** - API end-to-end testing with Postman collections
 - **Qlty** - Automated code quality hooks
 - **Basedpyright** - Type checking with enhanced features
 - **Ruff** - Fast Python linter and formatter
 
 ### 🐳 Automated Dev Container Setup (VS Code / Cursor / Windsurf)
-- **9 DevContainer Features** - Zsh, Node.js, Docker-in-Docker, uv, ruff, basedpyright, git, fzf, desktop
+- **8 DevContainer Features** - Zsh, Node.js, Docker-in-Docker, uv, ruff, basedpyright, git, fzf
 - **27 VS Code Extensions** - Python, Docker, SQL, testing, formatting, and development tools
 - **6 CLI Tools** - qlty, Claude Code, Statusline, dotenvx, Cipher, Newman
 - **PostgreSQL Database** - Local instance on port 5433 for development and testing
@@ -60,25 +58,15 @@
 
 ## 🎯 What Makes This Different
 
-### Compared to Other Spec-Driven Frameworks (OpenSpec, SpecKit, AgentOS)
+### Compared to Other Spec-Driven Frameworks (OpenSpec, SpecKit, AgentOS):
 
-**Performance & Efficiency:**
-- ⚡ **Focus on Shipping** - Optimized for building working code, not documentation
-- 💰 **Token-Optimized** - Automatic context management prevents overflow
-- 🔄 **Build Beyond Limits** - Continue complex features across multiple sessions
-- 🎯 **Persistent Memory** - Cross-session memory maintains knowledge between resets
-
-**Quality & Reliability:**
-- ✅ **Production-Grade** - Actively used in enterprise projects
-- 🧪 **Enforced TDD** - Code written before tests gets deleted automatically
-- 💯 **Real Verification** - Must show actual outputs, not assumptions
-- 🔍 **E2E Testing** - Built-in API testing with Newman/Postman
-
-**Developer Experience:**
-- 📦 **Works Immediately** - Pre-configured with everything you need
-- 🤖 **Self-Managing** - Handles context limits without manual intervention
-- 🛠️ **Complete Ecosystem** - Skills, MCP servers, testing tools all integrated
-- 📊 **Battle-Tested** - Refined through real client projects
+- 💾 **Persistent Memory** - Cross-session memory maintains knowledge between resets
+- ⚡ **Token-Optimized** - No tokens wasted during too complex planning, just works
+- ✅ **Production-Grade** - Actively used in client and enterprise projects
+- 📝 **Enforced TDD** - Code written before tests gets deleted automatically
+- 💯 **Real Verification** - Must show actual outputs based on tests, not assumptions
+- 🛠️ **Complete Ecosystem** - Skills, MCP servers, testing tools are integrated and configured
+- 📦 **Works Immediately** - Pre-configured automated setup with everything you need
 
 ---
 
@@ -95,10 +83,11 @@
 
 ### 📋 Prerequisites
 
+- Supports **all operating systems** (Windows / macOS / Linux) and **ARM/x86 architectures**
 - **[Docker Desktop](https://www.docker.com/products/docker-desktop/)** or **[OrbStack](https://orbstack.dev/download)**
 - **[VS Code](https://code.visualstudio.com/)** or **[Cursor](https://cursor.com/)** or **[Windsurf](https://windsurf.dev/)**
 - **[Dev Containers Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)**
-- **Optional** : **[Warp](https://www.warp.dev/)** for the best terminal experience
+- **Optional**: **[Warp](https://www.warp.dev/)** for the best terminal experience
 
 ### 📥 Installation
 
@@ -106,6 +95,7 @@
 - Open folder in VS Code, click on the button on the bottom-left: `Reopen in Container`
 - Wait for automatic build to finish, this can take a couple of minutes
 - Copy `.env.example` to `.env` and add your credentials and API keys
+- Restart the container via Command Palette: `Developer: Reload Window`
 
 ### ⚙️ Configuration
 
@@ -117,12 +107,11 @@
 
 ### 👣 First Steps
 
-- Start with `/plan` - It will ask clarifying questions to create a perfect spec
-- Use `/implement` to execute the spec with automatic TDD and best practices
-- When context fills, `/remember` updates your plan and stores learnings
-- Use `/verify` to ensure all changes are working and tests pass
+- Start with `/plan` - Provide your input and it will ask clarifying questions to create a spec
+- Use `/implement` to execute the spec with automatic TDD, best practices and context management
+- When context fills, `/remember` automatically updates your plan and stores learnings
+- After spec completion, run `/verify` to ensure all changes are working and tests pass
 - Watch as CC automatically applies best practices, testing, and quality control with every step
-- Enjoy coding with Claude Code Pro and watch the upcoming Masterclass to learn more techniques! ⤵️
 
 ---
 
