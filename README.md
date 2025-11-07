@@ -1,5 +1,3 @@
-<div align="center">
-
 <img src="https://www.claude-code.pro/assets/logo-CZm5tDhJ.png" alt="Claude CodePro" width="400">
 
 ### ⚙️💻 Claude CodePro is a Professional System for Building Quality Code
@@ -59,6 +57,43 @@
 
 ---
 
+## 🚀 Getting Started
+
+### 📋 Prerequisites
+
+- **[Docker Desktop](https://www.docker.com/products/docker-desktop/)** or **[OrbStack](https://orbstack.dev/download)**
+- **[VS Code](https://code.visualstudio.com/)** or **[Cursor](https://cursor.com/)** or **[Windsurf](https://windsurf.dev/)**
+- **[Dev Containers Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)**
+- **Optional**: **[Warp](https://www.warp.dev/)** for the best terminal experience
+
+### 📥 Installation
+
+- Clone this repository: `git clone https://github.com/maxritter/claude-codepro.git`
+- Open in VS Code, click on the button on the bottom-left: `Reopen in Container`
+- Wait for automatic build to finish, this can take a couple of minutes
+- Copy `.env.example` to `.env` and add your credentials and API keys
+- Run `cc` in the Terminal to finish CC Setup, `cr` to finish CodeRabbit setup
+
+---
+
+## 🚦 How-to-use
+
+### ⚙️ Configuration
+
+- In CC, run `/config` to set auto-connect to IDE to true and disable auto-compaction for best experience
+- In CC, run `/ide` to connect to VS Code diagnostics and make sure all MCP servers for `/mcp` are online
+- In VS Code, click `START` in the lower bar to start a split terminal and monitor CC usage with `/usage`
+- Open Claude Code in the IDE Terminal, Extension or an external Terminal like Warp with the `cc` command
+
+### 👣 First Steps
+
+- Start with `/plan` - Provide your input and it will ask clarifying questions to create a spec
+- Use `/implement` to execute the spec with automatic TDD, best practices and context management
+- When context fills, `/remember` automatically updates your plan and stores learnings
+- After spec completion, run `/verify` to run CodeRabbit AI review, all tests, and quality checks
+- Watch as CC automatically applies best practices, testing, and quality control with every step
+
+
 ## ⚖️ What Makes This Different
 
 **Compared to Other Spec-Driven Frameworks (OpenSpec, SpecKit, AgentOS):**
@@ -82,42 +117,6 @@
 
 ---
 
-## 🚀 Getting Started
-
-### 📋 Prerequisites
-
-- Supports **all operating systems** (Windows / macOS / Linux) and **ARM/x86 architectures**
-- **[Docker Desktop](https://www.docker.com/products/docker-desktop/)** or **[OrbStack](https://orbstack.dev/download)**
-- **[VS Code](https://code.visualstudio.com/)** or **[Cursor](https://cursor.com/)** or **[Windsurf](https://windsurf.dev/)**
-- **[Dev Containers Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)**
-- **Optional**: **[Warp](https://www.warp.dev/)** for the best terminal experience
-
-### 📥 Installation
-
-- Clone this repository and install the prerequisites from above
-- Open folder in VS Code, click on the button on the bottom-left: `Reopen in Container`
-- Wait for automatic build to finish, this can take a couple of minutes
-- Copy `.env.example` to `.env` and add your credentials and API keys
-- Restart the container via Command Palette: `Developer: Reload Window`
-
-### ⚙️ Configuration
-
-- In the launched terminal, run `cc` to finish CC Setup, then `cr` to finish CodeRabbit setup
-- In CC, run `/config` to set auto-connect to IDE to true and disable auto-compaction for best experience
-- In CC, run `/ide` to connect to VS Code diagnostics and make sure all MCP servers for `/mcp` are online
-- In VS Code, click `START` in the lower bar to start a split terminal and monitor CC usage with `/usage`
-- Open Claude Code in the IDE Terminal, Extension or an external Terminal like Warp with the `cc` command
-
-### 👣 First Steps
-
-- Start with `/plan` - Provide your input and it will ask clarifying questions to create a spec
-- Use `/implement` to execute the spec with automatic TDD, best practices and context management
-- When context fills, `/remember` automatically updates your plan and stores learnings
-- After spec completion, run `/verify` to run CodeRabbit AI review, all tests, and quality checks
-- Watch as CC automatically applies best practices, testing, and quality control with every step
-
----
-
 ## 🎬 Masterclass Coming Soon!
 
 If you want to dive deeper into the setup and advanced usage of Claude CodePro, check out the upcoming video masterclass with 10 comprehensive modules where we do a deep-dive into all important topics:
@@ -134,7 +133,6 @@ Contributions welcome: custom skills, MCP integrations, workflow improvements, b
 
 ## 🙏 Acknowledgments
 
-### Development Tools:
 - **[astral-sh/uv](https://github.com/astral-sh/uv)** - Fast Python package manager
 - **[astral-sh/ruff](https://github.com/astral-sh/ruff)** - Fast Python linter and formatter
 - **[DetachHead/basedpyright](https://github.com/DetachHead/basedpyright)** - Enhanced Python type checker
@@ -143,8 +141,6 @@ Contributions welcome: custom skills, MCP integrations, workflow improvements, b
 - **[postmanlabs/newman](https://github.com/postmanlabs/newman)** - End-to-End API testing
 - **[pytest-dev/pytest](https://github.com/pytest-dev/pytest)** - Python testing framework
 - **[qltysh/qlty](https://github.com/qltysh/qlty)** - Code quality automation
-
-### Claude Code Tools:
 - **[campfirein/cipher](https://github.com/campfirein/cipher)** - CC Cross-session memory
 - **[zilliztech/claude-context](https://github.com/zilliztech/claude-context)** - CC Semantic code search
 - **[hagan/claudia-statusline](https://github.com/hagan/claudia-statusline)** - CC Status line integration
@@ -159,5 +155,3 @@ Contributions welcome: custom skills, MCP integrations, workflow improvements, b
 Made with ❤️ by [Max Ritter](https://www.maxritter.net)
 
 [🌐 claude-code.pro](https://www.claude-code.pro)
-
-</div>
