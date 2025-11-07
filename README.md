@@ -2,11 +2,11 @@
 
 <img src="https://www.claude-code.pro/assets/logo-CZm5tDhJ.png" alt="Claude CodePro" width="400">
 
-### Claude CodePro is a Professional System for Building Quality Code ⚙️💻
+### ⚙️💻 Claude CodePro is a Professional System for Building Quality Code
 
-**A structured approach to software development with Specs, Tests, and Professional Workflows.**
+**🛠️ A structured approach to software development with Specs, Tests, and Professional Workflows.**
 
-**Stop vibe coding, start shipping systematically with Spec-Driven Development, TDD, and much more!**
+**</> Stop vibe coding, start shipping systematically with Spec-Driven Development, TDD, and much more!**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-Optimized-blue)](https://claude.ai)
@@ -14,7 +14,9 @@
 ![TDD](https://img.shields.io/badge/TDD-Test--Driven--Development-green.svg)
 [![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen.svg)](http://makeapullrequest.com)
 
-#### 🎬 Join the Upcoming Masterclass to Learn More ➡️ [www.claude-code.pro](https://www.claude-code.pro)
+**🌟 Please star this Repository if it helps you ship better Code!**
+
+**🎬 Join the upcoming Masterclass to learn more ➡️ [www.claude-code.pro](https://www.claude-code.pro)**
 
 ---
 
@@ -59,7 +61,7 @@
 
 ## ⚖️ What Makes This Different
 
-### Compared to Other Spec-Driven Frameworks (OpenSpec, SpecKit, AgentOS):
+**Compared to Other Spec-Driven Frameworks (OpenSpec, SpecKit, AgentOS):**
 
 - 💾 **Persistent Memory** - Cross-session memory maintains knowledge between resets
 - ⚡ **Token-Optimized** - No tokens wasted during too complex planning, just works
@@ -118,7 +120,7 @@
 
 ## 🎬 Masterclass Coming Soon!
 
-**If you want to dive deeper into the setup and advanced usage of Claude CodePro, check out the upcoming video masterclass with 12 comprehensive modules where we do a deep-dive into all important topics:**
+If you want to dive deeper into the setup and advanced usage of Claude CodePro, check out the upcoming video masterclass with 12 comprehensive modules where we do a deep-dive into all important topics:
 
 ### ➡️ [www.claude-code.pro](https://www.claude-code.pro)
 
@@ -132,7 +134,7 @@ Contributions welcome: custom skills, MCP integrations, workflow improvements, b
 
 ## 🙏 Acknowledgments
 
-**Development Tools:**
+### Development Tools:
 - **[astral-sh/uv](https://github.com/astral-sh/uv)** - Fast Python package manager
 - **[astral-sh/ruff](https://github.com/astral-sh/ruff)** - Fast Python linter and formatter
 - **[DetachHead/basedpyright](https://github.com/DetachHead/basedpyright)** - Enhanced Python type checker
@@ -142,7 +144,7 @@ Contributions welcome: custom skills, MCP integrations, workflow improvements, b
 - **[pytest-dev/pytest](https://github.com/pytest-dev/pytest)** - Python testing framework
 - **[qltysh/qlty](https://github.com/qltysh/qlty)** - Code quality automation
 
-**Claude Code Tools:**
+### Claude Code Tools:
 - **[campfirein/cipher](https://github.com/campfirein/cipher)** - CC Cross-session memory
 - **[zilliztech/claude-context](https://github.com/zilliztech/claude-context)** - CC Semantic code search
 - **[hagan/claudia-statusline](https://github.com/hagan/claudia-statusline)** - CC Status line integration
@@ -153,8 +155,6 @@ Contributions welcome: custom skills, MCP integrations, workflow improvements, b
 - **[chris-schra/mcp-funnel](https://github.com/chris-schra/mcp-funnel)** - MCP Tool filtering
 
 ---
-
-**⭐ Star this repo if it helps you ship better code!**
 
 Made with ❤️ by [Max Ritter](https://www.maxritter.net)
 
