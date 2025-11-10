@@ -60,3 +60,33 @@ echo -e "\n# Claude Code quick alias" >>~/.bashrc
 echo 'alias cc="cd /workspaces/claude-codepro/ && clear && dotenvx run claude"' >>~/.bashrc
 echo -e "\n# Claude Code quick alias" >>~/.zshrc
 echo 'alias cc="cd /workspaces/claude-codepro/ && clear && dotenvx run claude"' >>~/.zshrc
+
+# Print finish message
+echo ""
+echo "======================================================================"
+echo "✅ Dev Container Build Complete!"
+echo "======================================================================"
+echo ""
+echo "📋 Next Steps:"
+echo ""
+echo "1. Configure your environment:"
+echo "   cp .env.example .env"
+echo "   vim .env  # Add your API keys and credentials"
+echo ""
+echo "2. Run setup commands:"
+echo "   cc  # Setup Claude Code"
+echo "   cr  # Setup CodeRabbit CLI"
+echo ""
+echo "3. Configure Claude Code:"
+echo "   - Run /config to set auto-connect to IDE=true, Auto-compact=false"
+echo "   - Run /ide to connect to VS Code diagnostics"
+echo "   - Run /mcp to verify all MCP servers are online"
+echo ""
+echo "4. Start coding:"
+echo "   - Use /plan to create a spec with clarifying questions"
+echo "   - Use /implement to execute with automatic TDD"
+echo "   - Use /verify to run CodeRabbit review and quality checks"
+echo ""
+echo "📚 For more details, see the README.md"
+echo "======================================================================"
+echo ""

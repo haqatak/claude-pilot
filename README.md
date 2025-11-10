@@ -1,4 +1,4 @@
-<img src="https://www.claude-code.pro/assets/logo-CZm5tDhJ.png" alt="Claude CodePro" width="400">
+<img src="docs/img/logo.png" alt="Claude CodePro" width="400">
 
 ### ⚙️💻 Claude CodePro is a Professional System for Building Quality Code
 
@@ -20,7 +20,7 @@
 
 ## 📦 What's Inside
 
-<img src="https://www.claude-code.pro/assets/ide-screenshot-Bg67Az9Q.png" alt="IDE Screenshot" width="600">
+<img src="docs/img/ide-screenshot.png" alt="IDE Screenshot" width="600">
 
 ### 📋 Token-Optimized Spec-Driven Workflow via Slash Commands
 - `/plan` - Based on your input asks the right questions → Detailed spec with exact code (Opus 4.1)
@@ -67,7 +67,7 @@
 
 1. Clone this repository: `git clone https://github.com/maxritter/claude-codepro.git`
 2. Open in VS Code, click on the button on the bottom-left: `Reopen in Container` or open the command pallette via `Ctrl + Shift + P` and then use `> Dev Containers: Reopen in Container`
-3. Wait for automatic build to finish, this can take a couple of minutes (feel free to watch the logs in `vscode`)
+3. Wait for automatic build to finish, this can take a couple of minutes (feel free to watch the logs in `Terminal`)
 <img src="docs/img/ide-setup-finish.png" alt="Setup finish Screenshot" width="600">
 
 4. Copy `.env.example` to `.env` and add your credentials and API keys
@@ -89,15 +89,19 @@ cr
 
 ### ⚙️ Configuration
 
-1. In CC, run `/config` to set auto-connect to IDE to true and set `Auto-compact=false` for best experience
+1. Open Claude Code in the IDE Terminal, Extension or an external Terminal like Warp with the `cc` command
+
+2. In CC, run `/config` to set auto-connect to IDE to true and set `Auto-compact=false` for best experience
 <img src="docs/img/ide-setup-config.png" alt="Setup config Screenshot" width="600">
 
-2. In CC, run `/ide` to connect to VS Code diagnostics and make sure all MCP servers for `/mcp` are online
+3. In CC, run `/ide` to connect to VS Code diagnostics and make sure all MCP servers for `/mcp` are online
 <img src="docs/img/ide-setup-mcp.png" alt="Setup mcp Screenshot" width="600">
 
-3. In VS Code, click `START` in the lower bar of the IDE to start a split terminal and monitor CC usage with `/usage`. (see screenshot of the *Installation* section)
+4. In CC, run `/context` to verify context looks similar to this screenshot with less than 20% used
+<img src="docs/img/ide-setup-context.png" alt="Setup context Screenshot" width="600">
 
-4. Open Claude Code in the IDE Terminal, Extension or an external Terminal like Warp with the `cc` command
+5. In VS Code, click `START` in the lower bar of the IDE to start a split terminal and monitor CC usage with `/usage`
+<img src="docs/img/ide-setup-start.png" alt="Start command Screenshot" width="600">
 
 ### 👣 First Steps
 
