@@ -89,8 +89,8 @@ vim .env
 3. Open folder in VS Code, click on the button on the bottom-left: `Reopen in Container` or open the command pallette via `Ctrl + Shift + P` and then use `> Dev Containers: Reopen in Container`
 4. Wait for automatic build to finish, this can take a couple of minutes (feel free to watch the logs in `Terminal`)
 <img src="docs/img/ide-setup-finish.png" alt="Setup finish Screenshot" width="600">
-5. Run `cc` (which is an alias we created) in the Terminal to finish CC Setup, `cr` to finish CodeRabbit setup
 
+5. Run `cc` (which is an alias we created) in the Terminal to finish CC Setup, and `cr` to finish CodeRabbit setup
 ```bash
 # alias to spawn claude code with loaded environment varaibles
 cc
