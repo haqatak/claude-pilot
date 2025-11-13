@@ -80,7 +80,10 @@ Stop vibe coding, start shipping systematically with Spec-Driven Development, TD
 
 ### 📥 Installation
 
-1. Clone this repository: `git clone https://github.com/maxritter/claude-codepro.git`
+1. Clone this repository:
+```bash
+git clone https://github.com/maxritter/claude-codepro.git
+```
 2. Copy `.env.example` to `.env` and add your credentials and API keys
 ```bash
 cp .env.example .env
@@ -89,9 +92,10 @@ vim .env
 3. Open folder in VS Code, click on the button on the bottom-left: `Reopen in Container` or open the command pallette via `Ctrl + Shift + P` and then use `> Dev Containers: Reopen in Container`
 4. Wait for automatic build to finish, this can take a couple of minutes (feel free to watch the logs in `Terminal`)
 <img src="docs/img/ide-setup-finish.png" alt="Setup finish Screenshot" width="600">
-5. Run `cc` (which is an alias we created) in the Terminal to finish CC Setup, `cr` to finish CodeRabbit setup
+
+5. Run `cc` (which is an alias we created) in the Terminal to finish CC Setup, and `cr` to finish CodeRabbit setup
 ```bash
-# alias to spawn claude code with loaded environment varaibles
+# alias to spawn claude code with loaded environment variables
 cc
 # code rabbit cmd line tool and setup
 cr
@@ -105,7 +109,7 @@ cr
 
 1. Open Claude Code in the IDE Terminal, Extension or an external Terminal like Warp with the `cc` command
 
-2. In CC, run `/config` to set auto-connect to IDE to true and set `Auto-compact=false` for best experience
+2. In CC, run `/config` to set `Auto-connect to IDE=true` and set `Auto-compact=false` for best experience
 <img src="docs/img/ide-setup-config.png" alt="Setup config Screenshot" width="600">
 
 3. In CC, run `/ide` to connect to VS Code diagnostics and make sure all MCP servers for `/mcp` are online
