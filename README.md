@@ -30,7 +30,7 @@ Start shipping systematically with Spec-Driven Development, Skills, TDD, Semanti
 
 ## 🚀 Getting Started
 
-**Installation & Updates**: Run this shell command in any project directory for fresh install or to update to the latest version:
+Run this shell command in **any project directory** for a **fresh install** or to **update to the latest version**:
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/maxritter/claude-codepro/main/scripts/install.sh | bash
