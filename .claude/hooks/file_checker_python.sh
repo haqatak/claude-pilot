@@ -28,25 +28,29 @@ fi
 file_abs_path=$(realpath "$files")
 
 # Define tools with global paths (installed via uv tool install)
-declare -A TOOLS=(
-	[ruff]="$(command -v ruff 2>/dev/null || true)"
-	[basedpyright]="$(command -v basedpyright 2>/dev/null || true)"
-	[mypy]="$(command -v mypy 2>/dev/null || true)"
-)
+# Using simple variables instead of associative arrays for bash 3.2 compatibility
+TOOL_RUFF="$(command -v ruff 2>/dev/null || true)"
+TOOL_BASEDPYRIGHT="$(command -v basedpyright 2>/dev/null || true)"
+TOOL_MYPY="$(command -v mypy 2>/dev/null || true)"
 
 # Exit if no tools found
-[[ -z ${TOOLS[ruff]} && -z ${TOOLS[basedpyright]} && -z ${TOOLS[mypy]} ]] && exit 0
+[[ -z $TOOL_RUFF && -z $TOOL_BASEDPYRIGHT && -z $TOOL_MYPY ]] && exit 0
 
 # Auto-format before checks
-if [[ -x ${TOOLS[ruff]} ]]; then
-	${TOOLS[ruff]} check --select I,RUF022 --fix "$files" >/dev/null 2>&1 || true
-	${TOOLS[ruff]} format "$files" >/dev/null 2>&1 || true
+if [[ -x $TOOL_RUFF ]]; then
+	$TOOL_RUFF check --select I,RUF022 --fix "$files" >/dev/null 2>&1 || true
+	$TOOL_RUFF format "$files" >/dev/null 2>&1 || true
 fi
 
 # Run tool check and store results
 run_check() {
 	local tool=$1
-	local bin=${TOOLS[$tool]}
+	local bin
+	case $tool in
+		ruff) bin=$TOOL_RUFF ;;
+		basedpyright) bin=$TOOL_BASEDPYRIGHT ;;
+		mypy) bin=$TOOL_MYPY ;;
+	esac
 	[[ ! -x $bin ]] && return 1
 
 	case $tool in
@@ -121,11 +125,19 @@ for diag in data.get('generalDiagnostics', []):
 
 # Run all checks
 has_issues=false
-declare -A results
+# Using delimited string instead of associative array for bash 3.2 compatibility
+results_ruff=""
+results_basedpyright=""
+results_mypy=""
+
 for tool in ruff basedpyright mypy; do
 	if run_check "$tool"; then
 		has_issues=true
-		results[$tool]="$output"
+		case $tool in
+			ruff) results_ruff="$output" ;;
+			basedpyright) results_basedpyright="$output" ;;
+			mypy) results_mypy="$output" ;;
+		esac
 	fi
 done
 
@@ -136,8 +148,12 @@ if [[ $has_issues == true ]]; then
 	echo "" >&2
 
 	for tool in ruff basedpyright mypy; do
-		if [[ -n ${results[$tool]} ]]; then
-			output="${results[$tool]}"
+		case $tool in
+			ruff) output="$results_ruff" ;;
+			basedpyright) output="$results_basedpyright" ;;
+			mypy) output="$results_mypy" ;;
+		esac
+		if [[ -n $output ]]; then
 			display_result "$tool"
 		fi
 	done
