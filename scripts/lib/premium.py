@@ -195,14 +195,9 @@ def prompt_for_premium(non_interactive: bool) -> str | None:
     return license_key
 
 
-def install_premium_features(project_dir: Path, non_interactive: bool, version: str) -> bool:
-    """Main entry point for premium installation."""
+def install_premium_with_key(project_dir: Path, license_key: str, version: str) -> bool:
+    """Install premium features with a pre-validated license key."""
     from lib import ui
-
-    license_key = prompt_for_premium(non_interactive)
-    if not license_key:
-        ui.print_status("Skipping premium features")
-        return False
 
     ui.print_status("Validating license key...")
     valid, message = validate_license_key(license_key)

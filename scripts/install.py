@@ -335,7 +335,10 @@ def main() -> None:
             sys.stdout.flush()
             install_python = input("Install Python support? (Y/n): ").strip() or "Y"
             print("")
-            print("")
+
+        # Check for premium license early (before settings generation)
+        premium_license_key = premium.prompt_for_premium(args.non_interactive)
+        print("")
 
         ui.print_section("Installing Claude CodePro Files")
 
@@ -471,7 +474,11 @@ def main() -> None:
         print("")
 
         ui.print_section("Premium Features")
-        is_premium = premium.install_premium_features(project_dir, args.non_interactive, VERSION)
+        if premium_license_key:
+            is_premium = premium.install_premium_with_key(project_dir, premium_license_key, VERSION)
+        else:
+            is_premium = False
+            ui.print_status("Skipping premium features")
         if not is_premium:
             # Remove premium hook from settings (it's in template but user is not premium)
             premium.remove_premium_hook_from_settings(settings_file)
