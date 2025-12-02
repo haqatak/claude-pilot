@@ -43,6 +43,8 @@ curl -fsSL https://raw.githubusercontent.com/maxritter/claude-codepro/v3.0.9/ins
 
 > **Note:** Claude CodePro runs inside a Dev Container for complete isolation, consistent tooling, and cross-platform compatibility.
 
+> **Cursor, Windsurf, Antigravity users:** These IDEs don't auto-execute `postCreateCommand`. After the container starts, run: `.devcontainer/postCreateCommand.sh`
+
 ---
 
 ## 📦 What's Inside

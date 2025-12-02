@@ -128,8 +128,15 @@ class FinalizeStep(BaseStep):
             [
                 ("Reload your shell", "source ~/.zshrc (or ~/.bashrc)"),
                 ("Start Claude Code", "Run: ccp"),
-                ("Configure settings", "In Claude Code: /config → Auto-connect IDE = true"),
-                ("Verify MCP servers", "Run: /mcp → All servers should be online"),
+                (
+                    "Configure settings",
+                    "Run: /config and set:\n"
+                    "     • Auto-compact = false\n"
+                    "     • Verbose output = true\n"
+                    "     • Respect .gitignore in file picker = false\n"
+                    "     • Auto-connect to IDE (external terminal) = true",
+                ),
+                ("Verify MCP servers", "Run: /mcp → If any fail, run: /mcp again to reconnect"),
                 ("Initialize project", "Run: /setup → Scans and indexes codebase"),
                 ("Start building!", "/plan → /implement → /verify"),
             ]

@@ -1,17 +1,20 @@
-"""Shell config step - adds ccp alias to shell configuration."""
+"""Shell config step - configures shell with ccp alias, fzf, dotenv, and zsh."""
 
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from installer.platform_utils import get_shell_config_files
+from installer.platform_utils import get_shell_config_files, is_in_devcontainer
 from installer.steps.base import BaseStep
 
 if TYPE_CHECKING:
     from installer.context import InstallContext
 
 CCP_ALIAS_MARKER = "# Claude CodePro alias"
+FZF_MARKER = "source <(fzf --zsh)"
+DOTENV_MARKER = "ZSH_DOTENV_PROMPT"
 
 
 def get_alias_line(shell_type: str) -> str:
@@ -66,8 +69,98 @@ def alias_exists_in_file(config_file: Path) -> bool:
     return "alias ccp" in content or CCP_ALIAS_MARKER in content
 
 
+def _configure_zsh_fzf(zshrc: Path, ui) -> bool:
+    """Configure fzf in zshrc (idempotent)."""
+    if not zshrc.exists():
+        return False
+
+    content = zshrc.read_text()
+    if FZF_MARKER in content:
+        if ui:
+            ui.info("fzf already configured")
+        return False
+
+    with open(zshrc, "a") as f:
+        f.write(f"\n{FZF_MARKER}\n")
+    if ui:
+        ui.success("Added fzf configuration")
+    return True
+
+
+def _configure_zsh_dotenv(zshrc: Path, ui) -> bool:
+    """Configure dotenv plugin in zshrc (idempotent)."""
+    if not zshrc.exists():
+        return False
+
+    content = zshrc.read_text()
+    modified = False
+
+    # Add dotenv to plugins if not present
+    if "plugins=(" in content and "dotenv" not in content:
+        content = content.replace("plugins=(", "plugins=(dotenv ")
+        zshrc.write_text(content)
+        if ui:
+            ui.success("Added dotenv plugin")
+        modified = True
+    elif "dotenv" in content:
+        if ui:
+            ui.info("dotenv plugin already configured")
+
+    # Add ZSH_DOTENV_PROMPT setting BEFORE source $ZSH/oh-my-zsh.sh
+    # This must come before oh-my-zsh is loaded for the setting to take effect
+    if DOTENV_MARKER not in content:
+        content = zshrc.read_text()
+        dotenv_setting = "# Auto-load .env files without prompting\nexport ZSH_DOTENV_PROMPT=false\n\n"
+
+        if "source $ZSH/oh-my-zsh.sh" in content:
+            # Insert before oh-my-zsh source line
+            content = content.replace("source $ZSH/oh-my-zsh.sh", dotenv_setting + "source $ZSH/oh-my-zsh.sh")
+            zshrc.write_text(content)
+        else:
+            # Fallback: append to end
+            with open(zshrc, "a") as f:
+                f.write(f"\n{dotenv_setting}")
+
+        if ui:
+            ui.success("Added ZSH_DOTENV_PROMPT setting")
+        modified = True
+    elif ui:
+        ui.info("ZSH_DOTENV_PROMPT already configured")
+
+    return modified
+
+
+def _set_zsh_default_shell(ui) -> bool:
+    """Set zsh as default shell if not already (idempotent)."""
+    import os
+
+    current_shell = os.environ.get("SHELL", "")
+    if current_shell.endswith("/zsh"):
+        if ui:
+            ui.info("zsh already default shell")
+        return False
+
+    # Find zsh path
+    zsh_path = subprocess.run(["which", "zsh"], capture_output=True, text=True).stdout.strip()
+
+    if not zsh_path:
+        if ui:
+            ui.warning("zsh not found, skipping default shell change")
+        return False
+
+    try:
+        subprocess.run(["chsh", "-s", zsh_path], check=True, capture_output=True)
+        if ui:
+            ui.success("Set zsh as default shell")
+        return True
+    except subprocess.CalledProcessError:
+        if ui:
+            ui.warning("Could not change default shell (may need sudo)")
+        return False
+
+
 class ShellConfigStep(BaseStep):
-    """Step that configures shell aliases."""
+    """Step that configures shell with ccp alias, fzf, dotenv, and zsh."""
 
     name = "shell_config"
 
@@ -80,10 +173,20 @@ class ShellConfigStep(BaseStep):
         return False
 
     def run(self, ctx: InstallContext) -> None:
-        """Add ccp alias to shell configuration files."""
+        """Configure shell with alias, fzf, dotenv, and zsh settings."""
         ui = ctx.ui
         config_files = get_shell_config_files()
         modified_files: list[str] = []
+
+        # Configure zsh-specific settings if in devcontainer
+        if is_in_devcontainer():
+            zshrc = Path.home() / ".zshrc"
+            if zshrc.exists():
+                if ui:
+                    ui.status("Configuring zsh environment...")
+                _configure_zsh_fzf(zshrc, ui)
+                _configure_zsh_dotenv(zshrc, ui)
+                _set_zsh_default_shell(ui)
 
         if ui:
             ui.status("Configuring shell alias...")
@@ -94,7 +197,7 @@ class ShellConfigStep(BaseStep):
 
             if alias_exists_in_file(config_file):
                 if ui:
-                    ui.status(f"Alias already exists in {config_file.name}")
+                    ui.info(f"Alias already exists in {config_file.name}")
                 continue
 
             shell_type = "fish" if "fish" in config_file.name else "bash"
