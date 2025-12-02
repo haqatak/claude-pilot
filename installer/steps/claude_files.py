@@ -28,6 +28,9 @@ class ClaudeFilesStep(BaseStep):
         key_files = [
             "settings.local.template.json",
             "rules/standard",
+            "commands",
+            "hooks",
+            "skills",
         ]
 
         for key_file in key_files:
@@ -52,8 +55,25 @@ class ClaudeFilesStep(BaseStep):
 
         claude_files = get_repo_files(".claude", config)
 
+        if not claude_files:
+            if ui:
+                ui.warning("No .claude files found in repository")
+                if not config.local_mode:
+                    ui.print("  This may be due to GitHub API rate limiting.")
+                    ui.print("  Try running with --local flag if you have the repo cloned.")
+            return
+
         installed_files: list[str] = []
         file_count = 0
+        failed_files: list[str] = []
+
+        categories: dict[str, list[str]] = {
+            "commands": [],
+            "rules": [],
+            "hooks": [],
+            "skills": [],
+            "other": [],
+        }
 
         for file_path in claude_files:
             if not file_path:
@@ -68,12 +88,42 @@ class ClaudeFilesStep(BaseStep):
                 if "custom/python-rules.md" in file_path:
                     continue
 
-            dest_file = ctx.project_dir / file_path
-            if download_file(file_path, dest_file, config):
-                file_count += 1
-                installed_files.append(str(dest_file))
-                if ui:
-                    ui.print(f"   ✓ {Path(file_path).name}")
+            if "/commands/" in file_path:
+                categories["commands"].append(file_path)
+            elif "/rules/" in file_path:
+                categories["rules"].append(file_path)
+            elif "/hooks/" in file_path:
+                categories["hooks"].append(file_path)
+            elif "/skills/" in file_path:
+                categories["skills"].append(file_path)
+            else:
+                categories["other"].append(file_path)
+
+        category_names = {
+            "commands": "slash commands",
+            "rules": "rules",
+            "hooks": "hooks",
+            "skills": "skills",
+            "other": "config files",
+        }
+
+        for category, files in categories.items():
+            if not files:
+                continue
+
+            if ui:
+                ui.status(f"Installing {category_names[category]}...")
+
+            for file_path in files:
+                dest_file = ctx.project_dir / file_path
+                if download_file(file_path, dest_file, config):
+                    file_count += 1
+                    installed_files.append(str(dest_file))
+                else:
+                    failed_files.append(file_path)
+
+            if ui:
+                ui.success(f"Installed {len(files)} {category_names[category]}")
 
         ctx.config["installed_files"] = installed_files
 
@@ -95,7 +145,17 @@ class ClaudeFilesStep(BaseStep):
             (skills_dir / ".gitkeep").touch()
 
         if ui:
-            ui.success(f"Installed {file_count} .claude files")
+            if file_count > 0:
+                ui.success(f"Installed {file_count} .claude files")
+            else:
+                ui.warning("No .claude files were installed")
+
+            if failed_files:
+                ui.warning(f"Failed to download {len(failed_files)} files")
+                for failed in failed_files[:5]:
+                    ui.print(f"  - {failed}")
+                if len(failed_files) > 5:
+                    ui.print(f"  ... and {len(failed_files) - 5} more")
 
     def rollback(self, ctx: InstallContext) -> None:
         """Remove installed files."""

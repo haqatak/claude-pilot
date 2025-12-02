@@ -93,6 +93,10 @@ class ConfigFilesStep(BaseStep):
                     remove_python_settings(settings)
 
                 settings_file.write_text(json.dumps(settings, indent=2) + "\n")
+
+                if not ctx.local_mode:
+                    template_file.unlink()
+
                 if ui:
                     ui.success("Generated settings.local.json")
             except json.JSONDecodeError as e:
@@ -174,16 +178,6 @@ class ConfigFilesStep(BaseStep):
         else:
             if ui:
                 ui.success(".mcp-funnel.json already exists, skipping")
-
-        # Install .vscode/extensions.json (always overwrite to ensure recommendations)
-        vscode_dir = ctx.project_dir / ".vscode"
-        vscode_dir.mkdir(parents=True, exist_ok=True)
-        extensions_file = vscode_dir / "extensions.json"
-        if ui:
-            ui.status("Installing VS Code extensions recommendations...")
-        if download_file(".vscode/extensions.json", extensions_file, config):
-            if ui:
-                ui.success("Installed .vscode/extensions.json")
 
     def rollback(self, ctx: InstallContext) -> None:
         """Remove generated config files."""

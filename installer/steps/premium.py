@@ -94,7 +94,6 @@ def download_premium_binary(
     dest_path = dest_dir / "ccp-premium"
 
     if local_mode and local_repo_dir:
-        # Try platform-specific name first, then generic name
         source_path = local_repo_dir / "premium" / "dist" / binary_name
         if not source_path.exists():
             source_path = local_repo_dir / "premium" / "dist" / "ccp-premium"
@@ -212,11 +211,21 @@ class PremiumStep(BaseStep):
             ctx.ui.print("  Get a license at: [bold cyan]www.claude-code.pro[/bold cyan]")
             ctx.ui.print()
 
-            # Ask for the license key directly, allowing user to skip by pressing Enter
             key = ctx.ui.input("Enter premium license key (or press Enter to skip)")
             if key and key.strip():
                 return key.strip()
 
+        return None
+
+    def _prompt_for_license_key(self, ctx: InstallContext) -> str | None:
+        """Prompt user for license key with retry on invalid key."""
+        if ctx.non_interactive or not ctx.ui:
+            return None
+
+        ctx.ui.print()
+        key = ctx.ui.input("Enter premium license key (or press Enter to skip)")
+        if key and key.strip():
+            return key.strip()
         return None
 
     def check(self, ctx: InstallContext) -> bool:
@@ -242,12 +251,24 @@ class PremiumStep(BaseStep):
             ui.section("Premium Features")
             ui.status("Validating license key...")
 
-        valid, message = validate_license_key(ctx.premium_key)
-        if not valid:
+        while True:
+            valid, message = validate_license_key(ctx.premium_key)
+            if valid:
+                break
+
             if ui:
                 ui.error(f"License validation failed: {message}")
-            remove_premium_hooks_from_settings(settings_file)
-            return
+
+            retry_key = self._prompt_for_license_key(ctx)
+            if not retry_key:
+                if ui:
+                    ui.status("Skipping premium features")
+                remove_premium_hooks_from_settings(settings_file)
+                return
+
+            ctx.premium_key = retry_key
+            if ui:
+                ui.status("Validating license key...")
 
         if ui:
             ui.success(message)

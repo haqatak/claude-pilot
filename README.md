@@ -27,6 +27,8 @@ Start shipping systematically with Spec-Driven Development, Skills, TDD, Semanti
 - **IDE** - [VS Code](https://code.visualstudio.com/), [Cursor](https://cursor.sh/), [Windsurf](https://windsurf.com/editor), or [Antigravity](https://antigravity.google/)
 - **Dev Containers extension** - [Install from Marketplace](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
 
+> **Note:** Claude CodePro runs inside a Dev Container for complete isolation, consistent tooling, and cross-platform compatibility.
+
 ### Installation
 
 Claude CodePro can be installed into any existing project:
@@ -41,9 +43,7 @@ curl -fsSL https://raw.githubusercontent.com/maxritter/claude-codepro/v3.0.10/in
 3. Reopen in Container: `Cmd+Shift+P` → "Dev Containers: Reopen in Container"
 4. Installation completes automatically inside the container
 
-> **Note:** Claude CodePro runs inside a Dev Container for complete isolation, consistent tooling, and cross-platform compatibility.
-
-> **Cursor, Windsurf, Antigravity users:** These IDEs don't auto-execute `postCreateCommand`. After the container starts, run: `.devcontainer/postCreateCommand.sh`
+> **Cursor, Windsurf, Antigravity users:** These IDEs don't auto-execute `postCreateCommand`. After the container starts, run the install command from step 2 again.
 
 ---
 

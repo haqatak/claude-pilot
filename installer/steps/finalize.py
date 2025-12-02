@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from installer import __version__
 from installer.steps.base import BaseStep
 
 if TYPE_CHECKING:
@@ -124,10 +125,16 @@ class FinalizeStep(BaseStep):
 
         ui.success_box("Installation Complete!", installed_items)
 
+        project_slug = ctx.project_dir.name.lower().replace(" ", "-").replace("_", "-")
+
         ui.next_steps(
             [
-                ("Reload your shell", "source ~/.zshrc (or ~/.bashrc)"),
-                ("Start Claude Code", "Run: ccp"),
+                (
+                    "Connect to dev container",
+                    f"Open your favorite terminal (iTerm, Terminal, etc.) and run:\n"
+                    f'     docker exec -it $(docker ps --filter "name={project_slug}" -q) zsh',
+                ),
+                ("Start Claude CodePro", "Run: ccp"),
                 (
                     "Configure settings",
                     "Run: /config and set:\n"
@@ -136,7 +143,7 @@ class FinalizeStep(BaseStep):
                     "     • Respect .gitignore in file picker = false\n"
                     "     • Auto-connect to IDE (external terminal) = true",
                 ),
-                ("Verify MCP servers", "Run: /mcp → If any fail, run: /mcp again to reconnect"),
+                ("Verify MCP servers", "Run: /mcp → If any fail, click on the server and select 'Reconnect'"),
                 ("Initialize project", "Run: /setup → Scans and indexes codebase"),
                 ("Start building!", "/plan → /implement → /verify"),
             ]
@@ -147,6 +154,8 @@ class FinalizeStep(BaseStep):
         ui.print("  [bold yellow]⭐ Star this repo:[/bold yellow] https://github.com/maxritter/claude-codepro")
         ui.print("  [bold magenta]💎 Premium Features:[/bold magenta] https://www.claude-code.pro")
         ui.print("  [bold cyan]🐛 Bugs, Features, PRs:[/bold cyan] https://github.com/maxritter/claude-codepro/issues")
+        ui.print()
+        ui.print(f"  [dim]Installed version: {__version__}[/dim]")
         ui.print()
 
     def rollback(self, ctx: InstallContext) -> None:

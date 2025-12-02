@@ -135,53 +135,21 @@ class EnvironmentStep(BaseStep):
             if ui:
                 ui.success("EXA_API_KEY already set, skipping")
 
-        if append_mode:
-            content = env_file.read_text()
-            if "# Claude CodePro Configuration" not in content:
-                with open(env_file, "a") as f:
-                    f.write("\n")
-                    f.write("# " + "=" * 77 + "\n")
-                    f.write("# Claude CodePro Configuration\n")
-                    f.write("# " + "=" * 77 + "\n")
+        add_env_key("MILVUS_TOKEN", milvus_token, env_file)
+        add_env_key("MILVUS_ADDRESS", milvus_address, env_file)
+        add_env_key("VECTOR_STORE_URL", milvus_address, env_file)
+        add_env_key("VECTOR_STORE_USERNAME", vector_store_username, env_file)
+        add_env_key("VECTOR_STORE_PASSWORD", vector_store_password, env_file)
+        add_env_key("OPENAI_API_KEY", openai_api_key, env_file)
+        add_env_key("EXA_API_KEY", exa_api_key, env_file)
+        add_env_key("USE_ASK_CIPHER", "true", env_file)
+        add_env_key("VECTOR_STORE_TYPE", "milvus", env_file)
+        add_env_key("FASTMCP_LOG_LEVEL", "ERROR", env_file)
 
-            add_env_key("MILVUS_TOKEN", milvus_token, env_file)
-            add_env_key("MILVUS_ADDRESS", milvus_address, env_file)
-            add_env_key("VECTOR_STORE_URL", milvus_address, env_file)
-            add_env_key("VECTOR_STORE_USERNAME", vector_store_username, env_file)
-            add_env_key("VECTOR_STORE_PASSWORD", vector_store_password, env_file)
-            add_env_key("OPENAI_API_KEY", openai_api_key, env_file)
-            add_env_key("EXA_API_KEY", exa_api_key, env_file)
-            add_env_key("USE_ASK_CIPHER", "true", env_file)
-            add_env_key("VECTOR_STORE_TYPE", "milvus", env_file)
-            add_env_key("FASTMCP_LOG_LEVEL", "ERROR", env_file)
-
-            if ui:
+        if ui:
+            if append_mode:
                 ui.success("Updated .env file with Claude CodePro configuration")
-        else:
-            env_content = f"""# Zilliz Cloud (Free Vector DB for Semantic Search & Persistent Memory)
-                                # Create at https://zilliz.com/cloud
-                                MILVUS_TOKEN={milvus_token}
-                                MILVUS_ADDRESS={milvus_address}
-                                VECTOR_STORE_URL={milvus_address}
-                                VECTOR_STORE_USERNAME={vector_store_username}
-                                VECTOR_STORE_PASSWORD={vector_store_password}
-
-                                # OpenAI API Key - Used for Persistent Memory LLM Calls (Low Usage)
-                                # Create at https://platform.openai.com/account/api-keys
-                                OPENAI_API_KEY={openai_api_key}
-
-                                # Exa API Key - AI-Powered Web Search & Code Context
-                                # Create at https://dashboard.exa.ai/home
-                                EXA_API_KEY={exa_api_key}
-
-                                # Configuration Settings - No need to adjust
-                                USE_ASK_CIPHER=true
-                                VECTOR_STORE_TYPE=milvus
-                                FASTMCP_LOG_LEVEL=ERROR
-                            """
-            env_file.write_text(env_content)
-
-            if ui:
+            else:
                 ui.success("Created .env file with your API keys")
 
     def rollback(self, ctx: InstallContext) -> None:

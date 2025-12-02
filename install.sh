@@ -48,8 +48,6 @@ if ! is_in_container; then
         echo "  [..] Downloading dev container configuration..."
         download_file ".devcontainer/Dockerfile" ".devcontainer/Dockerfile"
         download_file ".devcontainer/devcontainer.json" ".devcontainer/devcontainer.json"
-        download_file ".devcontainer/postCreateCommand.sh" ".devcontainer/postCreateCommand.sh"
-        chmod +x ".devcontainer/postCreateCommand.sh"
 
         # Replace placeholders with current directory name
         PROJECT_NAME="$(basename "$(pwd)")"
@@ -61,6 +59,15 @@ if ! is_in_container; then
         fi
 
         echo "  [OK] Dev container configuration installed"
+    fi
+
+    # Download VS Code extensions recommendations (so they're ready when VS Code opens)
+    if [ ! -f ".vscode/extensions.json" ]; then
+        echo "  [..] Downloading VS Code extensions recommendations..."
+        download_file ".vscode/extensions.json" ".vscode/extensions.json"
+        echo "  [OK] VS Code extensions recommendations installed"
+    else
+        echo "  [OK] .vscode/extensions.json already exists"
     fi
 
     echo ""
