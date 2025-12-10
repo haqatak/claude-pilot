@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import tempfile
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import pytest
 
@@ -37,11 +37,11 @@ class TestFinalizeStep:
             assert step.check(ctx) is False
 
 
-class TestRulesBuild:
-    """Test rules building functionality."""
+class TestLegacyRulesCleanup:
+    """Test legacy rules file cleanup functionality."""
 
-    def test_run_builds_rules_if_script_exists(self):
-        """run() calls build.py if it exists."""
+    def test_run_removes_legacy_claude_md(self):
+        """run() removes legacy .claude/CLAUDE.md file."""
         from installer.context import InstallContext
         from installer.steps.finalize import FinalizeStep
         from installer.ui import Console
@@ -49,29 +49,76 @@ class TestRulesBuild:
         step = FinalizeStep()
         with tempfile.TemporaryDirectory() as tmpdir:
             project_dir = Path(tmpdir)
+            claude_dir = project_dir / ".claude"
+            claude_dir.mkdir(parents=True)
 
-            # Create build script
-            rules_dir = project_dir / ".claude" / "rules"
-            rules_dir.mkdir(parents=True)
-            build_script = rules_dir / "build.py"
-            build_script.write_text("print('building rules')")
+            # Create legacy CLAUDE.md
+            legacy_file = claude_dir / "CLAUDE.md"
+            legacy_file.write_text("# Auto-generated rules")
 
             ctx = InstallContext(
                 project_dir=project_dir,
                 ui=Console(non_interactive=True),
             )
 
-            with patch("subprocess.run") as mock_run:
-                mock_run.return_value = MagicMock(returncode=0)
-                step.run(ctx)
+            step.run(ctx)
 
-                # Should call build script
-                mock_run.assert_called()
-                call_args = str(mock_run.call_args)
-                assert "build.py" in call_args
+            # Legacy file should be removed
+            assert not legacy_file.exists()
 
-    def test_run_skips_rules_if_no_script(self):
-        """run() skips rules build if build.py doesn't exist."""
+    def test_run_removes_legacy_claude_local_md(self):
+        """run() removes legacy CLAUDE.local.md file."""
+        from installer.context import InstallContext
+        from installer.steps.finalize import FinalizeStep
+        from installer.ui import Console
+
+        step = FinalizeStep()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            project_dir = Path(tmpdir)
+            (project_dir / ".claude").mkdir()
+
+            # Create legacy CLAUDE.local.md at project root
+            legacy_file = project_dir / "CLAUDE.local.md"
+            legacy_file.write_text("# Custom rules")
+
+            ctx = InstallContext(
+                project_dir=project_dir,
+                ui=Console(non_interactive=True),
+            )
+
+            step.run(ctx)
+
+            # Legacy file should be removed
+            assert not legacy_file.exists()
+
+    def test_run_removes_legacy_build_script(self):
+        """run() removes legacy build.py script."""
+        from installer.context import InstallContext
+        from installer.steps.finalize import FinalizeStep
+        from installer.ui import Console
+
+        step = FinalizeStep()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            project_dir = Path(tmpdir)
+            rules_dir = project_dir / ".claude" / "rules"
+            rules_dir.mkdir(parents=True)
+
+            # Create legacy build.py
+            legacy_script = rules_dir / "build.py"
+            legacy_script.write_text("print('build rules')")
+
+            ctx = InstallContext(
+                project_dir=project_dir,
+                ui=Console(non_interactive=True),
+            )
+
+            step.run(ctx)
+
+            # Legacy script should be removed
+            assert not legacy_script.exists()
+
+    def test_run_succeeds_without_legacy_files(self):
+        """run() succeeds even when no legacy files exist."""
         from installer.context import InstallContext
         from installer.steps.finalize import FinalizeStep
         from installer.ui import Console
@@ -86,7 +133,7 @@ class TestRulesBuild:
                 ui=Console(non_interactive=True),
             )
 
-            # Should not raise even without build script
+            # Should not raise when no legacy files exist
             step.run(ctx)
 
 

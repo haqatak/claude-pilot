@@ -112,18 +112,23 @@ class ClaudeFilesStep(BaseStep):
                 continue
 
             if ui:
-                ui.status(f"Installing {category_names[category]}...")
-
-            for file_path in files:
-                dest_file = ctx.project_dir / file_path
-                if download_file(file_path, dest_file, config):
-                    file_count += 1
-                    installed_files.append(str(dest_file))
-                else:
-                    failed_files.append(file_path)
-
-            if ui:
+                with ui.spinner(f"Installing {category_names[category]}..."):
+                    for file_path in files:
+                        dest_file = ctx.project_dir / file_path
+                        if download_file(file_path, dest_file, config):
+                            file_count += 1
+                            installed_files.append(str(dest_file))
+                        else:
+                            failed_files.append(file_path)
                 ui.success(f"Installed {len(files)} {category_names[category]}")
+            else:
+                for file_path in files:
+                    dest_file = ctx.project_dir / file_path
+                    if download_file(file_path, dest_file, config):
+                        file_count += 1
+                        installed_files.append(str(dest_file))
+                    else:
+                        failed_files.append(file_path)
 
         ctx.config["installed_files"] = installed_files
 

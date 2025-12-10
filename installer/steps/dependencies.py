@@ -172,6 +172,8 @@ class DependenciesStep(BaseStep):
             if _install_with_spinner(ui, "Python tools", install_python_tools):
                 installed.append("python_tools")
 
+        if ui:
+            ui.info("Claude Code CLI installation may take 1-2 minutes...")
         if _install_with_spinner(ui, "Claude Code", install_claude_code):
             installed.append("claude_code")
 

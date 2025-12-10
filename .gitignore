@@ -227,10 +227,8 @@ data/
 # Claude Code
 .claude.backup.*
 settings.local.json
-.claude/CLAUDE.md
 .claude/rules/custom/*
 !.claude/rules/custom/python-rules.md
-CLAUDE.local.md
 
 # Build artifacts
 .claude/bin/

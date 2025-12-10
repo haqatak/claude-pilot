@@ -88,14 +88,6 @@ class TestAliasHelpers:
         result = get_alias_line("bash")
         assert "ccp" in result
 
-    def test_alias_builds_rules(self):
-        """Alias runs build.py to compile rules."""
-        from installer.steps.shell_config import get_alias_line
-
-        result = get_alias_line("bash")
-        assert "build.py" in result
-        assert ".claude/rules/build.py" in result
-
     def test_alias_uses_dotenvx(self):
         """Alias uses dotenvx to load environment variables."""
         from installer.steps.shell_config import get_alias_line
@@ -115,7 +107,7 @@ class TestAliasHelpers:
         from installer.steps.shell_config import get_alias_line
 
         result = get_alias_line("bash")
-        assert ".claude/rules/build.py" in result
+        assert ".claude/rules" in result
         assert "/workspaces" in result
 
     def test_fish_alias_uses_correct_syntax(self):
@@ -124,6 +116,6 @@ class TestAliasHelpers:
 
         result = get_alias_line("fish")
         # Fish uses 'and' for chaining commands, 'test' instead of '[]'
-        assert "test -f" in result or "and" in result
+        assert "test -d" in result or "and" in result
         assert "dotenvx run claude" in result
         assert "nvm use 22" in result

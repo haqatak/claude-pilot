@@ -22,25 +22,26 @@ def get_alias_line(shell_type: str) -> str:
     """Get the alias line for the given shell type.
 
     Creates an alias that:
-    1. If current dir is CCP project (.claude/rules/build.py exists) → use it
+    1. If current dir is CCP project (.claude/rules/ exists) → use it
     2. If in devcontainer (/workspaces exists) → find CCP project there
     3. Otherwise → show error
 
     The alias:
     - Uses nvm to set Node.js 22
-    - Runs build.py to compile rules
     - Clears screen
     - Uses dotenvx to load environment variables before running claude
+
+    Note: Rules are now natively loaded by Claude Code from .claude/rules/*.md
     """
     if shell_type == "fish":
         return (
             f"{CCP_ALIAS_MARKER}\n"
             "alias ccp='"
-            "if test -f .claude/rules/build.py; "
-            "nvm use 22; and python3 .claude/rules/build.py &>/dev/null; and clear; and dotenvx run claude; "
+            "if test -d .claude/rules; "
+            "nvm use 22; and clear; and dotenvx run claude; "
             "else if test -d /workspaces; "
-            'set ccp_dir ""; for d in /workspaces/*/; test -f "$d.claude/rules/build.py"; and set ccp_dir "$d"; and break; end; '
-            'if test -n "$ccp_dir"; cd "$ccp_dir"; and nvm use 22; and python3 .claude/rules/build.py &>/dev/null; and clear; and dotenvx run claude; '
+            'set ccp_dir ""; for d in /workspaces/*/; test -d "$d.claude/rules"; and set ccp_dir "$d"; and break; end; '
+            'if test -n "$ccp_dir"; cd "$ccp_dir"; and nvm use 22; and clear; and dotenvx run claude; '
             'else; echo "Error: No CCP project found in /workspaces"; end; '
             "else; "
             'echo "Error: Not a Claude CodePro project. Please cd to a CCP-enabled project first."; '
@@ -50,11 +51,11 @@ def get_alias_line(shell_type: str) -> str:
         return (
             f"{CCP_ALIAS_MARKER}\n"
             "alias ccp='"
-            "if [ -f .claude/rules/build.py ]; then "
-            "nvm use 22 && python3 .claude/rules/build.py &>/dev/null && clear && dotenvx run claude; "
+            "if [ -d .claude/rules ]; then "
+            "nvm use 22 && clear && dotenvx run claude; "
             "elif [ -d /workspaces ]; then "
-            'ccp_dir=""; for d in /workspaces/*/; do [ -f "$d.claude/rules/build.py" ] && ccp_dir="$d" && break; done; '
-            'if [ -n "$ccp_dir" ]; then cd "$ccp_dir" && nvm use 22 && python3 .claude/rules/build.py &>/dev/null && clear && dotenvx run claude; '
+            'ccp_dir=""; for d in /workspaces/*/; do [ -d "$d.claude/rules" ] && ccp_dir="$d" && break; done; '
+            'if [ -n "$ccp_dir" ]; then cd "$ccp_dir" && nvm use 22 && clear && dotenvx run claude; '
             'else echo "Error: No CCP project found in /workspaces"; fi; '
             "else "
             'echo "Error: Not a Claude CodePro project. Please cd to a CCP-enabled project first."; '

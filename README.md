@@ -2,12 +2,13 @@
 
 <img src="docs/img/logo.png" alt="Claude CodePro" width="400">
 
-### Professional Development Environment for Claude Code (CC)
+### 🛠️ Professional Development Environment for Claude Code (CC)
 
 Start shipping systematically with Spec-Driven Development, Skills, TDD, Semantic Search, Persistent Memory, Context Management, Quality Hooks, Modular Rules System, and much more 🚀
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-Optimized-blue)](https://claude.ai)
+[![Modular Rules](https://img.shields.io/badge/Modular_Rules-Integrated-brightgreen.svg)](https://code.claude.com/docs/en/memory#modular-rules-with-claude/rules/)
 ![Opus 4.5](https://img.shields.io/badge/Opus_4.5-Compatible-purple.svg)
 ![Spec-Driven](https://img.shields.io/badge/Spec-Driven-orange.svg)
 ![TDD](https://img.shields.io/badge/TDD-Test--Driven--Development-green.svg)
@@ -56,11 +57,13 @@ curl -fsSL https://raw.githubusercontent.com/maxritter/claude-codepro/v3.0.15/in
 - `/verify` - End-to-end spec verification → All tests, quality, security
 - `/remember` - Stores learnings in cross-session memory → Continue after /clear
 
-### 💡 Context-Loaded Rules System
+### 💡 Modular Rules System
 
-- **Auto-Generated** - Regenerated on every `ccp` command from `.claude/rules/` markdown files
-- **Standard Rules** - Best-Practices for TDD, Context Management, etc. loaded into `.claude/CLAUDE.md`
-- **Custom Rules** - Project-specific rules (never touched by updates) loaded into `CLAUDE.local.md`
+Built on [Claude Code's modular rules](https://code.claude.com/docs/en/memory#modular-rules-with-claude/rules/) - rules are loaded automatically as project memory.
+
+- **Auto Loading** - Claude Code automatically loads all `.claude/rules/*.md` files as project memory
+- **Standard Rules** - Best-Practices for TDD, Context Management, etc. in `.claude/rules/standard/`
+- **Custom Rules** - Project-specific rules in `.claude/rules/custom/` (never touched by updates)
 - **Commands** - Workflow-specific modes: /plan, /implement, /verify, /remember, /setup
 - **Skills** - Domain-specific @-referenceable guides (e.g., @backend-python-standards)
 
@@ -113,11 +116,20 @@ curl -fsSL https://raw.githubusercontent.com/maxritter/claude-codepro/v3.0.15/in
 
 ### 🎯 Customizing Rules
 
+Claude CodePro uses [Claude Code's modular rules](https://code.claude.com/docs/en/memory#modular-rules-with-claude/rules/):
+
 - **Standard Rules** in `.claude/rules/standard/` - Updated on install, don't modify
 - **Custom Rules** in `.claude/rules/custom/` - Your project-specific rules, never touched by updates
-- **Auto-Build** - `ccp` regenerates `.claude/CLAUDE.md` and `.claude/CLAUDE.local.md` at startup
+- **Path-Specific Rules** - Use YAML frontmatter with `paths:` to scope rules to specific files
 
-Add custom rules by creating `.md` files in `.claude/rules/custom/` - they'll be included automatically on next `ccp` start.
+Add custom rules by creating `.md` files in `.claude/rules/custom/`. You can also use path-specific rules:
+
+```yaml
+---
+paths: src/**/*.py
+---
+# Python-specific rules for this project
+```
 
 ---
 

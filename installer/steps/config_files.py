@@ -113,31 +113,33 @@ class ConfigFilesStep(BaseStep):
 
         cipher_dir = ctx.project_dir / ".cipher"
         if not cipher_dir.exists():
-            if ui:
-                ui.status("Installing .cipher configuration...")
             config = DownloadConfig(
                 repo_url="https://github.com/maxritter/claude-codepro",
                 repo_branch="main",
                 local_mode=ctx.local_mode,
                 local_repo_dir=ctx.local_repo_dir,
             )
-            count = download_directory(".cipher", cipher_dir, config)
             if ui:
+                with ui.spinner("Installing .cipher configuration..."):
+                    count = download_directory(".cipher", cipher_dir, config)
                 ui.success(f"Installed .cipher directory ({count} files)")
+            else:
+                download_directory(".cipher", cipher_dir, config)
 
         qlty_dir = ctx.project_dir / ".qlty"
         if not qlty_dir.exists():
-            if ui:
-                ui.status("Installing .qlty configuration...")
             config = DownloadConfig(
                 repo_url="https://github.com/maxritter/claude-codepro",
                 repo_branch="main",
                 local_mode=ctx.local_mode,
                 local_repo_dir=ctx.local_repo_dir,
             )
-            count = download_directory(".qlty", qlty_dir, config)
             if ui:
+                with ui.spinner("Installing .qlty configuration..."):
+                    count = download_directory(".qlty", qlty_dir, config)
                 ui.success(f"Installed .qlty directory ({count} files)")
+            else:
+                download_directory(".qlty", qlty_dir, config)
 
         config = DownloadConfig(
             repo_url="https://github.com/maxritter/claude-codepro",
@@ -148,33 +150,40 @@ class ConfigFilesStep(BaseStep):
 
         mcp_file = ctx.project_dir / ".mcp.json"
         if ui:
-            ui.status("Installing MCP configuration...")
-        with tempfile.TemporaryDirectory() as tmpdir:
-            temp_mcp = Path(tmpdir) / ".mcp.json"
-            if download_file(".mcp.json", temp_mcp, config):
-                try:
+            with ui.spinner("Installing MCP configuration..."):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    temp_mcp = Path(tmpdir) / ".mcp.json"
+                    if download_file(".mcp.json", temp_mcp, config):
+                        try:
+                            new_config = json.loads(temp_mcp.read_text())
+                            merge_mcp_config(mcp_file, new_config)
+                        except json.JSONDecodeError as e:
+                            ui.warning(f"Failed to parse .mcp.json: {e}")
+            ui.success("Installed .mcp.json")
+        else:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                temp_mcp = Path(tmpdir) / ".mcp.json"
+                if download_file(".mcp.json", temp_mcp, config):
                     new_config = json.loads(temp_mcp.read_text())
                     merge_mcp_config(mcp_file, new_config)
-                    if ui:
-                        ui.success("Installed .mcp.json")
-                except json.JSONDecodeError as e:
-                    if ui:
-                        ui.warning(f"Failed to parse .mcp.json: {e}")
 
         funnel_file = ctx.project_dir / ".mcp-funnel.json"
         if not funnel_file.exists():
             if ui:
-                ui.status("Installing MCP Funnel configuration...")
-            with tempfile.TemporaryDirectory() as tmpdir:
-                temp_funnel = Path(tmpdir) / ".mcp-funnel.json"
-                if download_file(".mcp-funnel.json", temp_funnel, config):
-                    try:
+                with ui.spinner("Installing MCP Funnel configuration..."):
+                    with tempfile.TemporaryDirectory() as tmpdir:
+                        temp_funnel = Path(tmpdir) / ".mcp-funnel.json"
+                        if download_file(".mcp-funnel.json", temp_funnel, config):
+                            try:
+                                funnel_file.write_text(temp_funnel.read_text())
+                            except Exception as e:
+                                ui.warning(f"Failed to install .mcp-funnel.json: {e}")
+                ui.success("Installed .mcp-funnel.json")
+            else:
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    temp_funnel = Path(tmpdir) / ".mcp-funnel.json"
+                    if download_file(".mcp-funnel.json", temp_funnel, config):
                         funnel_file.write_text(temp_funnel.read_text())
-                        if ui:
-                            ui.success("Installed .mcp-funnel.json")
-                    except Exception as e:
-                        if ui:
-                            ui.warning(f"Failed to install .mcp-funnel.json: {e}")
         else:
             if ui:
                 ui.success(".mcp-funnel.json already exists, skipping")
