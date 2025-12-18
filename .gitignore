@@ -221,12 +221,9 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# Cipher
-data/
-
 # Claude Code
 .claude.backup.*
-settings.local.json
+*.backup
 .claude/rules/custom/*
 !.claude/rules/custom/python-rules.md
 

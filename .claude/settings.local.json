@@ -1,8 +1,9 @@
 {
   "env": {
+    "MILVUS_ADDRESS": "http://host.docker.internal:19530",
+    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "63999",
     "MAX_MCP_OUTPUT_TOKENS": "10000",
     "MAX_THINKING_TOKENS": "31999",
-    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "63999",
     "DISABLE_NON_ESSENTIAL_MODEL_CALLS": "true",
     "DISABLE_TELEMETRY": "true"
   },
@@ -39,27 +40,29 @@
       "WebSearch",
       "Write",
       "mcp__ide__getDiagnostics",
-      "mcp__exa__web_search_exa",
-      "mcp__exa__get_code_context_exa",
-      "mcp__exa__crawling_exa",
-      "mcp__claude-context__index_codebase",
-      "mcp__claude-context__get_indexing_status",
-      "mcp__claude-context__search_code",
       "mcp__mcp-funnel__discover_tools_by_words",
       "mcp__mcp-funnel__get_tool_schema",
       "mcp__mcp-funnel__bridge_tool_request",
-      "mcp__cipher__ask_cipher",
       "mcp__mcp-funnel__load_toolset",
-      "SlashCommand(/remember:*)",
+      "mcp__claude-context__index_codebase",
+      "mcp__claude-context__get_indexing_status",
+      "mcp__claude-context__search_code",
+      "mcp__claude-context__clear_index",
+      "mcp__Ref__ref_search_documentation",
+      "mcp__Ref__ref_read_url",
+      "mcp__tavily__tavily-search",
+      "mcp__tavily__tavily-extract",
+      "mcp__tavily__tavily-map",
+      "mcp__tavily__tavily-crawl",
       "SlashCommand(/implement:*)",
       "SlashCommand(/plan:*)",
       "SlashCommand(/verify:*)",
-      "SlashCommand(/setup:*)"
+      "SlashCommand(/setup:*)",
+      "Skill(claude-mem:mem-search)",
+      "Skill(claude-mem:troubleshoot)"
     ],
     "deny": []
   },
-  "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": ["exa", "claude-context", "cipher", "mcp-funnel"],
   "hooks": {
     "PreToolUse": [
       {
@@ -67,7 +70,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 {{PROJECT_DIR}}/.claude/hooks/tdd_enforcer.py"
+            "command": "python3 .claude/hooks/tdd_enforcer.py"
           }
         ]
       }
@@ -78,11 +81,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 {{PROJECT_DIR}}/.claude/hooks/file_checker_qlty.py"
+            "command": "python3 .claude/hooks/file_checker_qlty.py"
           },
           {
             "type": "command",
-            "command": "python3 {{PROJECT_DIR}}/.claude/hooks/file_checker_python.py"
+            "command": "python3 .claude/hooks/file_checker_python.py"
           }
         ]
       },
@@ -91,18 +94,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 {{PROJECT_DIR}}/.claude/hooks/context_monitor.py"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "matcher": ".*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 {{PROJECT_DIR}}/.claude/hooks/rules_supervisor.py"
+            "command": "python3 .claude/hooks/context_monitor.py"
           }
         ]
       }
@@ -112,6 +104,11 @@
     "type": "command",
     "command": "npx -y ccstatusline@latest",
     "padding": 0
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": ["claude-context", "tavily", "Ref", "mcp-funnel"],
+  "enabledPlugins": {
+    "claude-mem@thedotmack": true
   },
   "model": "opus",
   "outputStyle": "default",

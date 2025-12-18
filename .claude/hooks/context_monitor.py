@@ -129,15 +129,15 @@ def run_context_monitor() -> int:
     if percentage >= THRESHOLD_STOP:
         print("", file=sys.stderr)
         print(f"{RED}CONTEXT LIMIT: {percentage:.0f}% ({total_tokens:,}/200k){NC}", file=sys.stderr)
-        print(f"{RED}MANDATORY: Use SlashCommand tool to run /remember NOW.{NC}", file=sys.stderr)
+        print(f"{RED}MANDATORY: Wrap up current development NOW and update plan!{NC}", file=sys.stderr)
         print(f"{RED}Then ask user to run /clear to reset context.{NC}", file=sys.stderr)
         return 2
 
     if percentage >= THRESHOLD_WARN:
         print("", file=sys.stderr)
         print(f"{YELLOW}Context: {percentage:.0f}% ({total_tokens:,}/200k){NC}", file=sys.stderr)
-        print(f"{YELLOW}   Complete current task, then use SlashCommand tool to run /remember{NC}", file=sys.stderr)
-        print(f"{YELLOW}   No new feature work, wrap up at 95% maximum{NC}", file=sys.stderr)
+        print(f"{YELLOW}   Complete current task, no new feature work{NC}", file=sys.stderr)
+        print(f"{YELLOW}   Continue work and wrap up at 95% maximum{NC}", file=sys.stderr)
         return 2
 
     return 0

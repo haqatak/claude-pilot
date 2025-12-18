@@ -1,29 +1,23 @@
 {
   "mcpServers": {
-    "exa": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "mcp-remote",
-        "https://mcp.exa.ai/mcp?tools=web_search_exa,get_code_context_exa,crawling_exa"
-      ]
-    },
     "claude-context": {
       "command": "npx",
       "args": [
         "-y",
-        "@zilliz/claude-context-mcp"
+        "@zilliz/claude-context-mcp@latest"
       ]
     },
-    "cipher": {
+    "tavily": {
       "command": "npx",
       "args": [
         "-y",
-        "@byterover/cipher",
-        "--mode",
-        "mcp",
-        "--agent",
-        ".cipher/config.yml"
+        "tavily-mcp@latest"
+      ]
+    },
+    "Ref": {
+      "command": "npx",
+      "args": [
+        "ref-tools-mcp@latest"
       ]
     },
     "mcp-funnel": {

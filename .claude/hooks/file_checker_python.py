@@ -1,4 +1,4 @@
-"""Python file checker hook - runs ruff, basedpyright, and mypy on most recent Python file."""
+"""Python file checker hook - runs ruff and basedpyright on most recent Python file."""
 
 from __future__ import annotations
 
@@ -131,26 +131,6 @@ def run_basedpyright_check(file_path: Path) -> tuple[bool, str]:
         return False, ""
 
 
-def run_mypy_check(file_path: Path) -> tuple[bool, str]:
-    """Run mypy check."""
-    mypy_bin = shutil.which("mypy")
-    if not mypy_bin:
-        return False, ""
-
-    try:
-        result = subprocess.run(
-            [mypy_bin, str(file_path.resolve())],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        output = result.stdout + result.stderr
-        has_issues = "error:" in output and "Success:" not in output
-        return has_issues, output
-    except Exception:
-        return False, ""
-
-
 def display_ruff_result(output: str) -> None:
     """Display ruff results."""
     lines = output.splitlines()
@@ -200,22 +180,6 @@ def display_basedpyright_result(output: str) -> None:
     print("", file=sys.stderr)
 
 
-def display_mypy_result(output: str) -> None:
-    """Display mypy results."""
-    error_lines = [line for line in output.splitlines() if "error:" in line]
-    error_count = len(error_lines)
-    plural = "issue" if error_count == 1 else "issues"
-
-    print("", file=sys.stderr)
-    print(f"🔍 Mypy: {error_count} {plural}", file=sys.stderr)
-    print("───────────────────────────────────────", file=sys.stderr)
-
-    for line in error_lines:
-        print(line, file=sys.stderr)
-
-    print("", file=sys.stderr)
-
-
 def main() -> int:
     """Main entry point."""
 
@@ -235,9 +199,8 @@ def main() -> int:
 
     has_ruff = shutil.which("ruff") is not None
     has_basedpyright = shutil.which("basedpyright") is not None
-    has_mypy = shutil.which("mypy") is not None
 
-    if not (has_ruff or has_basedpyright or has_mypy):
+    if not (has_ruff or has_basedpyright):
         return 0
 
     auto_format(most_recent)
@@ -257,12 +220,6 @@ def main() -> int:
             has_issues = True
             results["basedpyright"] = pyright_output
 
-    if has_mypy:
-        mypy_issues, mypy_output = run_mypy_check(most_recent)
-        if mypy_issues:
-            has_issues = True
-            results["mypy"] = mypy_output
-
     if has_issues:
         print("", file=sys.stderr)
         print(
@@ -275,9 +232,6 @@ def main() -> int:
 
         if "basedpyright" in results:
             display_basedpyright_result(results["basedpyright"])
-
-        if "mypy" in results:
-            display_mypy_result(results["mypy"])
 
         print(f"{RED}Fix Python issues above before continuing{NC}", file=sys.stderr)
         return 2

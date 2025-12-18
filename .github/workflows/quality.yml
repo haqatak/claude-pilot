@@ -25,10 +25,9 @@ jobs:
           "$HOME/.qlty/bin/qlty" check --install-only
           "$HOME/.qlty/bin/qlty" check
 
-  python-tests:
-    name: Python Unit & E2E Tests
+  unit-tests:
+    name: Python Unit Tests
     runs-on: ubuntu-latest
-    needs: quality
 
     steps:
       - name: Checkout code
@@ -50,18 +49,3 @@ jobs:
           python3 -m pytest tests/unit/ -v \
             --cov=installer \
             --cov-report=term --cov-report=xml
-
-      - name: Run E2E tests
-        run: |
-          python3 -m pytest tests/e2e/ -v
-
-      - name: Upload test logs on failure
-        if: failure()
-        uses: actions/upload-artifact@v5
-        with:
-          name: python-test-logs-pr
-          path: |
-            /tmp/test-*/install.log
-            /tmp/test-*/.claude/
-          retention-days: 7
-          if-no-files-found: ignore

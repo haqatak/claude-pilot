@@ -1,48 +1,5 @@
 ## MCP Tools - Core Workflow Integration
 
-**Rule:** Query memory first, verify with diagnostics, store learnings last
-
-### Exa - Web Search & Code Context (PREFERRED)
-
-**ALWAYS use Exa instead of Claude Code's built-in WebFetch and WebSearch tools.** Exa returns higher quality, LLM-optimized content with better code examples.
-
-| Task | Use This | NOT This |
-|------|----------|----------|
-| Code examples, library docs | `get_code_context_exa()` | ~~WebSearch/WebFetch~~ |
-| General web search | `web_search_exa()` | ~~WebSearch~~ |
-| Fetch specific URL | `crawling_exa()` | ~~WebFetch~~ |
-
-**Examples:**
-```
-get_code_context_exa("pytest fixtures with database setup")
-web_search_exa("Python asyncio error handling patterns")
-crawling_exa("https://docs.python.org/3/library/asyncio.html")
-```
-
-### Cipher - Project Memory
-
-**Tool:** `mcp_cipher_ask_cipher`
-
-**Query existing knowledge:**
-```
-"How did we implement authentication?"
-"What pattern did we use for error handling?"
-"Why did we choose library X over Y?"
-```
-
-**Store new learnings:**
-```
-"Store: Fixed race condition in user service using mutex locks"
-"Store: API rate limit is 100 req/min, implemented exponential backoff"
-"Store: Database migration pattern: create migration → test locally → review → deploy"
-```
-
-**When to use:**
-- Start of every task: Query for relevant past decisions
-- End of every task: Store what you learned
-- Before implementing: Check if similar problem was solved
-- After debugging: Document the solution for future reference
-
 ### Claude Context - Semantic Code Search
 
 **Tools:**
@@ -69,6 +26,74 @@ crawling_exa("https://docs.python.org/3/library/asyncio.html")
 2. If not indexed, index the codebase
 3. Search for relevant patterns
 4. Review results to understand existing approaches
+
+### Tavily - Web Search, Extract & Map (PREFERRED for web)
+
+**IMPORTANT:** Use Tavily for all web searches, content extraction, and site mapping. High-quality, AI-optimized results.
+
+| Tool | Args | Use Case |
+|------|------|----------|
+| `mcp__tavily__tavily-search` | `query`, `max_results?`, `search_depth?`, `topic?` | General web search |
+| `mcp__tavily__tavily-extract` | `urls` | Extract content from URLs |
+| `mcp__tavily__tavily-map` | `url`, `max_depth?`, `limit?` | Map website structure |
+
+**Search options:**
+- `search_depth`: `basic` (default) or `advanced`
+- `topic`: `general` (default) or `news`
+- `time_range`: `day`, `week`, `month`, `year`
+- `include_domains` / `exclude_domains`: Filter by domain
+
+**Examples:**
+```python
+# Web search
+mcp__tavily__tavily-search(query="Python async best practices 2025", max_results=5)
+mcp__tavily__tavily-search(query="AWS CDK updates", topic="news", time_range="month")
+
+# Extract content from URLs
+mcp__tavily__tavily-extract(urls=["https://example.com/article"])
+
+# Map website structure
+mcp__tavily__tavily-map(url="https://docs.example.com", max_depth=2, limit=20)
+```
+
+**When to use Tavily:**
+- General web searches
+- Current events, blog posts, articles
+- Extracting content from specific URLs
+- Mapping website structures
+
+---
+
+### Ref - Library Documentation & URL Reading
+
+**Use Ref for library/framework documentation and reading specific URLs.** Context-efficient - processes content before returning.
+
+| Tool | Args | Use Case |
+|------|------|----------|
+| `mcp__Ref__ref_search_documentation` | `query` | Search docs for libraries, frameworks, APIs |
+| `mcp__Ref__ref_read_url` | `url` | Read/crawl specific URL content |
+
+**Query tips:**
+- Include language and framework: `"Python pytest fixtures"`, `"TypeScript AWS CDK S3"`
+- Be specific: `"SQLAlchemy async session management"` not just `"SQLAlchemy"`
+
+**Examples:**
+```python
+# Search for library documentation
+mcp__Ref__ref_search_documentation(query="Python pydantic v2 model validation")
+mcp__Ref__ref_search_documentation(query="TypeScript zod schema inference")
+mcp__Ref__ref_search_documentation(query="pytest parametrize fixtures")
+
+# Read/crawl a specific URL
+mcp__Ref__ref_read_url(url="https://docs.pydantic.dev/latest/concepts/models/")
+mcp__Ref__ref_read_url(url="https://blog.example.com/article")
+```
+
+**When to use Ref:**
+- Library API documentation
+- Framework guides and tutorials
+- Code examples for specific libraries
+- Reading/crawling specific URL content
 
 ### IDE - Diagnostics and Execution
 
@@ -99,53 +124,3 @@ crawling_exa("https://docs.python.org/3/library/asyncio.html")
 1. Discover tools: `discover_tools_by_words("database migration")`
 2. Get schema: `get_tool_schema("discovered_tool_name")`
 3. Execute: `bridge_tool_request("tool_name", {args})`
-
-Use sparingly - core tools handle most needs.
-
-## Mandatory Workflow Patterns
-
-### Task Start Sequence
-
-1. **Check diagnostics:** `getDiagnostics()` - Understand current state
-2. **Query memory:** `ask_cipher("How did we handle X?")` - Learn from past
-3. **Search codebase:** `search_code(path, "relevant pattern")` - Find examples
-4. **Search docs if needed:** `web_search_exa("library feature")` or `get_code_context_exa("code pattern")` - External knowledge
-
-### Task End Sequence
-
-1. **Verify diagnostics:** `getDiagnostics()` - Confirm no new errors
-2. **Store learnings:** `ask_cipher("Store: [what you learned]")` - Document for future
-
-### When Stuck
-
-1. Query Cipher for past solutions to similar problems
-2. Search codebase for existing patterns
-3. Search Exa for external documentation and examples
-4. Consider MCP Funnel for specialized tools
-
-## Common Mistakes to Avoid
-
-**Don't skip diagnostics:** "Tests pass" ≠ "No errors". Always check diagnostics.
-
-**Don't forget to store learnings:** If you solved a problem, store it. Future you will thank you.
-
-**Don't search externally first:** Check Cipher and codebase before searching external docs. Project-specific knowledge is more relevant.
-
-**Don't ignore indexing status:** If Claude Context search returns nothing, check if codebase is indexed.
-
-**Don't use MCP Funnel as first resort:** Core tools handle 95% of needs. Only use Funnel for specialized requirements.
-
-## Tool Selection Decision Tree
-
-```
-Need to check for errors? → getDiagnostics
-Need to remember past decisions? → ask_cipher (query)
-Need to find existing code? → search_code
-Need code examples/library docs? → get_code_context_exa (ALWAYS use Exa)
-Need to search the web? → web_search_exa (ALWAYS use Exa, NOT WebSearch)
-Need to fetch URL content? → crawling_exa (ALWAYS use Exa, NOT WebFetch)
-Need specialized functionality? → discover_tools_by_words
-Finished task? → getDiagnostics + ask_cipher (store)
-```
-
-**Remember:** NEVER use WebFetch or WebSearch - ALWAYS use Exa tools instead.

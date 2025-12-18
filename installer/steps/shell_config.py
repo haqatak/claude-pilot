@@ -89,14 +89,12 @@ def remove_old_alias(config_file: Path) -> bool:
             skip_next = True
             continue
         if skip_next and ("alias ccp" in line or line.strip().startswith("if [")):
-            # Skip the alias line and any continuation
             if line.rstrip().endswith("'"):
                 skip_next = False
             continue
         skip_next = False
         new_lines.append(line)
 
-    # Also remove any standalone alias ccp lines without marker
     final_lines = []
     for line in new_lines:
         if line.strip().startswith("alias ccp="):
@@ -251,7 +249,6 @@ class ShellConfigStep(BaseStep):
             if not config_file.exists():
                 continue
 
-            # Always remove old alias first to ensure clean update
             alias_existed = alias_exists_in_file(config_file)
             if alias_existed:
                 remove_old_alias(config_file)

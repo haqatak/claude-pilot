@@ -22,7 +22,6 @@
         "ms-python.mypy-type-checker",
         "ms-python.python",
         "detachhead.basedpyright",
-        "ms-python.vscode-python-envs",
         "pkief.material-icon-theme",
         "redhat.vscode-xml",
         "redhat.vscode-yaml",
@@ -31,11 +30,11 @@
     }
   },
   "forwardPorts": [
-    5433 // PostgreSQL
+    37777 // claude-mem
   ],
   "portsAttributes": {
-    "5433": {
-      "label": "postgresql"
+    "37777": {
+      "label": "claude-mem"
     }
   },
   /* GET FROM: https://containers.dev/features */
@@ -78,12 +77,14 @@
     "ghcr.io/devcontainers/features/git:1": {
       "version": "latest"
     },
+    /* https://github.com/michidk/devcontainers-features/tree/main/src/bun */
+    "ghcr.io/michidk/devcontainers-features/bun:1": {},
     /* https://github.com/braun-daniel/devcontainer-features/blob/main/src/spaceship */
     "ghcr.io/braun-daniel/devcontainer-features/spaceship:1": {},
     /* https://github.com/braun-daniel/devcontainer-features/blob/main/src/fzf */
     "ghcr.io/braun-daniel/devcontainer-features/fzf:1": {}
   },
-  "postCreateCommand": "curl -fsSL https://raw.githubusercontent.com/maxritter/claude-codepro/v3.1.2/install.sh | bash",
+  "postCreateCommand": "curl -fsSL https://raw.githubusercontent.com/maxritter/claude-codepro/v3.2.3/install.sh | bash",
   "remoteUser": "root",
   "containerUser": "root"
 }

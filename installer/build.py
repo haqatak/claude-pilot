@@ -147,7 +147,6 @@ def main() -> int:
 
     BUILD_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Only set build timestamp for CI/CD builds
     if args.local:
         version = get_current_version()
         print(f"Version: {version}")
@@ -175,7 +174,6 @@ def main() -> int:
         return 1
 
     finally:
-        # Only reset if we set it (CI/CD builds)
         if not args.local:
             reset_build_timestamp()
 

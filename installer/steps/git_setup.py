@@ -21,7 +21,6 @@ def is_git_initialized(project_dir: Path) -> bool:
 def get_git_config(key: str, project_dir: Path | None = None) -> str | None:
     """Get a git config value (checks local repo config first, then global)."""
     try:
-        # If project_dir is provided, check local config first
         if project_dir is not None:
             result = subprocess.run(
                 ["git", "config", key],
@@ -33,7 +32,6 @@ def get_git_config(key: str, project_dir: Path | None = None) -> str | None:
             if result.returncode == 0 and result.stdout.strip():
                 return result.stdout.strip()
 
-        # Fall back to global config
         result = subprocess.run(
             ["git", "config", "--global", key],
             capture_output=True,
@@ -103,17 +101,14 @@ class GitSetupStep(BaseStep):
 
     def check(self, ctx: InstallContext) -> bool:
         """Check if git is properly configured."""
-        # Check if git repo exists
         if not is_git_initialized(ctx.project_dir):
             return False
 
-        # Check if user config exists (local or global)
         if not get_git_config("user.name", ctx.project_dir):
             return False
         if not get_git_config("user.email", ctx.project_dir):
             return False
 
-        # Check if repo has commits
         if not has_commits(ctx.project_dir):
             return False
 
@@ -126,7 +121,6 @@ class GitSetupStep(BaseStep):
         if ui:
             ui.section("Git Configuration")
 
-        # Check git is installed
         try:
             subprocess.run(["git", "--version"], capture_output=True, check=True)
         except Exception:
@@ -134,7 +128,6 @@ class GitSetupStep(BaseStep):
                 ui.error("Git is not installed. Please install git first.")
             return
 
-        # Initialize git if needed
         if not is_git_initialized(ctx.project_dir):
             if ui:
                 ui.status("Initializing git repository...")
@@ -155,7 +148,6 @@ class GitSetupStep(BaseStep):
             if ui:
                 ui.success("Git repository already initialized")
 
-        # Configure user.name
         user_name = get_git_config("user.name")
         if not user_name:
             if ctx.non_interactive:
@@ -185,7 +177,6 @@ class GitSetupStep(BaseStep):
             if ui:
                 ui.success(f"Git user.name: {user_name}")
 
-        # Configure user.email
         user_email = get_git_config("user.email")
         if not user_email:
             if ctx.non_interactive:
@@ -215,12 +206,10 @@ class GitSetupStep(BaseStep):
             if ui:
                 ui.success(f"Git user.email: {user_email}")
 
-        # Create initial commit if needed
         if not has_commits(ctx.project_dir):
             if ui:
                 ui.status("Creating initial commit...")
 
-            # Create .gitignore if it doesn't exist
             gitignore = ctx.project_dir / ".gitignore"
             if not gitignore.exists():
                 gitignore.write_text(

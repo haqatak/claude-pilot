@@ -34,13 +34,38 @@ class TestDependenciesStep:
             # Dependencies always need to be checked
             assert step.check(ctx) is False
 
-    @patch("installer.steps.dependencies.install_nodejs")
+    @patch("installer.steps.dependencies.install_dotenvx")
+    @patch("installer.steps.dependencies.run_qlty_check")
+    @patch("installer.steps.dependencies.install_qlty")
+    @patch("installer.steps.dependencies.install_local_milvus")
+    @patch("installer.steps.dependencies.install_claude_mem")
+    @patch("installer.steps.dependencies.install_bun")
     @patch("installer.steps.dependencies.install_claude_code")
-    def test_dependencies_run_installs_core(self, mock_claude, mock_nodejs):
+    @patch("installer.steps.dependencies.install_nodejs")
+    def test_dependencies_run_installs_core(
+        self,
+        mock_nodejs,
+        mock_claude,
+        mock_bun,
+        mock_claude_mem,
+        mock_milvus,
+        mock_qlty,
+        mock_qlty_check,
+        mock_dotenvx,
+    ):
         """DependenciesStep installs core dependencies."""
         from installer.context import InstallContext
         from installer.steps.dependencies import DependenciesStep
         from installer.ui import Console
+
+        # Setup mocks
+        mock_nodejs.return_value = True
+        mock_claude.return_value = True
+        mock_bun.return_value = True
+        mock_claude_mem.return_value = True
+        mock_milvus.return_value = True
+        mock_qlty.return_value = (True, False)
+        mock_dotenvx.return_value = True
 
         step = DependenciesStep()
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -56,17 +81,44 @@ class TestDependenciesStep:
             mock_nodejs.assert_called_once()
             mock_claude.assert_called_once()
 
-    @patch("installer.steps.dependencies.install_nodejs")
-    @patch("installer.steps.dependencies.install_uv")
-    @patch("installer.steps.dependencies.install_python_tools")
+    @patch("installer.steps.dependencies.install_dotenvx")
+    @patch("installer.steps.dependencies.run_qlty_check")
+    @patch("installer.steps.dependencies.install_qlty")
+    @patch("installer.steps.dependencies.install_local_milvus")
+    @patch("installer.steps.dependencies.install_claude_mem")
+    @patch("installer.steps.dependencies.install_bun")
     @patch("installer.steps.dependencies.install_claude_code")
+    @patch("installer.steps.dependencies.install_python_tools")
+    @patch("installer.steps.dependencies.install_uv")
+    @patch("installer.steps.dependencies.install_nodejs")
     def test_dependencies_installs_python_when_enabled(
-        self, mock_claude, mock_python_tools, mock_uv, mock_nodejs
+        self,
+        mock_nodejs,
+        mock_uv,
+        mock_python_tools,
+        mock_claude,
+        mock_bun,
+        mock_claude_mem,
+        mock_milvus,
+        mock_qlty,
+        mock_qlty_check,
+        mock_dotenvx,
     ):
         """DependenciesStep installs Python tools when enabled."""
         from installer.context import InstallContext
         from installer.steps.dependencies import DependenciesStep
         from installer.ui import Console
+
+        # Setup mocks
+        mock_nodejs.return_value = True
+        mock_uv.return_value = True
+        mock_python_tools.return_value = True
+        mock_claude.return_value = True
+        mock_bun.return_value = True
+        mock_claude_mem.return_value = True
+        mock_milvus.return_value = True
+        mock_qlty.return_value = (True, False)
+        mock_dotenvx.return_value = True
 
         step = DependenciesStep()
         with tempfile.TemporaryDirectory() as tmpdir:

@@ -64,7 +64,6 @@ class BootstrapStep(BaseStep):
 
             ctx.config["is_upgrade"] = True
 
-            # Skip backup in local mode (development)
             if not ctx.local_mode:
                 backup_name = f".claude.backup.{datetime.now().strftime('%Y%m%d_%H%M%S')}"
                 backup_path = ctx.project_dir / backup_name

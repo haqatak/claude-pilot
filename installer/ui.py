@@ -63,11 +63,9 @@ def _get_tty_input() -> TextIO:
     if sys.stdin.isatty():
         return sys.stdin
 
-    # Try to open /dev/tty for interactive input
     try:
-        return open("/dev/tty", "r")  # noqa: SIM115
+        return open("/dev/tty", "r")
     except OSError:
-        # /dev/tty not available (e.g., no controlling terminal)
         return sys.stdin
 
 
@@ -120,19 +118,19 @@ class Console:
         features = Text()
         features.append("  📋 ", style="yellow")
         features.append("Spec-Driven Workflow", style="bold green")
-        features.append(" — /plan, /implement, /verify, /remember commands\n", style="white")
+        features.append(" — /plan, /implement, /verify commands\n", style="white")
         features.append("  💡 ", style="yellow")
         features.append("Modular Rules System", style="bold green")
         features.append(" — Standards + custom rules loaded as project memory\n", style="white")
         features.append("  🔌 ", style="yellow")
         features.append("MCP Servers", style="bold green")
-        features.append(" — Semantic search, persistent memory, web search\n", style="white")
+        features.append(" — Semantic search, Web Search, Code Search\n", style="white")
         features.append("  🛠️ ", style="yellow")
         features.append("Quality Automation", style="bold green")
         features.append(" — Post-edit hooks, linting, type checking\n", style="white")
         features.append("  🪝 ", style="yellow")
         features.append("Intelligent Hooks", style="bold green")
-        features.append(" — TDD Enforcer, Context Monitor, Rules Supervisor\n", style="white")
+        features.append(" — TDD Enforcer, Context Monitor, Persistent Memory\n", style="white")
         features.append("  🏗️ ", style="yellow")
         features.append("Dev Container", style="bold green")
         features.append(" — Isolated environment with pre-configured tools", style="white")
@@ -376,7 +374,6 @@ class Console:
         self._console.print(f"  [bold cyan]?[/bold cyan] {message}: ", end="")
 
         try:
-            # getpass reads from /dev/tty by default, but we pass stream for consistency
             tty = self._get_input_stream()
             return getpass.getpass(prompt="", stream=tty)
         except (EOFError, KeyboardInterrupt, OSError):

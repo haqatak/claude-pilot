@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -19,25 +18,12 @@ class ClaudeFilesStep(BaseStep):
     name = "claude_files"
 
     def check(self, ctx: InstallContext) -> bool:
-        """Check if .claude files are already installed."""
-        claude_dir = ctx.project_dir / ".claude"
+        """Check if .claude files are already installed.
 
-        if not claude_dir.exists():
-            return False
-
-        key_files = [
-            "settings.local.template.json",
-            "rules/standard",
-            "commands",
-            "hooks",
-            "skills",
-        ]
-
-        for key_file in key_files:
-            if not (claude_dir / key_file).exists():
-                return False
-
-        return True
+        Note: Always returns False to ensure settings.local.json is updated.
+        This step is idempotent - files are overwritten without backup.
+        """
+        return False
 
     def run(self, ctx: InstallContext) -> None:
         """Install all .claude files from repository."""
@@ -79,13 +65,17 @@ class ClaudeFilesStep(BaseStep):
             if not file_path:
                 continue
 
-            if "settings.local.json" in file_path and "settings.local.template.json" not in file_path:
+            if "/rules/custom/" in file_path:
+                continue
+
+            if "__pycache__" in file_path:
+                continue
+
+            if file_path.endswith(".pyc"):
                 continue
 
             if not ctx.install_python:
                 if "file_checker_python.py" in file_path:
-                    continue
-                if "custom/python-rules.md" in file_path:
                     continue
 
             if "/commands/" in file_path:

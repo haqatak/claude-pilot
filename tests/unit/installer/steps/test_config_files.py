@@ -19,80 +19,14 @@ class TestConfigFilesStep:
         step = ConfigFilesStep()
         assert step.name == "config_files"
 
-    def test_config_files_generates_settings(self):
-        """ConfigFilesStep generates settings.local.json from template."""
-        from installer.context import InstallContext
-        from installer.steps.config_files import ConfigFilesStep
-        from installer.ui import Console
-
-        step = ConfigFilesStep()
-        with tempfile.TemporaryDirectory() as tmpdir:
-            project_dir = Path(tmpdir)
-            claude_dir = project_dir / ".claude"
-            claude_dir.mkdir()
-
-            # Create template
-            template = {"projectDir": "{{PROJECT_DIR}}", "setting": "value"}
-            (claude_dir / "settings.local.template.json").write_text(json.dumps(template))
-
-            ctx = InstallContext(
-                project_dir=project_dir,
-                ui=Console(non_interactive=True),
-            )
-
-            step.run(ctx)
-
-            # Check settings.local.json was created with substitution
-            settings_file = claude_dir / "settings.local.json"
-            assert settings_file.exists()
-            settings = json.loads(settings_file.read_text())
-            assert settings["projectDir"] == str(project_dir)
-
-    def test_config_files_removes_python_settings_when_disabled(self):
-        """ConfigFilesStep removes Python settings when install_python=False."""
-        from installer.context import InstallContext
-        from installer.steps.config_files import ConfigFilesStep
-        from installer.ui import Console
-
-        step = ConfigFilesStep()
-        with tempfile.TemporaryDirectory() as tmpdir:
-            project_dir = Path(tmpdir)
-            claude_dir = project_dir / ".claude"
-            claude_dir.mkdir()
-
-            # Create template with Python hook
-            template = {
-                "hooks": {
-                    "PostToolUse": [{"hooks": [{"command": "file_checker_python.py"}]}]
-                },
-                "permissions": {"allow": ["Bash(pytest:*)", "Bash(ls:*)"]}
-            }
-            (claude_dir / "settings.local.template.json").write_text(json.dumps(template))
-
-            ctx = InstallContext(
-                project_dir=project_dir,
-                install_python=False,
-                ui=Console(non_interactive=True),
-            )
-
-            step.run(ctx)
-
-            settings_file = claude_dir / "settings.local.json"
-            settings = json.loads(settings_file.read_text())
-
-            # Python hook should be removed
-            hooks = settings.get("hooks", {}).get("PostToolUse", [])
-            for group in hooks:
-                for hook in group.get("hooks", []):
-                    assert "file_checker_python.py" not in hook.get("command", "")
 
 
-class TestMCPConfigMerge:
-    """Test MCP config merging."""
+class TestMCPConfigBackupReplace:
+    """Test MCP config backup and replace."""
 
-    def test_merge_mcp_config_preserves_existing(self):
-        """Merging MCP config preserves existing servers."""
-        from installer.steps.config_files import merge_mcp_config
+    def test_backup_and_replace_creates_backup(self):
+        """Replacing MCP config creates backup of existing."""
+        from installer.steps.config_files import backup_and_replace_mcp_config
 
         with tempfile.TemporaryDirectory() as tmpdir:
             config_file = Path(tmpdir) / ".mcp.json"
@@ -104,65 +38,41 @@ class TestMCPConfigMerge:
             # New config
             new_config = {"mcpServers": {"new": {"command": "new-server"}}}
 
-            merge_mcp_config(config_file, new_config)
+            backup_and_replace_mcp_config(config_file, new_config)
 
+            # Check backup was created (with timestamp)
+            backup_files = list(Path(tmpdir).glob(".mcp.json.backup.*"))
+            assert len(backup_files) == 1, "Should create one timestamped backup"
+            backup_file = backup_files[0]
+            backup_content = json.loads(backup_file.read_text())
+            assert "existing" in backup_content["mcpServers"]
+
+            # Check new config replaced old
             result = json.loads(config_file.read_text())
-            # Both servers should exist
-            assert "existing" in result["mcpServers"]
             assert "new" in result["mcpServers"]
+            assert "existing" not in result["mcpServers"]
 
-    def test_merge_mcp_config_creates_new(self):
-        """Merging creates new config if none exists."""
-        from installer.steps.config_files import merge_mcp_config
+    def test_backup_and_replace_creates_new(self):
+        """Replacing creates new config if none exists."""
+        from installer.steps.config_files import backup_and_replace_mcp_config
 
         with tempfile.TemporaryDirectory() as tmpdir:
             config_file = Path(tmpdir) / ".mcp.json"
 
             new_config = {"mcpServers": {"new": {"command": "new-server"}}}
 
-            merge_mcp_config(config_file, new_config)
+            backup_and_replace_mcp_config(config_file, new_config)
 
             result = json.loads(config_file.read_text())
             assert "new" in result["mcpServers"]
 
+            # No backup should exist since there was no original
+            backup_file = config_file.with_suffix(".json.backup")
+            assert not backup_file.exists()
+
 
 class TestDirectoryInstallation:
-    """Test .cipher and .qlty directory installation."""
-
-    def test_install_cipher_directory(self):
-        """ConfigFilesStep installs .cipher directory."""
-        from unittest.mock import patch
-
-        from installer.context import InstallContext
-        from installer.steps.config_files import ConfigFilesStep
-        from installer.ui import Console
-
-        step = ConfigFilesStep()
-        with tempfile.TemporaryDirectory() as tmpdir:
-            project_dir = Path(tmpdir)
-            claude_dir = project_dir / ".claude"
-            claude_dir.mkdir()
-
-            # Create template
-            template = {"setting": "value"}
-            (claude_dir / "settings.local.template.json").write_text(json.dumps(template))
-
-            ctx = InstallContext(
-                project_dir=project_dir,
-                ui=Console(non_interactive=True),
-                local_mode=True,
-                local_repo_dir=Path("/fake"),
-            )
-
-            # Mock download_directory to simulate installation
-            with patch("installer.steps.config_files.download_directory") as mock_download:
-                mock_download.return_value = 3  # 3 files installed
-                step.run(ctx)
-
-                # Should have called download_directory for .cipher
-                calls = mock_download.call_args_list
-                cipher_calls = [c for c in calls if ".cipher" in str(c)]
-                assert len(cipher_calls) >= 1, "Should install .cipher directory"
+    """Test .qlty directory installation."""
 
     def test_install_qlty_directory(self):
         """ConfigFilesStep installs .qlty directory."""
@@ -218,7 +128,6 @@ class TestDirectoryInstallation:
             (claude_dir / "settings.local.template.json").write_text(json.dumps(template))
 
             # Pre-create directories
-            (project_dir / ".cipher").mkdir()
             (project_dir / ".qlty").mkdir()
 
             ctx = InstallContext(
@@ -235,9 +144,7 @@ class TestDirectoryInstallation:
 
                 # Should NOT call download_directory for existing dirs
                 calls = mock_download.call_args_list
-                cipher_calls = [c for c in calls if ".cipher" in str(c)]
                 qlty_calls = [c for c in calls if ".qlty" in str(c)]
-                assert len(cipher_calls) == 0, "Should skip existing .cipher"
                 assert len(qlty_calls) == 0, "Should skip existing .qlty"
 
 
@@ -326,8 +233,8 @@ class TestMCPConfigInstallation:
                     funnel_calls = [c for c in mock_download.call_args_list if ".mcp-funnel.json" in str(c)]
                     assert len(funnel_calls) >= 1, "Should install .mcp-funnel.json"
 
-    def test_merges_mcp_config_with_existing(self):
-        """ConfigFilesStep merges new MCP config with existing."""
+    def test_replaces_mcp_config_with_backup(self):
+        """ConfigFilesStep replaces MCP config and creates backup."""
         from unittest.mock import patch
 
         from installer.context import InstallContext
@@ -351,8 +258,7 @@ class TestMCPConfigInstallation:
             ctx = InstallContext(
                 project_dir=project_dir,
                 ui=Console(non_interactive=True),
-                local_mode=True,
-                local_repo_dir=Path("/fake"),
+                local_mode=False,  # Test backup creation (skipped in local_mode)
             )
 
             # Mock downloads
@@ -367,8 +273,14 @@ class TestMCPConfigInstallation:
                     mock_download.side_effect = fake_download
                     step.run(ctx)
 
-                    # Check merged result
+                    # Check backup was created (with timestamp)
+                    backup_files = list(project_dir.glob(".mcp.json.backup.*"))
+                    assert len(backup_files) == 1, "Backup should be created"
+                    backup_content = json.loads(backup_files[0].read_text())
+                    assert "user-server" in backup_content["mcpServers"], "Backup contains old config"
+
+                    # Check new config replaced old
                     mcp_file = project_dir / ".mcp.json"
                     result = json.loads(mcp_file.read_text())
-                    assert "user-server" in result["mcpServers"], "Existing server preserved"
                     assert "new-server" in result["mcpServers"], "New server added"
+                    assert "user-server" not in result["mcpServers"], "Old server replaced"

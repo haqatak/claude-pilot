@@ -127,31 +127,7 @@ model: opus
    )
    ```
 
-### Phase 4: Store in Persistent Memory
-
-1. **Store project context in Cipher:**
-   ```python
-   mcp__cipher__ask_cipher(f"""
-   Store: Project setup completed for '{project_name}'.
-
-   Project Type: {language} / {framework}
-   Key Technologies: {tech_list}
-   Directory Structure: {key_dirs}
-   Entry Points: {entry_files}
-
-   Development Commands:
-   - Install: {install_cmd}
-   - Dev: {dev_cmd}
-   - Test: {test_cmd}
-   - Build: {build_cmd}
-
-   Architecture: {architecture_notes}
-
-   This context should be recalled when working on this project.
-   """)
-   ```
-
-### Phase 5: Completion Summary
+### Phase 4: Completion Summary
 
 Display a summary like:
 
@@ -165,20 +141,17 @@ Semantic Search:
   Claude Context index initialized (or "already indexed")
   Indexed X files
 
-Persistent Memory:
-  Project context stored in Cipher
-
 Next Steps:
   1. Run 'ccp' to reload with rules auto-generated into context
-  2. Use /plan to start building features
-  3. Reference project context with: "check project.md" or ask Cipher
+  2. Use /plan to create a feature plan
+  3. Use /implement to implement the feature plan
+  4. Use /verify to verify the feature plan
 ```
 
 ## Error Handling
 
 - **If tree command not available:** Use `ls -la` recursively with depth limit
 - **If indexing fails:** Log error, continue with other steps, suggest manual indexing
-- **If Cipher unavailable:** Log warning, continue - project.md still provides value
 - **If README.md missing:** Ask user for brief project description
 - **If package.json/pyproject.toml missing:** Infer from file extensions and directory structure
 

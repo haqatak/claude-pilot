@@ -34,8 +34,8 @@ class TestRunInstallation:
 
         assert callable(run_installation)
 
-    @patch("installer.cli.BootstrapStep")
-    def test_run_installation_executes_steps(self, mock_bootstrap):
+    @patch("installer.cli.get_all_steps")
+    def test_run_installation_executes_steps(self, mock_get_all_steps):
         """run_installation executes steps in order."""
         from installer.cli import run_installation
         from installer.context import InstallContext
@@ -48,18 +48,22 @@ class TestRunInstallation:
                 non_interactive=True,
             )
 
-            mock_bootstrap_instance = MagicMock()
-            mock_bootstrap_instance.name = "bootstrap"
-            mock_bootstrap_instance.check.return_value = False
-            mock_bootstrap.return_value = mock_bootstrap_instance
+            # Create mock steps
+            mock_step1 = MagicMock()
+            mock_step1.name = "step1"
+            mock_step1.check.return_value = False
 
-            try:
-                run_installation(ctx)
-            except Exception:
-                pass  # May fail due to other steps, that's ok
+            mock_step2 = MagicMock()
+            mock_step2.name = "step2"
+            mock_step2.check.return_value = False
 
-            # Bootstrap should be called
-            mock_bootstrap_instance.run.assert_called()
+            mock_get_all_steps.return_value = [mock_step1, mock_step2]
+
+            run_installation(ctx)
+
+            # Both steps should be called
+            mock_step1.run.assert_called_once_with(ctx)
+            mock_step2.run.assert_called_once_with(ctx)
 
 
 class TestRollback:

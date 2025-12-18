@@ -9,18 +9,6 @@ model: opus
 > The built-in Claude Code plan mode tools write to different paths and are incompatible.
 > When planning is complete, simply inform the user and wait for confirmation - no special tool needed.
 
-## MCP Servers - Use Throughout Planning
-
-| Server | Purpose | When to Use |
-|--------|---------|-------------|
-| **Cipher** | Project memory | Query past decisions, store plan context |
-| **Claude Context** | Semantic code search | Find patterns, similar implementations |
-| **Exa** | Web search & code examples | Research libraries, find documentation |
-| **MCP Funnel** | Tool discovery | Find specialized tools when needed |
-
-**Start every planning session by querying Cipher for relevant history.**
-
-
 ## Using AskUserQuestion - Core Planning Tool
 
 **The AskUserQuestion tool is essential for effective planning.** Questions are grouped into batches so users answer related questions together without interruption.
@@ -186,6 +174,23 @@ Questions:
 
 **Explore the codebase systematically.** Run explorations **one at a time** (sequentially, not in parallel).
 
+#### 🔧 MCP Tools for Exploration
+
+**Use these MCP servers to gather context efficiently:**
+
+| Tool | When to Use | Example |
+|------|-------------|---------|
+| **claude-context** | Semantic code search | `mcp__claude-context__search_code` - Find implementations by concept |
+| **Ref** | Library/framework docs | `mcp__Ref__ref_search_documentation` - Look up API usage |
+| **tavily** | External research | `mcp__tavily__tavily-search` - Research best practices |
+| **mcp-funnel** | Discover more tools | `mcp__mcp-funnel__discover_tools_by_words` - Find specialized tools |
+
+**Before exploring, check if codebase is indexed:**
+```
+mcp__claude-context__get_indexing_status(path="/absolute/path/to/project")
+```
+If not indexed, run: `mcp__claude-context__index_codebase(path="...")`
+
 **Exploration areas (in order):**
 
 1. **Architecture** - Project structure, entry points, how components connect
@@ -194,14 +199,13 @@ Questions:
 4. **Tests** - Test infrastructure, existing patterns, available fixtures
 
 **For each area:**
-- Use Task tool with `subagent_type='Explore'` OR search directly with Grep/Glob
+- Use `mcp__claude-context__search_code` for semantic searches like "authentication middleware" or "database connection handling"
+- Use `mcp__Ref__ref_search_documentation` when you need library/framework API details
+- Use `mcp__tavily__tavily-search` for researching patterns, best practices, or unfamiliar technologies
+- Use Task tool with `subagent_type='Explore'` for complex multi-step exploration
 - Document hypotheses (not conclusions)
 - Note full file paths for relevant code
 - Track questions that remain unanswered
-
-**Also query memory and external sources:**
-- Cipher: `mcp__cipher__ask_cipher("What do we know about <feature>?")`
-- Codebase: `mcp__claude-context__search_code(path, "related features")`
 
 **After explorations complete:**
 1. Read each identified file to verify hypotheses
@@ -385,10 +389,9 @@ Status: PENDING
 
 **After saving plan:**
 
-1. **Store in Cipher:** `mcp__cipher__ask_cipher("Store: implementation plan for <feature>")`
-2. **Inform user:** "Plan saved to docs/plans/YYYY-MM-DD-<feature>.md"
-3. **Request review:** Ask user to review and edit the plan
-4. **Wait for explicit confirmation** before proceeding
+1. **Inform user:** "Plan saved to docs/plans/YYYY-MM-DD-<feature>.md"
+2. **Request review:** Ask user to review and edit the plan
+3. **Wait for explicit confirmation** before proceeding
 
 **After user confirms:**
 

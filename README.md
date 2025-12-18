@@ -6,10 +6,9 @@
 
 Start shipping systematically with Spec-Driven Development, Skills, TDD, Semantic Search, Persistent Memory, Context Management, Quality Hooks, Modular Rules System, and much more 🚀
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Claude Code](https://img.shields.io/badge/Claude_Code-Optimized-blue)](https://claude.ai)
-[![Modular Rules](https://img.shields.io/badge/Modular_Rules-Integrated-brightgreen.svg)](https://code.claude.com/docs/en/memory#modular-rules-with-claude/rules/)
+[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 ![Opus 4.5](https://img.shields.io/badge/Opus_4.5-Compatible-purple.svg)
+[![Modular Rules](https://img.shields.io/badge/Modular_Rules-Integrated-brightgreen.svg)](https://code.claude.com/docs/en/memory#modular-rules-with-claude/rules/)
 ![Spec-Driven](https://img.shields.io/badge/Spec-Driven-orange.svg)
 ![TDD](https://img.shields.io/badge/TDD-Test--Driven--Development-green.svg)
 
@@ -37,7 +36,7 @@ Claude CodePro can be installed into any existing project:
 2. Run this command in the terminal:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/maxritter/claude-codepro/v3.1.2/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/maxritter/claude-codepro/v3.2.3/install.sh | bash
 ```
 
 3. Reopen in Container: `Cmd+Shift+P` → "Dev Containers: Reopen in Container"
@@ -55,7 +54,6 @@ curl -fsSL https://raw.githubusercontent.com/maxritter/claude-codepro/v3.1.2/ins
 - `/plan` - Based on your input asks the right questions → Detailed spec with exact code
 - `/implement` - Execute spec with mandatory TDD → Auto-manages context when full
 - `/verify` - End-to-end spec verification → All tests, quality, security
-- `/remember` - Stores learnings in cross-session memory → Continue after /clear
 
 ### 💡 Modular Rules System
 
@@ -64,23 +62,24 @@ Built on [Claude Code's modular rules](https://code.claude.com/docs/en/memory#mo
 - **Auto Loading** - Claude Code automatically loads all `.claude/rules/*.md` files as project memory
 - **Standard Rules** - Best-Practices for TDD, Context Management, etc. in `.claude/rules/standard/`
 - **Custom Rules** - Project-specific rules in `.claude/rules/custom/` (never touched by updates)
-- **Commands** - Workflow-specific modes: /plan, /implement, /verify, /remember, /setup
+- **Commands** - Workflow-specific modes: /plan, /implement, /verify, /setup
 - **Skills** - Domain-specific @-referenceable guides (e.g., @backend-python-standards)
 
 ### 🔌 Enhanced Context and Capabilities via MCP Servers
 
-- **Cipher** - Cross-session memory for persistent knowledge and learnings stored in Vector DB
-- **Claude Context** - Semantic code search for optimal codebase context retrieval
-- **Exa** - AI-powered web search, code context retrieval, and URL content extraction
+- **Claude Mem** - Cross-session persistent memory system that automatically ingest context
+- **Claude Context** - Local vector store based semantic code search for token-efficient retrieval
+- **Tavily** - Real-time web search capabilities and powerful web mapping tool
+- **Ref** - AI-powered code context retrieval, similar to Context7 but uses less context
 - **MCP Funnel** - Allows to plug-in more MCP servers as needed without wasting context
 
 ### 🛠️ Intelligent Hooks for Quality, Standards and Context
 
 - **Qlty Quality** - Post-edit hook for automated formatting and code checking for all languages
 - **Python Quality** - Post-edit hook for uv, ruff, mypy, basedpyright linting and type checking (optional)
-- **Rules Supervisor** - Stop hook that analyzes `/implement` sessions using Gemini AI
 - **TDD Enforcer** - Pre-edit hook that warns when modifying code without failing tests first
-- **Context Monitor** - Post-tool hook that warns at 85%/95% context usage
+- **Context Monitor** - Post-tool hook that warns CC automatically at 85%/95% context usage
+- **Claude Memory** - Various hooks that intelligently manage Claude Memory context injection via claude-mem
 
 ### 🏗️ One-Command Installation
 
@@ -104,14 +103,16 @@ Built on [Claude Code's modular rules](https://code.claude.com/docs/en/memory#mo
 3. In CC, run `/ide` to connect to VS Code diagnostics and make sure all MCP servers for `/mcp` are online
    <img src="docs/img/ide-setup-mcp.png" alt="Setup mcp Screenshot" width="600">
 
-4. In CC, run `/context` to verify context looks similar to this screenshot with less than 20% used
+4. In CC, run `/plugins` → Marketplaces → thedotmack → Click "Update marketplace" & "Enable auto-update" → Restart with `ccp` → Open http://localhost:37777/ → Settings → Advanced → Set Model to 'opus'
+   <img src="docs/img/ide-setup-plugin.png" alt="Setup plugin Screenshot" width="600">
+
+5. In CC, run `/context` to verify context looks similar to this screenshot with rules loaded
    <img src="docs/img/ide-setup-context.png" alt="Setup context Screenshot" width="600">
 
 ### 👣 First Steps
 
 - Start with `/plan` - Provide your input and it will ask clarifying questions to create a spec
 - Use `/implement` to execute the spec with automatic TDD, best practices and context management
-- When context fills, `/remember` automatically updates your plan and stores learnings
 - After spec completion, run `/verify` to run end-to-end review, all tests, and quality checks
 
 ### 🎯 Customizing Rules
@@ -138,13 +139,13 @@ paths: src/**/*.py
 - **[qltysh/qlty](https://github.com/qltysh/qlty)** - Code quality automation
 - **[obra/superpowers](https://github.com/obra/superpowers)** - CC Skills inspiration
 - **[buildermethods/agent-os](https://github.com/buildermethods/agent-os)** - CC Spec-Driven inspiration
-- **[campfirein/cipher](https://github.com/campfirein/cipher)** - CC Cross-session memory
+- **[thedotmack/claude-mem](https://github.com/thedotmack/claude-mem)** - CC Persistent Memory system
 - **[zilliztech/claude-context](https://github.com/zilliztech/claude-context)** - CC Semantic code search
 - **[sirmalloc/ccstatusline](https://github.com/sirmalloc/ccstatusline)** - CC Status line integration
-- **[exa-labs/exa-mcp-server](https://github.com/exa-labs/exa-mcp-server)** - AI-powered web search and code context
+- **[tavily-ai/tavily-mcp](https://github.com/tavily-ai/tavily-mcp)** - Web search and mapping capabilities
+- **[ref-tools/ref-tools-mcp](https://github.com/ref-tools/ref-tools-mcp)** - Library code context retrieval
 - **[chris-schra/mcp-funnel](https://github.com/chris-schra/mcp-funnel)** - MCP Tool filtering
 - **[astral-sh/uv](https://github.com/astral-sh/uv)** - Fast Python package manager
 - **[astral-sh/ruff](https://github.com/astral-sh/ruff)** - Fast Python linter and formatter
 - **[DetachHead/basedpyright](https://github.com/DetachHead/basedpyright)** - Enhanced Python type checker
-- **[python/mypy](https://github.com/python/mypy)** - Static type checker for Python
 - **[dotenvx/dotenvx](https://github.com/dotenvx/dotenvx)** - Automatic .env loading for Claude Code

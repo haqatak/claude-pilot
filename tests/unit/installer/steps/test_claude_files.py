@@ -71,8 +71,8 @@ class TestClaudeFilesStep:
             # Check files were installed
             assert (dest_dir / ".claude" / "test.md").exists()
 
-    def test_claude_files_skips_settings_local(self):
-        """ClaudeFilesStep skips settings.local.json."""
+    def test_claude_files_installs_settings_local(self):
+        """ClaudeFilesStep installs settings.local.json."""
         from installer.context import InstallContext
         from installer.steps.claude_files import ClaudeFilesStep
         from installer.ui import Console
@@ -83,7 +83,6 @@ class TestClaudeFilesStep:
             source_claude = Path(tmpdir) / "source" / ".claude"
             source_claude.mkdir(parents=True)
             (source_claude / "settings.local.json").write_text('{"test": true}')
-            (source_claude / "settings.local.template.json").write_text('{"template": true}')
 
             dest_dir = Path(tmpdir) / "dest"
             dest_dir.mkdir()
@@ -98,10 +97,8 @@ class TestClaudeFilesStep:
 
             step.run(ctx)
 
-            # settings.local.json should NOT be copied
-            assert not (dest_dir / ".claude" / "settings.local.json").exists()
-            # But template should be copied
-            assert (dest_dir / ".claude" / "settings.local.template.json").exists()
+            # settings.local.json should be copied
+            assert (dest_dir / ".claude" / "settings.local.json").exists()
 
     def test_claude_files_skips_python_when_disabled(self):
         """ClaudeFilesStep skips Python files when install_python=False."""
@@ -137,6 +134,90 @@ class TestClaudeFilesStep:
             assert not (dest_dir / ".claude" / "hooks" / "file_checker_python.py").exists()
             # Other hooks should be copied
             assert (dest_dir / ".claude" / "hooks" / "other_hook.sh").exists()
+
+
+class TestClaudeFilesCustomRulesPreservation:
+    """Test that custom rules are never overwritten."""
+
+    def test_custom_rules_not_overwritten(self):
+        """ClaudeFilesStep never overwrites rules/custom/ files."""
+        from installer.context import InstallContext
+        from installer.steps.claude_files import ClaudeFilesStep
+        from installer.ui import Console
+
+        step = ClaudeFilesStep()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create source with custom rules (simulating repo)
+            source_claude = Path(tmpdir) / "source" / ".claude"
+            source_rules_custom = source_claude / "rules" / "custom"
+            source_rules_standard = source_claude / "rules" / "standard"
+            source_rules_custom.mkdir(parents=True)
+            source_rules_standard.mkdir(parents=True)
+
+            # Repo has custom rules (these should NOT be copied)
+            (source_rules_custom / "repo-custom.md").write_text("repo custom rule")
+            # Repo has standard rules (these SHOULD be copied)
+            (source_rules_standard / "standard-rule.md").write_text("standard rule")
+
+            # Destination already has user's custom rules
+            dest_dir = Path(tmpdir) / "dest"
+            dest_claude = dest_dir / ".claude"
+            dest_rules_custom = dest_claude / "rules" / "custom"
+            dest_rules_custom.mkdir(parents=True)
+            (dest_rules_custom / "user-custom.md").write_text("USER CUSTOM RULE - DO NOT OVERWRITE")
+
+            ctx = InstallContext(
+                project_dir=dest_dir,
+                ui=Console(non_interactive=True),
+                local_mode=True,
+                local_repo_dir=Path(tmpdir) / "source",
+            )
+
+            step.run(ctx)
+
+            # User's custom rule should be PRESERVED
+            assert (dest_rules_custom / "user-custom.md").exists()
+            assert (dest_rules_custom / "user-custom.md").read_text() == "USER CUSTOM RULE - DO NOT OVERWRITE"
+
+            # Repo's custom rule should NOT be copied
+            assert not (dest_rules_custom / "repo-custom.md").exists()
+
+            # Standard rules SHOULD be copied
+            assert (dest_claude / "rules" / "standard" / "standard-rule.md").exists()
+
+    def test_pycache_files_not_copied(self):
+        """ClaudeFilesStep skips __pycache__ directories and .pyc files."""
+        from installer.context import InstallContext
+        from installer.steps.claude_files import ClaudeFilesStep
+        from installer.ui import Console
+
+        step = ClaudeFilesStep()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create source with __pycache__
+            source_claude = Path(tmpdir) / "source" / ".claude"
+            source_hooks = source_claude / "hooks"
+            source_pycache = source_hooks / "__pycache__"
+            source_pycache.mkdir(parents=True)
+            (source_hooks / "hook.py").write_text("# hook")
+            (source_pycache / "hook.cpython-312.pyc").write_text("bytecode")
+
+            dest_dir = Path(tmpdir) / "dest"
+            (dest_dir / ".claude").mkdir(parents=True)
+
+            ctx = InstallContext(
+                project_dir=dest_dir,
+                ui=Console(non_interactive=True),
+                local_mode=True,
+                local_repo_dir=Path(tmpdir) / "source",
+            )
+
+            step.run(ctx)
+
+            # Regular hook should be copied
+            assert (dest_dir / ".claude" / "hooks" / "hook.py").exists()
+
+            # __pycache__ should NOT be copied
+            assert not (dest_dir / ".claude" / "hooks" / "__pycache__").exists()
 
 
 class TestClaudeFilesRollback:

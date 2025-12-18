@@ -29,11 +29,10 @@ Run integration tests and fix any failures immediately.
 Run the actual program and verify real output.
 
 **If serious bugs (NOT simple fixes):**
-1. Store findings in Cipher
-2. Update plan with bug fixes as new tasks
-3. Set plan status to `PENDING`
-4. Tell user: "Found [N] bugs. Run `/clear` → `/implement [plan]`"
-5. STOP
+1. Update plan with bug fixes as new tasks
+2. Set plan status to `PENDING`
+3. Tell user: "Found [N] bugs. Run `/clear` → `/implement [plan]`"
+4. STOP
 
 **If simple fixes:** Fix directly, re-run, continue
 
@@ -51,25 +50,20 @@ Run the actual program and verify real output.
 
 This is a serious issue - the implementation is incomplete.
 
-1. **Store findings in Cipher:**
-   ```
-   mcp__cipher__ask_cipher("Store: VERIFICATION FAILED - Missing features: [list]")
-   ```
-
-2. **Add new tasks to the plan file:**
+1. **Add new tasks to the plan file:**
    - Read the existing plan
    - Add new tasks for each missing feature (follow existing task format)
    - Mark new tasks with `[MISSING]` prefix in task title
    - Update the Progress Tracking section with new task count
    - Add note: `> Extended [Date]: Tasks X-Y added for missing features found during verification`
 
-3. **Set plan status to PENDING:**
+2. **Set plan status to PENDING:**
    ```
    Edit the plan file and change the Status line:
    Status: COMPLETE  →  Status: PENDING
    ```
 
-4. **Inform user:**
+3. **Inform user:**
    ```
    ⚠️ VERIFICATION FAILED - Missing Features Detected
 
@@ -86,7 +80,7 @@ This is a serious issue - the implementation is incomplete.
    3. Run `/verify @docs/plans/[plan-file].md` again after implementation
    ```
 
-5. **STOP** - Do not continue verification
+4. **STOP** - Do not continue verification
 
 ### Step 4: Call Chain Analysis
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import subprocess
 import time
 from pathlib import Path
@@ -15,6 +16,13 @@ if TYPE_CHECKING:
 
 MAX_RETRIES = 3
 RETRY_DELAY = 2
+
+ANSI_ESCAPE_PATTERN = re.compile(r"\x1b\[[0-9;]*[a-zA-Z]|\x1b\].*?\x07")
+
+
+def _strip_ansi(text: str) -> str:
+    """Strip ANSI escape codes from text."""
+    return ANSI_ESCAPE_PATTERN.sub("", text)
 
 
 def _run_bash_with_retry(command: str, cwd: Path | None = None) -> bool:
@@ -93,7 +101,7 @@ def install_qlty(project_dir: Path) -> tuple[bool, bool]:
 
 
 def run_qlty_check(project_dir: Path, ui) -> bool:
-    """Run qlty check to download prerequisites (formatters, linters)."""
+    """Run qlty check to download prerequisites (linters)."""
     import os
 
     qlty_bin = Path.home() / ".qlty" / "bin" / "qlty"
@@ -105,7 +113,7 @@ def run_qlty_check(project_dir: Path, ui) -> bool:
 
     try:
         process = subprocess.Popen(
-            [str(qlty_bin), "check", "--no-fix"],
+            [str(qlty_bin), "check", "--no-fix", "--no-formatters", "--no-fail", "--install-only"],
             cwd=project_dir,
             env=env,
             stdout=subprocess.PIPE,
@@ -132,6 +140,126 @@ def install_dotenvx() -> bool:
         return True
 
     return _run_bash_with_retry("curl -sfS https://dotenvx.sh | sh")
+
+
+def install_bun() -> bool:
+    """Install bun runtime if not present."""
+    if command_exists("bun"):
+        return True
+
+    return _run_bash_with_retry("curl -fsSL https://bun.sh/install | bash")
+
+
+def install_claude_mem() -> bool:
+    """Install claude-mem plugin for persistent memory across sessions."""
+    plugins_dir = Path.home() / ".claude" / "plugins"
+    claude_mem_dir = plugins_dir / "thedotmack"
+
+    if (claude_mem_dir / "dist").exists():
+        return True
+
+    plugins_dir.mkdir(parents=True, exist_ok=True)
+
+    if not claude_mem_dir.exists():
+        if not _run_bash_with_retry(
+            "git clone https://github.com/thedotmack/claude-mem.git thedotmack",
+            cwd=plugins_dir,
+        ):
+            return False
+
+    build_cmd = "bun install && bun run build" if command_exists("bun") else "npm install && npm run build"
+    if not _run_bash_with_retry(build_cmd, cwd=claude_mem_dir):
+        return False
+
+    known_marketplaces = {
+        "claude-plugins-official": {
+            "source": {"source": "github", "repo": "anthropics/claude-plugins-official"},
+            "installLocation": str(Path.home() / ".claude/plugins/marketplaces/claude-plugins-official"),
+            "lastUpdated": "2025-12-16T18:12:11.651Z",
+        },
+        "thedotmack": {
+            "source": {"source": "github", "repo": "thedotmack/claude-mem"},
+            "installLocation": str(Path.home() / ".claude/plugins/marketplaces/thedotmack"),
+            "lastUpdated": "2025-12-17T03:35:56.709Z",
+        },
+    }
+
+    import json
+
+    marketplaces_file = plugins_dir / "known_marketplaces.json"
+    marketplaces_file.write_text(json.dumps(known_marketplaces, indent=2))
+
+    return True
+
+
+MILVUS_COMPOSE_URL = (
+    "https://raw.githubusercontent.com/maxritter/claude-codepro/main/.claude/scripts/milvus/docker-compose.yml"
+)
+MILVUS_COMPOSE_LOCAL_PATH = ".claude/scripts/milvus/docker-compose.yml"
+
+
+def _milvus_containers_running() -> bool:
+    """Check if Milvus containers are already running."""
+    try:
+        result = subprocess.run(
+            ["docker", "ps", "--filter", "name=milvus-standalone", "--format", "{{.Names}}"],
+            capture_output=True,
+            text=True,
+        )
+        return "milvus-standalone" in result.stdout
+    except Exception:
+        return False
+
+
+def install_local_milvus(ui: Any = None, local_mode: bool = False, local_repo_dir: Path | None = None) -> bool:
+    """Start local Milvus via docker compose in ~/.claude/milvus/."""
+    import shutil
+
+    if _milvus_containers_running():
+        return True
+
+    milvus_dir = Path.home() / ".claude" / "milvus"
+    compose_file = milvus_dir / "docker-compose.yml"
+
+    milvus_dir.mkdir(parents=True, exist_ok=True)
+
+    if local_mode and local_repo_dir:
+        source_file = local_repo_dir / MILVUS_COMPOSE_LOCAL_PATH
+        if source_file.exists():
+            shutil.copy2(source_file, compose_file)
+        else:
+            return False
+    else:
+        if not _run_bash_with_retry(f"curl -fsSL -o {compose_file} {MILVUS_COMPOSE_URL}"):
+            return False
+
+    try:
+        process = subprocess.Popen(
+            ["sudo", "docker", "compose", "--progress=plain", "up", "-d"],
+            cwd=milvus_dir,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+
+        output_lines = []
+        if process.stdout:
+            for line in process.stdout:
+                line = _strip_ansi(line.rstrip())
+                output_lines.append(line)
+                if line and ui:
+                    ui.print(f"  {line}")
+
+        process.wait()
+
+        if process.returncode != 0:
+            output_text = "\n".join(output_lines)
+            if "is already in use" in output_text or "Conflict" in output_text:
+                return True
+
+        return process.returncode == 0
+    except Exception:
+        return False
 
 
 def _install_with_spinner(ui: Any, name: str, install_fn: Any, *args: Any) -> bool:
@@ -177,17 +305,31 @@ class DependenciesStep(BaseStep):
         if _install_with_spinner(ui, "Claude Code", install_claude_code):
             installed.append("claude_code")
 
+        if _install_with_spinner(ui, "bun", install_bun):
+            installed.append("bun")
+
+        if _install_with_spinner(ui, "claude-mem plugin", install_claude_mem):
+            installed.append("claude_mem")
+
+        if ui:
+            ui.status("Starting local Milvus for Claude Context...")
+        if install_local_milvus(ui, ctx.local_mode, ctx.local_repo_dir):
+            installed.append("local_milvus")
+            if ui:
+                ui.success("Local Milvus started")
+        else:
+            if ui:
+                ui.warning("Could not start Milvus - please install manually")
+
         qlty_result = install_qlty(ctx.project_dir)
         if qlty_result[0]:
             installed.append("qlty")
             if ui:
                 ui.success("qlty installed")
-            if qlty_result[1]:
-                if ui:
-                    ui.status("Downloading qlty prerequisites (formatters, linters)...")
-                run_qlty_check(ctx.project_dir, ui)
-                if ui:
-                    ui.success("qlty prerequisites ready")
+                ui.status("Downloading qlty prerequisites (linters)...")
+            run_qlty_check(ctx.project_dir, ui)
+            if ui:
+                ui.success("qlty prerequisites ready")
         else:
             if ui:
                 ui.warning("Could not install qlty - please install manually")

@@ -13,14 +13,16 @@ if TYPE_CHECKING:
 
 
 def key_exists_in_file(key: str, env_file: Path) -> bool:
-    """Check if key exists in .env file."""
+    """Check if key exists in .env file with a non-empty value."""
     if not env_file.exists():
         return False
 
     content = env_file.read_text()
     for line in content.split("\n"):
-        if line.strip().startswith(f"{key}="):
-            return True
+        line = line.strip()
+        if line.startswith(f"{key}="):
+            value = line[len(key) + 1 :].strip()
+            return bool(value)
     return False
 
 
@@ -74,44 +76,18 @@ class EnvironmentStep(BaseStep):
                 ui.print("  Let's set up your API keys. I'll guide you through each one.")
                 ui.print()
 
-        milvus_token = ""
-        milvus_address = ""
-        vector_store_username = ""
-        vector_store_password = ""
         openai_api_key = ""
-        exa_api_key = ""
-
-        if not key_is_set("MILVUS_TOKEN", env_file):
-            if ui:
-                ui.print()
-                ui.rule("1. Zilliz Cloud - Free Vector DB for Semantic Search & Memory")
-                ui.print()
-                ui.print("  [bold]Used for:[/bold] Persistent memory across CC sessions & semantic code search")
-                ui.print("  [bold]Create at:[/bold] [cyan]https://zilliz.com/cloud[/cyan]")
-                ui.print()
-                ui.print("  [bold]Steps:[/bold]")
-                ui.print("  1. Sign up for free account")
-                ui.print("  2. Create a new cluster (Serverless is free)")
-                ui.print("  3. Go to Cluster -> Overview -> Connect")
-                ui.print("  4. Copy the Token and Public Endpoint")
-                ui.print("  5. Go to Clusters -> Users -> Admin -> Reset Password")
-                ui.print()
-
-                milvus_token = ui.input("MILVUS_TOKEN", default="")
-                milvus_address = ui.input("MILVUS_ADDRESS (Public Endpoint)", default="")
-                vector_store_username = ui.input("VECTOR_STORE_USERNAME (usually db_xxxxx)", default="")
-                vector_store_password = ui.input("VECTOR_STORE_PASSWORD", default="")
-        else:
-            if ui:
-                ui.success("Zilliz Cloud configuration already set, skipping")
+        tavily_api_key = ""
+        ref_api_key = ""
 
         if not key_is_set("OPENAI_API_KEY", env_file):
             if ui:
                 ui.print()
-                ui.rule("2. OpenAI API Key - For Memory LLM Calls")
+                ui.rule("1. OpenAI API Key - Semantic Code Search")
                 ui.print()
-                ui.print("  [bold]Used for:[/bold] Low-usage LLM calls in Cipher memory system")
-                ui.print("  [bold]Create at:[/bold] [cyan]https://platform.openai.com/account/api-keys[/cyan]")
+                ui.print("  [bold]Used for:[/bold] Generating embeddings for Claude Context semantic search")
+                ui.print("  [bold]Why:[/bold] Powers fast, intelligent code search across your codebase")
+                ui.print("  [bold]Create at:[/bold] [cyan]https://platform.openai.com/api-keys[/cyan]")
                 ui.print()
 
                 openai_api_key = ui.input("OPENAI_API_KEY", default="")
@@ -119,48 +95,39 @@ class EnvironmentStep(BaseStep):
             if ui:
                 ui.success("OPENAI_API_KEY already set, skipping")
 
-        if not key_is_set("EXA_API_KEY", env_file):
+        if not key_is_set("TAVILY_API_KEY", env_file):
             if ui:
                 ui.print()
-                ui.rule("3. Exa API Key - AI-Powered Web Search & Code Context")
+                ui.rule("2. Tavily API Key - AI-Powered Web Search")
                 ui.print()
                 ui.print(
                     "  [bold]Used for:[/bold] Web search, code examples, documentation lookup, and URL content extraction"
                 )
-                ui.print("  [bold]Create at:[/bold] [cyan]https://dashboard.exa.ai/home[/cyan]")
+                ui.print("  [bold]Create at:[/bold] [cyan]https://app.tavily.com/home[/cyan]")
                 ui.print()
 
-                exa_api_key = ui.input("EXA_API_KEY", default="")
+                tavily_api_key = ui.input("TAVILY_API_KEY", default="")
         else:
             if ui:
-                ui.success("EXA_API_KEY already set, skipping")
+                ui.success("TAVILY_API_KEY already set, skipping")
 
-        gemini_api_key = ""
-        if not key_is_set("GEMINI_API_KEY", env_file):
+        if not key_is_set("REF_API_KEY", env_file):
             if ui:
                 ui.print()
-                ui.rule("4. Gemini API Key - Rules Supervisor Analysis")
+                ui.rule("3. Ref.Tools API Key - Library Documentation Search")
                 ui.print()
-                ui.print("  [bold]Used for:[/bold] AI-powered session analysis to verify compliance with project rules")
-                ui.print("  [bold]Create at:[/bold] [cyan]https://aistudio.google.com/apikey[/cyan]")
+                ui.print("  [bold]Used for:[/bold] Searching library and framework documentation")
+                ui.print("  [bold]Create at:[/bold] [cyan]https://ref.tools/dashboard[/cyan]")
                 ui.print()
 
-                gemini_api_key = ui.input("GEMINI_API_KEY", default="")
+                ref_api_key = ui.input("REF_API_KEY", default="")
         else:
             if ui:
-                ui.success("GEMINI_API_KEY already set, skipping")
+                ui.success("REF_API_KEY already set, skipping")
 
-        add_env_key("MILVUS_TOKEN", milvus_token, env_file)
-        add_env_key("MILVUS_ADDRESS", milvus_address, env_file)
-        add_env_key("VECTOR_STORE_URL", milvus_address, env_file)
-        add_env_key("VECTOR_STORE_USERNAME", vector_store_username, env_file)
-        add_env_key("VECTOR_STORE_PASSWORD", vector_store_password, env_file)
         add_env_key("OPENAI_API_KEY", openai_api_key, env_file)
-        add_env_key("EXA_API_KEY", exa_api_key, env_file)
-        add_env_key("GEMINI_API_KEY", gemini_api_key, env_file)
-        add_env_key("USE_ASK_CIPHER", "true", env_file)
-        add_env_key("VECTOR_STORE_TYPE", "milvus", env_file)
-        add_env_key("FASTMCP_LOG_LEVEL", "ERROR", env_file)
+        add_env_key("TAVILY_API_KEY", tavily_api_key, env_file)
+        add_env_key("REF_API_KEY", ref_api_key, env_file)
 
         if ui:
             if append_mode:
