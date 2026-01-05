@@ -4,7 +4,8 @@ import {
   Plug2,
   ShieldCheck,
   Container,
-  Sparkles
+  Sparkles,
+  Code2
 } from "lucide-react";
 import { useInView } from "@/hooks/use-in-view";
 
@@ -74,6 +75,16 @@ const insideItems: InsideItem[] = [
       "Backend and frontend standards skills",
       "Testing guidelines and anti-patterns",
       "Invoked automatically when relevant",
+    ],
+  },
+  {
+    icon: Code2,
+    title: "LSP Servers",
+    items: [
+      "Python (Pyright) - Type info, definitions, references",
+      "TypeScript - Full language server support",
+      "Go to definition, find references, hover info",
+      "Call hierarchy and incoming/outgoing calls",
     ],
   },
 ];
