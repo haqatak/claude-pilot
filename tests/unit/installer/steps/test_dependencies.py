@@ -342,15 +342,32 @@ class TestClaudeMemInstall:
         """install_claude_mem uses claude plugin marketplace and install."""
         from installer.steps.dependencies import install_claude_mem
 
-        mock_run.return_value = MagicMock(returncode=0)
+        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
 
         result = install_claude_mem()
 
         assert mock_run.call_count >= 2
-        # Check marketplace add call
+        # First call adds marketplace
         first_call = mock_run.call_args_list[0][0][0]
         assert "claude plugin marketplace add" in first_call[2]
         assert "thedotmack/claude-mem" in first_call[2]
-        # Check plugin install call
+        # Second call installs plugin
         second_call = mock_run.call_args_list[1][0][0]
         assert "claude plugin install claude-mem" in second_call[2]
+
+    @patch("subprocess.run")
+    def test_install_claude_mem_succeeds_if_marketplace_already_added(self, mock_run):
+        """install_claude_mem succeeds when marketplace already exists."""
+        from installer.steps.dependencies import install_claude_mem
+
+        def side_effect(*args, **kwargs):
+            cmd = args[0] if args else kwargs.get("args", [])
+            if isinstance(cmd, list) and "marketplace add" in cmd[2]:
+                return MagicMock(returncode=1, stderr="already installed", stdout="")
+            return MagicMock(returncode=0, stdout="", stderr="")
+
+        mock_run.side_effect = side_effect
+
+        result = install_claude_mem()
+
+        assert result is True

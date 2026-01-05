@@ -99,9 +99,22 @@ def install_python_tools() -> bool:
         return False
 
 
+def _is_claude_installed_via_npm() -> bool:
+    """Check if Claude Code is installed via npm (required for LSP fix)."""
+    try:
+        result = subprocess.run(
+            ["npm", "list", "-g", "@anthropic-ai/claude-code", "--depth=0"],
+            capture_output=True,
+            text=True,
+        )
+        return "@anthropic-ai/claude-code" in result.stdout
+    except Exception:
+        return False
+
+
 def install_claude_code() -> bool:
-    """Install Claude Code CLI via npm."""
-    if command_exists("claude"):
+    """Install Claude Code CLI via npm (required for LSP fix to work)."""
+    if _is_claude_installed_via_npm():
         return True
 
     return _run_bash_with_retry("npm install -g @anthropic-ai/claude-code")
@@ -202,7 +215,15 @@ def install_pyright_lsp() -> bool:
 
 def install_claude_mem() -> bool:
     """Install claude-mem plugin via claude plugin marketplace."""
-    if not _run_bash_with_retry("claude plugin marketplace add thedotmack/claude-mem"):
+    try:
+        result = subprocess.run(
+            ["bash", "-c", "claude plugin marketplace add thedotmack/claude-mem"],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0 and "already installed" not in result.stderr.lower():
+            return False
+    except Exception:
         return False
 
     return _run_bash_with_retry("claude plugin install claude-mem")
