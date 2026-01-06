@@ -27,11 +27,7 @@ const faqs: FaqItem[] = [
     answer: "Add custom rules by creating .md files in .claude/rules/custom/. Standard rules in .claude/rules/standard/ are updated with each install. You can also use path-specific rules with YAML frontmatter to scope rules to specific files.",
   },
   {
-    question: "What MCP servers are included?",
-    answer: "Claude CodePro includes Claude Mem (persistent memory), Claude Context (semantic search), Tavily (web search), Ref (code context retrieval), and MCP Lazy Loading (improves context). All are pre-configured and ready to use.",
-  },
-  {
-    question: "Why shouldn't I use /compact?",
+    question: "Why shouldn't I use manual or auto compaction?",
     answer: "Claude CodePro is designed to use the full 200k context window. When context fills up, use /clear instead of /compact. Claude Mem automatically injects relevant context from your previous session when you continue with /implement. This ensures maximum context utilization with seamless session continuity.",
   },
 ];
