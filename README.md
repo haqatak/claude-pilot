@@ -95,7 +95,7 @@ curl -fsSL https://raw.githubusercontent.com/maxritter/claude-codepro/v3.3.4/ins
 
 1. Open Claude Code in the IDE Terminal, Extension or an external Terminal with the `ccp` command
 
-2. In CC, run `/config` to set `Auto-connect to IDE=true` and set `Auto-compact=false`
+2. In CC, run `/config` and make sure the configuration looks similar to this screenshot
    <img src="docs/img/ide-setup-config.png" alt="Setup config Screenshot" width="600">
 
 3. In CC, run `/ide` to connect to VS Code diagnostics and make sure all MCP servers for `/mcp` are online
@@ -108,7 +108,7 @@ curl -fsSL https://raw.githubusercontent.com/maxritter/claude-codepro/v3.3.4/ins
 
 **Never use `/compact`** - Claude CodePro is designed to use the full 200k context window:
 
-- **Auto-compact must be disabled** in `/config` (see step 2 above)
+- **Auto-compact must be disabled** in `/config`
 - **Ignore the compact warning** in the bottom right of Claude Code - it appears too early
 - **Use the full context** during `/implement` sessions until context is actually full
 - **When context is full**, run `/clear` to start a fresh session

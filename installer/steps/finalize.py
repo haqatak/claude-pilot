@@ -89,14 +89,6 @@ class FinalizeStep(BaseStep):
                 ),
                 ("Start Claude CodePro", "Run: ccp"),
                 (
-                    "Configure settings",
-                    "Run: /config and set:\n"
-                    "     • Auto-compact = false\n"
-                    "     • Verbose output = true\n"
-                    "     • Respect .gitignore in file picker = false\n"
-                    "     • Auto-connect to IDE (external terminal) = true",
-                ),
-                (
                     "View claude-mem Memory UI",
                     "Open http://localhost:37777/ to see the Memory Web UI",
                 ),

@@ -181,6 +181,90 @@ class TestDependencyInstallFunctions:
         assert callable(install_dotenvx)
 
 
+class TestClaudeCodeInstall:
+    """Test Claude Code installation."""
+
+    @patch("installer.steps.dependencies._configure_claude_defaults")
+    @patch("subprocess.run")
+    @patch("installer.steps.dependencies._remove_native_claude_binaries")
+    def test_install_claude_code_removes_native_binaries(
+        self, mock_remove, mock_run, mock_config
+    ):
+        """install_claude_code removes native binaries before npm install."""
+        from installer.steps.dependencies import install_claude_code
+
+        mock_run.return_value = MagicMock(returncode=0)
+
+        install_claude_code()
+
+        mock_remove.assert_called_once()
+
+    @patch("installer.steps.dependencies._configure_claude_defaults")
+    @patch("subprocess.run")
+    @patch("installer.steps.dependencies._remove_native_claude_binaries")
+    def test_install_claude_code_always_runs_npm_install(
+        self, mock_remove, mock_run, mock_config
+    ):
+        """install_claude_code always runs npm install (upgrades if exists)."""
+        from installer.steps.dependencies import install_claude_code
+
+        mock_run.return_value = MagicMock(returncode=0)
+
+        result = install_claude_code()
+
+        assert result is True
+        # Verify npm install was called
+        npm_calls = [c for c in mock_run.call_args_list if "npm install" in str(c)]
+        assert len(npm_calls) >= 1
+
+    @patch("installer.steps.dependencies._configure_claude_defaults")
+    @patch("subprocess.run")
+    @patch("installer.steps.dependencies._remove_native_claude_binaries")
+    def test_install_claude_code_configures_defaults(
+        self, mock_remove, mock_run, mock_config
+    ):
+        """install_claude_code configures Claude defaults after npm install."""
+        from installer.steps.dependencies import install_claude_code
+
+        mock_run.return_value = MagicMock(returncode=0)
+
+        install_claude_code()
+
+        mock_config.assert_called_once()
+
+    def test_patch_claude_config_creates_file(self):
+        """_patch_claude_config creates config file if it doesn't exist."""
+        from installer.steps.dependencies import _patch_claude_config
+        import json
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with patch.object(Path, "home", return_value=Path(tmpdir)):
+                result = _patch_claude_config({"test_key": "test_value"})
+
+                assert result is True
+                config_path = Path(tmpdir) / ".claude.json"
+                assert config_path.exists()
+                config = json.loads(config_path.read_text())
+                assert config["test_key"] == "test_value"
+
+    def test_patch_claude_config_merges_existing(self):
+        """_patch_claude_config merges with existing config."""
+        from installer.steps.dependencies import _patch_claude_config
+        import json
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_path = Path(tmpdir) / ".claude.json"
+            config_path.write_text(json.dumps({"existing_key": "existing_value"}))
+
+            with patch.object(Path, "home", return_value=Path(tmpdir)):
+                result = _patch_claude_config({"new_key": "new_value"})
+
+                assert result is True
+                config = json.loads(config_path.read_text())
+                assert config["existing_key"] == "existing_value"
+                assert config["new_key"] == "new_value"
+
+
 class TestDotenvxInstall:
     """Test dotenvx installation."""
 
@@ -236,9 +320,12 @@ class TestTypescriptLspInstall:
         first_call = mock_run.call_args_list[0][0][0]
         assert "bash" in first_call
         assert "typescript-language-server" in first_call[2]
-        # Check plugin install call
+        # Check marketplace add call
         second_call = mock_run.call_args_list[1][0][0]
-        assert "claude plugin install typescript-lsp" in second_call[2]
+        assert "claude plugin marketplace add anthropics/claude-plugins-official" in second_call[2]
+        # Check plugin install call
+        third_call = mock_run.call_args_list[2][0][0]
+        assert "claude plugin install typescript-lsp" in third_call[2]
 
 
 class TestPyrightLspInstall:
@@ -259,14 +346,17 @@ class TestPyrightLspInstall:
 
         result = install_pyright_lsp()
 
-        assert mock_run.call_count >= 2
+        assert mock_run.call_count >= 3
         # Check npm install call
         first_call = mock_run.call_args_list[0][0][0]
         assert "bash" in first_call
         assert "pyright" in first_call[2]
-        # Check plugin install call
+        # Check marketplace add call
         second_call = mock_run.call_args_list[1][0][0]
-        assert "claude plugin install pyright-lsp" in second_call[2]
+        assert "claude plugin marketplace add anthropics/claude-plugins-official" in second_call[2]
+        # Check plugin install call
+        third_call = mock_run.call_args_list[2][0][0]
+        assert "claude plugin install pyright-lsp" in third_call[2]
 
 
 class TestTweakcc:

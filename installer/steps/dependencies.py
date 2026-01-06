@@ -99,25 +99,63 @@ def install_python_tools() -> bool:
         return False
 
 
-def _is_claude_installed_via_npm() -> bool:
-    """Check if Claude Code is installed via npm (required for LSP fix)."""
+def _remove_native_claude_binaries() -> None:
+    """Remove native Claude Code binaries to avoid conflicts with npm install."""
+    native_bin = Path.home() / ".local" / "bin" / "claude"
+    native_data = Path.home() / ".local" / "share" / "claude"
+
+    if native_bin.exists():
+        native_bin.unlink()
+    if native_data.exists():
+        import shutil
+
+        shutil.rmtree(native_data, ignore_errors=True)
+
+
+def _patch_claude_config(config_updates: dict) -> bool:
+    """Patch ~/.claude.json with the given config updates.
+
+    Creates the file if it doesn't exist. Merges updates with existing config.
+    """
+    import json
+
+    config_path = Path.home() / ".claude.json"
+
     try:
-        result = subprocess.run(
-            ["npm", "list", "-g", "@anthropic-ai/claude-code", "--depth=0"],
-            capture_output=True,
-            text=True,
-        )
-        return "@anthropic-ai/claude-code" in result.stdout
+        if config_path.exists():
+            config = json.loads(config_path.read_text())
+        else:
+            config = {}
+
+        config.update(config_updates)
+        config_path.write_text(json.dumps(config, indent=2) + "\n")
+        return True
     except Exception:
         return False
 
 
-def install_claude_code() -> bool:
-    """Install Claude Code CLI via npm (required for LSP fix to work)."""
-    if _is_claude_installed_via_npm():
-        return True
+def _configure_claude_defaults() -> bool:
+    """Configure Claude Code with recommended defaults after installation."""
+    return _patch_claude_config(
+        {
+            "installMethod": "npm-global",
+            "theme": "dark-ansi",
+            "verbose": True,
+            "autoCompactEnabled": False,
+            "autoConnectIde": True,
+        }
+    )
 
-    return _run_bash_with_retry("npm install -g @anthropic-ai/claude-code")
+
+def install_claude_code() -> bool:
+    """Install/upgrade Claude Code CLI via npm and configure defaults."""
+    _remove_native_claude_binaries()
+
+    if not _run_bash_with_retry("npm install -g @anthropic-ai/claude-code@latest"):
+        return False
+
+    _configure_claude_defaults()
+    return True
 
 
 def install_qlty(project_dir: Path) -> tuple[bool, bool]:
@@ -186,9 +224,26 @@ def run_tweakcc(project_dir: Path) -> bool:
         return False
 
 
+def _ensure_official_marketplace() -> bool:
+    """Ensure official Claude plugins marketplace is installed."""
+    try:
+        result = subprocess.run(
+            ["bash", "-c", "claude plugin marketplace add anthropics/claude-plugins-official"],
+            capture_output=True,
+            text=True,
+        )
+        output = (result.stdout + result.stderr).lower()
+        return result.returncode == 0 or "already installed" in output
+    except Exception:
+        return False
+
+
 def install_typescript_lsp() -> bool:
     """Install TypeScript language server and plugin via npm and claude plugin."""
     if not _run_bash_with_retry("npm install -g typescript-language-server typescript"):
+        return False
+
+    if not _ensure_official_marketplace():
         return False
 
     return _run_bash_with_retry("claude plugin install typescript-lsp")
@@ -197,6 +252,9 @@ def install_typescript_lsp() -> bool:
 def install_pyright_lsp() -> bool:
     """Install pyright language server and plugin via npm and claude plugin."""
     if not _run_bash_with_retry("npm install -g pyright"):
+        return False
+
+    if not _ensure_official_marketplace():
         return False
 
     return _run_bash_with_retry("claude plugin install pyright-lsp")
@@ -328,6 +386,8 @@ class DependenciesStep(BaseStep):
 
         if _install_with_spinner(ui, "Claude Code", install_claude_code):
             installed.append("claude_code")
+            if ui:
+                ui.success("Claude Code config defaults applied")
 
             if ui:
                 with ui.spinner("Applying tweakcc customizations..."):
