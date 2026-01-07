@@ -436,7 +436,7 @@ def main() -> int:
         print("", file=sys.stderr)
         print(f"{GREEN}✅ TypeScript: All checks passed{NC}", file=sys.stderr)
         debug_log("Exiting with code 0 (success)")
-        return 0  # Fixed: was 2, should be 0
+        return 0  
 
 
 if __name__ == "__main__":

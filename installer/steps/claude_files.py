@@ -48,17 +48,19 @@ def process_settings(settings_content: str, install_python: bool, install_typesc
     """
     config: dict[str, Any] = json.loads(settings_content)
 
-    hooks_to_remove = []
+    # Match by filename, not full path (source file may have absolute paths)
+    files_to_remove: list[str] = []
     if not install_python:
-        hooks_to_remove.append(PYTHON_CHECKER_HOOK)
+        files_to_remove.append("file_checker_python.py")
     if not install_typescript:
-        hooks_to_remove.append(TYPESCRIPT_CHECKER_HOOK)
+        files_to_remove.append("file_checker_ts.py")
 
-    if hooks_to_remove:
+    if files_to_remove:
         try:
             for hook_group in config["hooks"]["PostToolUse"]:
                 hook_group["hooks"] = [
-                    h for h in hook_group["hooks"] if h.get("command") not in hooks_to_remove
+                    h for h in hook_group["hooks"]
+                    if not any(f in h.get("command", "") for f in files_to_remove)
                 ]
         except (KeyError, TypeError, AttributeError):
             pass
