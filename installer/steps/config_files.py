@@ -36,6 +36,12 @@ class ConfigFilesStep(BaseStep):
         if ui:
             ui.success("Created .nvmrc for Node.js 22")
 
+        mcp_servers_file = ctx.project_dir / "mcp_servers.json"
+        if not mcp_servers_file.exists():
+            mcp_servers_file.write_text('{\n  "mcpServers": {}\n}\n')
+            if ui:
+                ui.success("Created mcp_servers.json template")
+
         qlty_dir = ctx.project_dir / ".qlty"
         if not qlty_dir.exists():
             if ui:
