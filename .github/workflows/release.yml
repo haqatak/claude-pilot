@@ -191,6 +191,88 @@ jobs:
           gh release upload "v${{ steps.version.outputs.version }}" \
             installer/dist/ccp-installer-linux-arm64 --clobber
 
+  build-darwin-x86:
+    name: Build Darwin x86_64
+    runs-on: macos-13
+    needs: release
+    if: |
+      needs.release.outputs.released == 'true' ||
+      github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Set version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            VERSION="${{ needs.release.outputs.version }}"
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout release tag
+        uses: actions/checkout@v6
+        with:
+          ref: v${{ steps.version.outputs.version }}
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Build binary
+        run: |
+          pip install pyinstaller rich httpx typer platformdirs
+          cd installer && python build.py
+          chmod 755 dist/ccp-installer-darwin-x86_64
+
+      - name: Upload binary to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "v${{ steps.version.outputs.version }}" \
+            installer/dist/ccp-installer-darwin-x86_64 --clobber
+
+  build-darwin-arm64:
+    name: Build Darwin arm64
+    runs-on: macos-14
+    needs: release
+    if: |
+      needs.release.outputs.released == 'true' ||
+      github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Set version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            VERSION="${{ needs.release.outputs.version }}"
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout release tag
+        uses: actions/checkout@v6
+        with:
+          ref: v${{ steps.version.outputs.version }}
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Build binary
+        run: |
+          pip install pyinstaller rich httpx typer platformdirs
+          cd installer && python build.py
+          chmod 755 dist/ccp-installer-darwin-arm64
+
+      - name: Upload binary to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "v${{ steps.version.outputs.version }}" \
+            installer/dist/ccp-installer-darwin-arm64 --clobber
+
   deploy-website:
     name: Trigger Netlify Deploy
     runs-on: ubuntu-latest

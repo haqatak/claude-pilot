@@ -99,18 +99,17 @@ confirm_local_install() {
     # Read from /dev/tty for curl|bash compatibility
     confirm=""
     if [ -t 0 ]; then
-        printf "  Continue? [y/N]: "
+        printf "  Continue? [Y/n]: "
         read -r confirm
     elif [ -e /dev/tty ]; then
-        printf "  Continue? [y/N]: "
+        printf "  Continue? [Y/n]: "
         read -r confirm < /dev/tty
     else
-        echo "  No interactive terminal available, aborting."
-        exit 1
+        echo "  No interactive terminal available, continuing with defaults."
+        confirm="y"
     fi
     case "$confirm" in
-        [Yy]|[Yy][Ee][Ss]) ;;
-        *)
+        [Nn]|[Nn][Oo])
             echo "  Cancelled. Run again to choose Dev Container instead."
             exit 0
             ;;
@@ -167,6 +166,14 @@ if ! is_in_container; then
     echo "  Claude CodePro Installer (v${VERSION})"
     echo "======================================================================"
     echo ""
+
+    # Auto-select Dev Container if .devcontainer already exists
+    if [ -d ".devcontainer" ]; then
+        echo "  Detected existing .devcontainer - using Dev Container mode."
+        echo ""
+        setup_devcontainer
+    fi
+
     echo "  Choose installation method:"
     echo ""
     echo "    1) Dev Container - Isolated environment, consistent tooling"
