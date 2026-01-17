@@ -211,17 +211,16 @@ download_ccp_binary() {
 }
 
 install_dependencies() {
-    local installer_dir=".claude/installer"
-
     echo "  [..] Installing dependencies..."
 
-    cd "$installer_dir"
-    uv venv .venv --quiet
+    if [ ! -d ".venv" ]; then
+        uv venv .venv --quiet
+    fi
+
     uv pip install --quiet rich httpx typer platformdirs || {
         echo "  [!!] Failed to install dependencies"
         exit 1
     }
-    cd - >/dev/null
 
     echo "  [OK] Dependencies installed"
 }
@@ -232,13 +231,11 @@ run_installer() {
     echo ""
     export PYTHONPATH="$installer_dir:${PYTHONPATH:-}"
 
-    cd "$installer_dir"
     if [ "$LOCAL_INSTALL" = true ]; then
         uv run python -m installer install --local-system "$@"
     else
         uv run python -m installer install "$@"
     fi
-    cd - >/dev/null
 }
 
 if ! is_in_container; then
