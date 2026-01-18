@@ -259,6 +259,13 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/pip
+          key: ${{ runner.os }}-pip-pyinstaller
+          restore-keys: ${{ runner.os }}-pip-
+
       - name: Verify version
         run: |
           echo "Building version: ${{ steps.version.outputs.version }}"
@@ -269,6 +276,9 @@ jobs:
           pip install pyinstaller rich httpx typer platformdirs
           python -m ccp.build
           chmod 755 ccp/dist/ccp-darwin-x86_64
+
+      - name: Sign binary (ad-hoc)
+        run: codesign --force --sign - ccp/dist/ccp-darwin-x86_64
 
       - name: Upload binary to release
         env:
@@ -313,6 +323,13 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/pip
+          key: ${{ runner.os }}-pip-pyinstaller
+          restore-keys: ${{ runner.os }}-pip-
+
       - name: Verify version
         run: |
           echo "Building version: ${{ steps.version.outputs.version }}"
@@ -323,6 +340,9 @@ jobs:
           pip install pyinstaller rich httpx typer platformdirs
           python -m ccp.build
           chmod 755 ccp/dist/ccp-darwin-arm64
+
+      - name: Sign binary (ad-hoc)
+        run: codesign --force --sign - ccp/dist/ccp-darwin-arm64
 
       - name: Upload binary to release
         env:
