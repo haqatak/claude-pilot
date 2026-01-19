@@ -25,7 +25,7 @@ TDD enforced. Quality automated. Ship with confidence. 🚀
 ## ⚡ TL;DR
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/maxritter/claude-codepro/v4.5.23/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/maxritter/claude-codepro/v4.5.25/install.sh | bash
 ```
 
 Then run `ccp` and `/setup` once. That's it.
@@ -65,7 +65,7 @@ Choose your installation method:
 Run the following command in your **project folder root**:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/maxritter/claude-codepro/v4.5.24/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/maxritter/claude-codepro/v4.5.25/install.sh | bash
 ```
 
 You'll be asked to choose between **Dev Container** or **Local Installation**.
