@@ -253,3 +253,72 @@ class TestCLIDeactivate:
 
         assert result.exit_code == 0
         assert "deactivated" in result.stdout.lower()
+
+
+class TestCLITrial:
+    """Tests for trial command."""
+
+    def test_trial_check_returns_status(self) -> None:
+        """trial --check returns trial_used status."""
+        from ccp.cli import app
+
+        with patch("ccp.auth.has_used_trial", return_value=False):
+            result = runner.invoke(app, ["trial", "--check"])
+
+        assert result.exit_code == 0
+        assert "Trial used: False" in result.stdout
+
+    def test_trial_check_json_output(self) -> None:
+        """trial --check --json outputs JSON format."""
+        from ccp.cli import app
+
+        with patch("ccp.auth.has_used_trial", return_value=True):
+            result = runner.invoke(app, ["trial", "--check", "--json"])
+
+        assert result.exit_code == 0
+        data = json.loads(result.stdout)
+        assert data["trial_used"] is True
+
+    def test_trial_start_success(self) -> None:
+        """trial --start starts a new trial."""
+        from ccp.cli import app
+
+        with patch("ccp.auth.create_trial_state"):
+            result = runner.invoke(app, ["trial", "--start"])
+
+        assert result.exit_code == 0
+        assert "started" in result.stdout.lower()
+
+    def test_trial_start_json_success(self) -> None:
+        """trial --start --json outputs JSON on success."""
+        from ccp.cli import app
+
+        with patch("ccp.auth.create_trial_state"):
+            result = runner.invoke(app, ["trial", "--start", "--json"])
+
+        assert result.exit_code == 0
+        data = json.loads(result.stdout)
+        assert data["success"] is True
+
+    def test_trial_start_already_used(self) -> None:
+        """trial --start fails when trial already used."""
+        from ccp.auth import TrialAlreadyUsedError
+        from ccp.cli import app
+
+        with patch("ccp.auth.create_trial_state", side_effect=TrialAlreadyUsedError()):
+            result = runner.invoke(app, ["trial", "--start", "--json"])
+
+        assert result.exit_code == 1
+        data = json.loads(result.stdout)
+        assert data["success"] is False
+        assert data["error"] == "trial_already_used"
+
+    def test_trial_without_flags_shows_error(self) -> None:
+        """trial without --check or --start shows error."""
+        from ccp.cli import app
+
+        result = runner.invoke(app, ["trial"])
+
+        assert result.exit_code == 1
+        # Error goes to stderr
+        assert "--check" in result.output or "--start" in result.output

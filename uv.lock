@@ -162,7 +162,7 @@ wheels = [
 [[package]]
 name = "claude-codepro"
 version = "1.0.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "claude-agent-sdk" },
     { name = "httpx" },

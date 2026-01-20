@@ -11,7 +11,8 @@ import pytest
 
 from claude_agent_sdk import AssistantMessage, ResultMessage, TextBlock
 
-from ccp.auditor.types import AuditorConfig, RuleDefinition, StateSnapshot, Violation
+from ccp.auditor.config import AuditorConfig
+from ccp.auditor.types import RuleDefinition, StateSnapshot, Violation
 
 
 class TestAuditorAgent:

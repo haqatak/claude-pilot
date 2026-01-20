@@ -132,23 +132,84 @@ def _validate_license_key(
 
 def _start_trial(
     console: Console,
-    _project_dir: Path,
-    _local_mode: bool,
-    _local_repo_dir: Path | None,
+    project_dir: Path,
+    local_mode: bool,
+    local_repo_dir: Path | None,
 ) -> bool:
-    """Start a 7-day trial using the auth module directly."""
-    from ccp.auth import TrialAlreadyUsedError, create_trial_state
+    """Start a 7-day trial using ccp binary."""
+    bin_path = project_dir / ".claude" / "bin" / "ccp"
+    if not bin_path.exists() and local_mode and local_repo_dir:
+        local_bin = local_repo_dir / ".claude" / "bin" / "ccp"
+        if local_bin.exists():
+            bin_path = local_bin
+
+    if not bin_path.exists():
+        console.error("CCP binary not found")
+        return False
+
+    def _run_trial_start() -> bool:
+        result = subprocess.run(
+            [str(bin_path), "trial", "--start", "--json"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        if result.returncode == 0:
+            return True
+        output = result.stdout.strip() or result.stderr.strip()
+        if output:
+            try:
+                data = json.loads(output)
+                if data.get("error") == "trial_already_used":
+                    console.error("Trial has already been used on this machine")
+                else:
+                    console.error(f"Failed to start trial: {data.get('error', 'Unknown error')}")
+            except json.JSONDecodeError:
+                console.error(f"Failed to start trial: {output}")
+        else:
+            console.error("Failed to start trial")
+        return False
 
     try:
         with console.spinner("Starting trial..."):
-            create_trial_state()
-        return True
-    except TrialAlreadyUsedError:
-        console.error("Trial has already been used on this machine")
+            return _run_trial_start()
+    except subprocess.TimeoutExpired:
+        console.error("Trial start timed out")
         return False
     except Exception as e:
         console.error(f"Failed to start trial: {e}")
         return False
+
+
+def _check_trial_used(
+    project_dir: Path,
+    local_mode: bool,
+    local_repo_dir: Path | None,
+) -> bool | None:
+    """Check if trial has been used via ccp binary. Returns None if check fails."""
+    bin_path = project_dir / ".claude" / "bin" / "ccp"
+    if not bin_path.exists() and local_mode and local_repo_dir:
+        local_bin = local_repo_dir / ".claude" / "bin" / "ccp"
+        if local_bin.exists():
+            bin_path = local_bin
+
+    if not bin_path.exists():
+        return None
+
+    try:
+        result = subprocess.run(
+            [str(bin_path), "trial", "--check", "--json"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        output = result.stdout.strip() or result.stderr.strip()
+        if output:
+            data = json.loads(output)
+            return data.get("trial_used", False)
+    except (subprocess.TimeoutExpired, json.JSONDecodeError, OSError):
+        pass
+    return None
 
 
 def _get_license_info(
@@ -364,8 +425,10 @@ def install(
         console.print("  [bold cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/bold cyan]")
         console.print()
 
-        trial_marker_file = Path.home() / ".config" / "claude-codepro" / ".trial_used"
-        trial_used = trial_marker_file.exists()
+        with console.spinner("Checking license status..."):
+            trial_used = _check_trial_used(project_dir, local, effective_local_repo_dir)
+        if trial_used is None:
+            trial_used = False
 
         if trial_used:
             console.print("  [bold yellow]Trial already used on this machine.[/bold yellow]")
