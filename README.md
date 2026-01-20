@@ -189,7 +189,7 @@ Claude CodePro uses [Claude Code's modular rules](https://code.claude.com/docs/e
 
 - **Standard Rules** in `.claude/rules/standard/` - Best-Practices updated on install, don't modify those
 - **Custom Rules** in `.claude/rules/custom/` - Your project-specific rules, never touched by updates
-- **Auditor Agent** - Background AI that monitors every 60s and alerts you when rules are violated
+- **Auditor Agent** - Background agent that monitors your session and alerts you when rules are violated
 
 
 ---

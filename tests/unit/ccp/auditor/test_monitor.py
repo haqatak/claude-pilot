@@ -149,3 +149,121 @@ Approved: Yes
 
         assert hasattr(state, "git_diff")
         assert isinstance(state.git_diff, str)
+
+
+class TestStateMonitorBaseline:
+    """Tests for baseline tracking to ignore pre-session changes."""
+
+    def test_first_call_establishes_baseline_returns_empty(self, tmp_path: Path) -> None:
+        """First call to get_git_changes should establish baseline and return empty."""
+        monitor = StateMonitor(project_root=tmp_path)
+
+        # Simulate pre-existing changes by setting internal state
+        monitor._baseline_files = None
+        monitor._baseline_initialized = False
+
+        # First call should return empty (baseline established)
+        changes = monitor.get_git_changes()
+
+        assert changes == []
+        assert monitor._baseline_initialized is True
+
+    def test_subsequent_calls_return_only_new_files(self, tmp_path: Path) -> None:
+        """Subsequent calls should only return files not in baseline."""
+        monitor = StateMonitor(project_root=tmp_path)
+
+        # Simulate baseline with some pre-existing files
+        monitor._baseline_files = {"old_file.py", "another_old.py"}
+        monitor._baseline_initialized = True
+        monitor._git_cache = None  # Clear cache to force recalculation
+
+        # Mock _get_all_git_changes to return both old and new files
+        original_get_all = monitor._get_all_git_changes
+
+        def mock_get_all() -> set[str]:
+            return {"old_file.py", "another_old.py", "new_file.py"}
+
+        monitor._get_all_git_changes = mock_get_all  # type: ignore[method-assign]
+
+        changes = monitor.get_git_changes()
+
+        # Should only return the new file, not baseline files
+        assert changes == ["new_file.py"]
+
+        # Restore original method
+        monitor._get_all_git_changes = original_get_all  # type: ignore[method-assign]
+
+    def test_git_diff_empty_when_no_new_changes(self, tmp_path: Path) -> None:
+        """get_git_diff should return empty when no new files since baseline."""
+        monitor = StateMonitor(project_root=tmp_path)
+
+        # Establish baseline
+        monitor._baseline_files = {"existing.py"}
+        monitor._baseline_initialized = True
+        monitor._git_cache = None
+        monitor._diff_cache = None
+
+        # Mock to return only baseline files (no new changes)
+        def mock_get_all() -> set[str]:
+            return {"existing.py"}
+
+        monitor._get_all_git_changes = mock_get_all  # type: ignore[method-assign]
+
+        diff = monitor.get_git_diff()
+
+        # Should be empty since no new files
+        assert diff == ""
+
+    def test_baseline_not_reestablished_on_subsequent_calls(self, tmp_path: Path) -> None:
+        """Baseline should only be set once, not on every call."""
+        monitor = StateMonitor(project_root=tmp_path)
+
+        # First call establishes baseline
+        monitor._baseline_files = None
+        monitor._baseline_initialized = False
+
+        def mock_get_all() -> set[str]:
+            return {"initial.py"}
+
+        monitor._get_all_git_changes = mock_get_all  # type: ignore[method-assign]
+
+        # First call
+        monitor._git_cache = None
+        changes1 = monitor.get_git_changes()
+        assert changes1 == []
+        assert monitor._baseline_files == {"initial.py"}
+
+        # Simulate new file appearing
+        def mock_get_all_with_new() -> set[str]:
+            return {"initial.py", "new.py"}
+
+        monitor._get_all_git_changes = mock_get_all_with_new  # type: ignore[method-assign]
+
+        # Second call should NOT reset baseline
+        monitor._git_cache = None
+        changes2 = monitor.get_git_changes()
+
+        # Should return only the new file
+        assert changes2 == ["new.py"]
+        # Baseline should still be the original
+        assert monitor._baseline_files == {"initial.py"}
+
+    def test_get_current_state_respects_baseline(self, tmp_path: Path) -> None:
+        """get_current_state should return state respecting baseline."""
+        monitor = StateMonitor(project_root=tmp_path)
+
+        # Set up baseline
+        monitor._baseline_files = {"preexisting.py"}
+        monitor._baseline_initialized = True
+
+        def mock_get_all() -> set[str]:
+            return {"preexisting.py"}  # Only baseline files
+
+        monitor._get_all_git_changes = mock_get_all  # type: ignore[method-assign]
+
+        state = monitor.get_current_state()
+
+        # git_changes should be empty (no new changes)
+        assert state.git_changes == []
+        # git_diff should be empty (no new changes to diff)
+        assert state.git_diff == ""
