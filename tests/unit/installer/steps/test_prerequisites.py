@@ -133,14 +133,16 @@ class TestPrerequisitesStepRun:
     @patch("installer.steps.prerequisites._add_bun_tap")
     @patch("installer.steps.prerequisites._is_nvm_installed")
     @patch("installer.steps.prerequisites.command_exists")
+    @patch("installer.steps.prerequisites.is_homebrew_available")
     def test_prerequisites_run_installs_missing_packages(
-        self, mock_cmd_exists, mock_nvm_installed, mock_tap, mock_install
+        self, mock_homebrew_available, mock_cmd_exists, mock_nvm_installed, mock_tap, mock_install
     ):
         """PrerequisitesStep.run installs packages that are missing."""
         from installer.context import InstallContext
         from installer.steps.prerequisites import HOMEBREW_PACKAGES, PrerequisitesStep
         from installer.ui import Console
 
+        mock_homebrew_available.return_value = True
         mock_cmd_exists.return_value = False
         mock_nvm_installed.return_value = False
         mock_tap.return_value = True
@@ -163,14 +165,16 @@ class TestPrerequisitesStepRun:
     @patch("installer.steps.prerequisites._add_bun_tap")
     @patch("installer.steps.prerequisites._is_nvm_installed")
     @patch("installer.steps.prerequisites.command_exists")
+    @patch("installer.steps.prerequisites.is_homebrew_available")
     def test_prerequisites_run_skips_installed_packages(
-        self, mock_cmd_exists, mock_nvm_installed, mock_tap, mock_install
+        self, mock_homebrew_available, mock_cmd_exists, mock_nvm_installed, mock_tap, mock_install
     ):
         """PrerequisitesStep.run skips packages that are already installed."""
         from installer.context import InstallContext
         from installer.steps.prerequisites import PrerequisitesStep
         from installer.ui import Console
 
+        mock_homebrew_available.return_value = True
         mock_cmd_exists.return_value = True
         mock_nvm_installed.return_value = True
         mock_tap.return_value = True
