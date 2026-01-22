@@ -81,7 +81,7 @@ class TestGetLocalSoName:
         mock_sys.implementation.name = "cpython"
         mock_sys.version_info.major = 3
         mock_sys.version_info.minor = 12
-        assert _get_local_so_name() == "cli.cpython-312-x86_64-linux-gnu.so"
+        assert _get_local_so_name() == "ccp.cpython-312-x86_64-linux-gnu.so"
 
     @patch("installer.steps.ccp_binary.sys")
     @patch("installer.steps.ccp_binary.platform")
@@ -91,7 +91,7 @@ class TestGetLocalSoName:
         mock_sys.implementation.name = "cpython"
         mock_sys.version_info.major = 3
         mock_sys.version_info.minor = 12
-        assert _get_local_so_name() == "cli.cpython-312-aarch64-linux-gnu.so"
+        assert _get_local_so_name() == "ccp.cpython-312-aarch64-linux-gnu.so"
 
     @patch("installer.steps.ccp_binary.sys")
     @patch("installer.steps.ccp_binary.platform")
@@ -101,7 +101,7 @@ class TestGetLocalSoName:
         mock_sys.implementation.name = "cpython"
         mock_sys.version_info.major = 3
         mock_sys.version_info.minor = 12
-        assert _get_local_so_name() == "cli.cpython-312-darwin.so"
+        assert _get_local_so_name() == "ccp.cpython-312-darwin.so"
 
 
 class TestDownloadFile:
@@ -160,7 +160,7 @@ class TestDownloadCcpArtifacts:
         tmp_path: Path,
     ) -> None:
         mock_suffix.return_value = "linux-x86_64"
-        mock_so_name.return_value = "cli.cpython-312-x86_64-linux-gnu.so"
+        mock_so_name.return_value = "ccp.cpython-312-x86_64-linux-gnu.so"
         mock_download.return_value = True
 
         result = _download_ccp_artifacts("5.1.2", tmp_path)
@@ -170,7 +170,7 @@ class TestDownloadCcpArtifacts:
         # First call: .so module
         so_call = mock_download.call_args_list[0]
         assert "ccp-linux-x86_64.so" in so_call[0][0]
-        assert so_call[0][1] == tmp_path / "cli.cpython-312-x86_64-linux-gnu.so"
+        assert so_call[0][1] == tmp_path / "ccp.cpython-312-x86_64-linux-gnu.so"
         # Second call: wrapper
         wrapper_call = mock_download.call_args_list[1]
         assert "ccp-wrapper" in wrapper_call[0][0]
@@ -195,7 +195,7 @@ class TestDownloadCcpArtifacts:
         tmp_path: Path,
     ) -> None:
         mock_suffix.return_value = "linux-x86_64"
-        mock_so_name.return_value = "cli.cpython-312-x86_64-linux-gnu.so"
+        mock_so_name.return_value = "ccp.cpython-312-x86_64-linux-gnu.so"
         mock_download.return_value = False
 
         result = _download_ccp_artifacts("5.1.2", tmp_path)
@@ -212,12 +212,12 @@ class TestDownloadCcpArtifacts:
         tmp_path: Path,
     ) -> None:
         mock_suffix.return_value = "linux-x86_64"
-        mock_so_name.return_value = "cli.cpython-312-x86_64-linux-gnu.so"
+        mock_so_name.return_value = "ccp.cpython-312-x86_64-linux-gnu.so"
         # First download (so) succeeds, second (wrapper) fails
         mock_download.side_effect = [True, False]
 
         # Create the .so file to simulate successful first download
-        so_path = tmp_path / "cli.cpython-312-x86_64-linux-gnu.so"
+        so_path = tmp_path / "ccp.cpython-312-x86_64-linux-gnu.so"
         so_path.write_bytes(b"fake so content")
 
         result = _download_ccp_artifacts("5.1.2", tmp_path)

@@ -64,7 +64,7 @@ def _get_local_so_name() -> str:
     else:
         platform_tag = system
 
-    return f"cli.{impl}-{version}-{platform_tag}.so"
+    return f"ccp.{impl}-{version}-{platform_tag}.so"
 
 
 def _get_installed_version(ccp_path: Path, ui: Any = None) -> str | None:
@@ -93,6 +93,46 @@ def _get_installed_version(ccp_path: Path, ui: Any = None) -> str | None:
             return _run_version()
     else:
         return _run_version()
+
+
+def _check_macos_gatekeeper(bin_dir: Path, ui: Any = None) -> bool:
+    """Check if macOS Gatekeeper is blocking the binary and show instructions if so.
+
+    Returns True if binary works, False if blocked.
+    """
+    if platform.system() != "Darwin":
+        return True
+
+    ccp_path = bin_dir / "ccp"
+    if not ccp_path.exists():
+        return True
+
+    try:
+        result = subprocess.run(
+            [str(ccp_path), "--version"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if result.returncode == 0:
+            return True
+    except (subprocess.SubprocessError, OSError):
+        pass
+
+    if ui:
+        ui.warning("macOS Gatekeeper may be blocking the CCP binary")
+        ui.info("")
+        ui.info("To fix this, follow these steps:")
+        ui.info("  1. Open System Settings → Privacy & Security")
+        ui.info("  2. Scroll down to find a message about 'ccp' being blocked")
+        ui.info("  3. Click 'Allow Anyway'")
+        ui.info("  4. Run 'ccp' once in terminal, then click 'Open' when prompted")
+        ui.info("")
+        ui.info("Or run this command to remove the quarantine flag:")
+        ui.info(f"  xattr -cr {bin_dir}")
+        ui.info("")
+
+    return False
 
 
 def _download_file(url: str, dest_path: Path, executable: bool = True) -> bool:
@@ -211,6 +251,8 @@ class CcpBinaryStep(BaseStep):
                 success = _download_ccp_artifacts(target_version, bin_dir)
             if success:
                 ui.success(f"CCP binary updated to v{target_version}")
+                if ctx.is_local_install:
+                    _check_macos_gatekeeper(bin_dir, ui)
             else:
                 ui.warning("Could not update CCP binary - will update on next install")
         else:

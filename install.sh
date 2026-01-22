@@ -72,6 +72,31 @@ install_uv() {
     echo "  [OK] uv installed"
 }
 
+show_macos_gatekeeper_help() {
+    if [ "$(uname)" != "Darwin" ]; then
+        return
+    fi
+
+    # Check if ccp binary exists and can run
+    local ccp_path=".claude/bin/ccp"
+    if [ -f "$ccp_path" ]; then
+        if ! "$ccp_path" --version >/dev/null 2>&1; then
+            echo ""
+            echo "  ⚠️  macOS Gatekeeper may be blocking the CCP binary"
+            echo ""
+            echo "  To fix this, follow these steps:"
+            echo "    1. Open System Settings → Privacy & Security"
+            echo "    2. Scroll down to find a message about 'ccp' being blocked"
+            echo "    3. Click 'Allow Anyway'"
+            echo "    4. Run 'ccp' once in terminal, then click 'Open' when prompted"
+            echo ""
+            echo "  Or run this command to remove the quarantine flag:"
+            echo "    xattr -cr .claude/bin"
+            echo ""
+        fi
+    fi
+}
+
 confirm_local_install() {
     echo ""
     echo "  Local installation will:"
@@ -278,3 +303,9 @@ download_installer
 install_dependencies
 
 run_installer "$@"
+
+# Show macOS Gatekeeper help for local installs
+saved_mode=$(get_saved_install_mode)
+if [ "$saved_mode" = "local" ] || is_in_container; then
+    show_macos_gatekeeper_help
+fi
