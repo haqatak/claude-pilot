@@ -38,12 +38,12 @@ const insideItems: InsideItem[] = [
   },
   {
     icon: FileCode2,
-    title: "Modular Rules & Skills",
+    title: "Rules, Commands & Skills",
     items: [
-      "Standard rules in .claude/rules/standard/",
-      "Custom rules in .claude/rules/custom/",
-      "Standard skills: plan, implement, verify, standards-*",
-      "Custom skills: any non-standard name (preserved)",
+      "Rules: Best practices for TDD and workflows",
+      "Commands: /spec, /sync, /plan, /implement, /verify",
+      "Skills: Coding standards for languages & frameworks",
+      "Customizable: Add your own, they survive updates",
     ],
   },
   {

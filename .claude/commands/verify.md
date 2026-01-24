@@ -1,6 +1,6 @@
 ---
-name: verify
 description: Run tests and fix issues end-to-end with Claude CodePro
+model: opus
 ---
 # VERIFY MODE: Verification and Quality Assurance Process with Code Review
 
@@ -275,9 +275,9 @@ curl -X DELETE http://localhost:8000/api/resource/1
 
 ---
 
-## ⛔ WHEN THIS SKILL COMPLETES - CRITICAL
+## ⛔ WHEN THIS COMMAND COMPLETES - CRITICAL
 
-**This skill ends after updating plan status. Control returns to /spec.**
+**This command ends after updating plan status. Control returns to /spec.**
 
 **What /spec MUST do next (in the SAME response):**
 - If Status: VERIFIED → Report completion, workflow done

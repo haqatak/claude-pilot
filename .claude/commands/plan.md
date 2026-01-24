@@ -1,14 +1,14 @@
 ---
-name: plan
 description: Create a detailed implementation plan with exploration for Claude CodePro
+model: opus
 ---
 # PLAN MODE: Five-Phase Planning Process
 
 > **WARNING: DO NOT use the built-in `ExitPlanMode` or `EnterPlanMode` tools.**
-> This project has its own planning workflow using `/plan`, `/implement`, and `/verify` skill commands that are automatically invoked via the `/spec` slash-command.
+> This project has its own planning workflow using `/plan`, `/implement`, and `/verify` commands that are automatically invoked via the `/spec` command.
 > The built-in Claude Code plan mode tools write to different paths and are incompatible.
 >
-> **⛔ CRITICAL: When planning is complete and approved, this skill ENDS and control returns to /spec.**
+> **⛔ CRITICAL: When planning is complete and approved, this command ENDS and control returns to /spec.**
 > Do NOT stop or wait - /spec will automatically invoke /implement next.
 
 ## Using AskUserQuestion - Core Planning Tool
@@ -423,7 +423,7 @@ Iterations: 0
    **If user approves ("Yes, proceed..."):**
    - Edit the plan file to change `Approved: No` to `Approved: Yes`
    - Output: "Plan approved. **Plan path:** `<plan-path>`"
-   - **THIS SKILL NOW ENDS** - your response is complete
+   - **THIS COMMAND NOW ENDS** - your response is complete
    - Do NOT write any implementation code - that's /implement's job
    - Do NOT say "proceeding to implementation" and then stop - that's a violation
 
@@ -440,9 +440,9 @@ Iterations: 0
 
 ---
 
-## ⛔ WHEN THIS SKILL COMPLETES - CRITICAL
+## ⛔ WHEN THIS COMMAND COMPLETES - CRITICAL
 
-**When the plan is approved, this skill ends and control returns to /spec.**
+**When the plan is approved, this command ends and control returns to /spec.**
 
 **What /spec MUST do next (in the SAME response):**
 1. Re-read the plan file to confirm Status: PENDING, Approved: Yes
@@ -465,7 +465,7 @@ These rules are non-negotiable:
 7. **⛔ NEVER proceed without user approval** - Use AskUserQuestion to get explicit approval, then update `Approved: Yes` yourself
 8. **ALWAYS re-read the plan after user edits** - If they chose to make changes, re-read before asking again
 9. **The plan must be detailed enough that another developer could follow it**
-10. **NEVER use built-in ExitPlanMode or EnterPlanMode tools** - This project uses custom `/plan`, `/implement`, `/verify` skill commands. The built-in plan mode tools are incompatible with this workflow. They are orchestrated by the `/spec` slash command.
+10. **NEVER use built-in ExitPlanMode or EnterPlanMode tools** - This project uses custom `/plan`, `/implement`, `/verify` commands. The built-in plan mode tools are incompatible with this workflow. They are orchestrated by the `/spec` command.
 11. **FOR MIGRATIONS: Create Feature Inventory BEFORE tasks** - List every file, function, and class being replaced. Map each to a task. No unmapped features allowed.
 12. **"Out of Scope" ≠ "Don't implement"** - "Out of Scope: Changes to X" means migrate X as-is (still needs a task). Only "Out of Scope: Remove X" means no task needed (requires user confirmation).
 13. **Ask for approval after creating plan** - After Phase 5, use AskUserQuestion to get approval. If approved, update the file and let /spec continue automatically.

@@ -207,7 +207,6 @@ class ClaudeFilesStep(BaseStep):
 
         if not source_is_destination:
             dirs_to_clear = [
-                ("commands", categories["commands"], ctx.project_dir / ".claude" / "commands"),
                 ("hooks", categories["hooks"], ctx.project_dir / ".claude" / "hooks"),
                 ("standard rules", categories["rules_standard"], ctx.project_dir / ".claude" / "rules" / "standard"),
             ]
@@ -222,15 +221,33 @@ class ClaudeFilesStep(BaseStep):
                         if ui:
                             ui.warning(f"Failed to clear {name} directory: {e}")
 
+            commands_dir = ctx.project_dir / ".claude" / "commands"
+            if commands_dir.exists() and categories["commands"]:
+                standard_command_names = {"spec", "sync", "plan", "implement", "verify"}
+                for cmd_file in commands_dir.iterdir():
+                    if cmd_file.is_file() and cmd_file.suffix == ".md":
+                        name = cmd_file.stem
+                        if name in standard_command_names:
+                            if ui:
+                                ui.status(f"Clearing old command: {name}...")
+                            try:
+                                cmd_file.unlink()
+                            except (OSError, IOError) as e:
+                                if ui:
+                                    ui.warning(f"Failed to clear command {name}: {e}")
+
             skills_dir = ctx.project_dir / ".claude" / "skills"
-            if skills_dir.exists() and categories["skills"]:
-                standard_skill_names = {"plan", "implement", "verify"}
+            if skills_dir.exists():
+                migrated_to_commands = {"plan", "implement", "verify"}
                 for skill_subdir in skills_dir.iterdir():
                     if skill_subdir.is_dir():
                         name = skill_subdir.name
-                        if name in standard_skill_names or name.startswith("standards-"):
+                        if name in migrated_to_commands or name.startswith("standards-"):
                             if ui:
-                                ui.status(f"Clearing old skill: {name}...")
+                                if name in migrated_to_commands:
+                                    ui.status(f"Migrating skill to command: {name}...")
+                                else:
+                                    ui.status(f"Clearing old skill: {name}...")
                             try:
                                 shutil.rmtree(skill_subdir)
                             except (OSError, IOError) as e:
@@ -320,10 +337,9 @@ class ClaudeFilesStep(BaseStep):
             custom_dir.mkdir(parents=True, exist_ok=True)
             (custom_dir / ".gitkeep").touch()
 
-        skills_custom_dir = ctx.project_dir / ".claude" / "skills" / "custom"
-        if not skills_custom_dir.exists():
-            skills_custom_dir.mkdir(parents=True, exist_ok=True)
-            (skills_custom_dir / ".gitkeep").touch()
+        skills_dir = ctx.project_dir / ".claude" / "skills"
+        if not skills_dir.exists():
+            skills_dir.mkdir(parents=True, exist_ok=True)
 
         if ui:
             if file_count > 0:

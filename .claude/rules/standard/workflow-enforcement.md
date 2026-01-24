@@ -70,7 +70,7 @@ This is a HARD RULE with NO EXCEPTIONS:
 - ❌ Writing tests directly after plan approval - BANNED
 - ❌ Writing implementation code after plan approval - BANNED
 - ❌ Editing source files while in /spec orchestration - BANNED
-- ❌ Any implementation work outside of /implement skill - BANNED
+- ❌ Any implementation work outside of /implement command - BANNED
 
 **The correct flow after user approves a plan:**
 ```
@@ -111,7 +111,7 @@ The project uses a three-phase workflow with **automatic feedback loop**:
 
 ## ⛔ CRITICAL: Automatic Continuation is MANDATORY
 
-**"Auto-continue" means /spec MUST invoke the next skill in the SAME response.**
+**"Auto-continue" means /spec MUST invoke the next command in the SAME response.**
 
 When /implement finishes (Status: COMPLETE):
 ```

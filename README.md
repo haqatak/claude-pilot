@@ -94,12 +94,12 @@ You'll be asked to choose between **Dev Container** or **Local Installation**.
 - **Implementation** - Executes the plan with TDD enforcement and context management
 - **Verification** - Runs tests, quality checks, and validates completion based on the plan
 
-### 📚 Modular Rules & Skills System
+### 📚 Modular Rules, Commands & Skills
 
-- **Standard Rules** in `.claude/rules/standard/` - Best practices for TDD, context management, etc.
-- **Custom Rules** in `.claude/rules/custom/` - Project-specific rules, never touched by updates
-- **Standard Skills** in `.claude/skills/` (`plan`, `implement`, `verify`, `standards-*`) - Updated on install
-- **Custom Skills** in `.claude/skills/` (any other name) - Never touched by updates
+- **Rules** - Best practices for TDD, debugging, context management, and more
+- **Commands** - Slash commands like `/spec`, `/sync`, `/plan`, `/implement`, `/verify`
+- **Skills** - Coding standards for Python, TypeScript, Go, testing, and components
+- **Customizable** - Add your own rules, commands, and skills that survive updates
 
 ### 🧠 Enhanced Context Capabilities
 
@@ -187,15 +187,27 @@ ccp
 > Fix the null pointer bug in user.py
 ```
 
-### 📐 Rules & Skills System
+### 📐 Rules, Commands & Skills
 
-Claude CodePro uses [Claude Code's modular rules](https://code.claude.com/docs/en/memory#modular-rules-with-claude/rules/):
+Claude CodePro extends Claude Code with a modular system of rules, commands, and skills:
 
-- **Standard Rules** in `.claude/rules/standard/` - Updated on install
-- **Custom Rules** in `.claude/rules/custom/` - Never touched by updates
-- **Standard Skills** in `.claude/skills/` (`plan`, `implement`, `verify`, `standards-*`) - Updated on install
-- **Custom Skills** in `.claude/skills/` (any other name) - Never touched by updates
+**Managed by CCP** (updated on install):
+- `.claude/rules/standard/` - Best practices and workflows
+- `.claude/commands/` - `spec`, `sync`, `plan`, `implement`, `verify`
+- `.claude/skills/standards-*/` - Coding standards for languages and frameworks
 
+**Yours to customize** (never touched by updates):
+- `.claude/rules/custom/` - Project-specific rules
+- `.claude/commands/` - Any command besides the standard ones
+- `.claude/skills/` - Any skill not prefixed with `standards-`
+
+**When to use what:**
+
+| Type | Loaded | Best for |
+|------|--------|----------|
+| **Rules** | Every session (always in context) | Guidelines Claude should always follow |
+| **Commands** | On demand via `/command` | Specific workflows or multi-step tasks |
+| **Skills** | Dynamically when relevant | Specialized knowledge, coding standards |
 
 ---
 

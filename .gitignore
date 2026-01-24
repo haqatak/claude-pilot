@@ -229,6 +229,10 @@ CLAUDE.md
 .claude/config/
 tmp/
 
+# Custom skills (non-standard names are project-specific)
+.claude/skills/*/
+!.claude/skills/standards-*/
+
 # Build artifacts
 .claude/bin/
 .claude/installer/

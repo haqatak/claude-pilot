@@ -6,8 +6,6 @@ import json
 import tempfile
 from pathlib import Path
 
-import pytest
-
 
 class TestPatchClaudePaths:
     """Test the patch_claude_paths function."""
@@ -335,7 +333,6 @@ class TestClaudeFilesStep:
     def test_claude_files_check_returns_false_when_empty(self):
         """ClaudeFilesStep.check returns False when no files installed."""
         from installer.context import InstallContext
-        from installer.downloads import DownloadConfig
         from installer.steps.claude_files import ClaudeFilesStep
         from installer.ui import Console
 
@@ -741,19 +738,19 @@ class TestDirectoryClearing:
 
         step = ClaudeFilesStep()
         with tempfile.TemporaryDirectory() as tmpdir:
-            # Create source with standard skill (plan is a standard skill name)
+            # Create source with standard skill (standards-* is a standard skill name)
             source_dir = Path(tmpdir) / "source"
             source_claude = source_dir / ".claude"
-            source_skills = source_claude / "skills" / "plan"
+            source_skills = source_claude / "skills" / "standards-testing"
             source_skills.mkdir(parents=True)
-            (source_skills / "SKILL.md").write_text("new plan skill")
+            (source_skills / "SKILL.md").write_text("new standards-testing skill")
 
             # Create destination with OLD standard skill (should be cleared)
             dest_dir = Path(tmpdir) / "dest"
             dest_claude = dest_dir / ".claude"
-            dest_skills = dest_claude / "skills" / "plan"
+            dest_skills = dest_claude / "skills" / "standards-testing"
             dest_skills.mkdir(parents=True)
-            (dest_skills / "SKILL.md").write_text("old plan skill to be removed")
+            (dest_skills / "SKILL.md").write_text("old standards-testing skill to be removed")
 
             ctx = InstallContext(
                 project_dir=dest_dir,
@@ -765,8 +762,8 @@ class TestDirectoryClearing:
             step.run(ctx)
 
             # New standard skill should be installed (old was cleared)
-            assert (dest_claude / "skills" / "plan" / "SKILL.md").exists()
-            assert (dest_claude / "skills" / "plan" / "SKILL.md").read_text() == "new plan skill"
+            assert (dest_claude / "skills" / "standards-testing" / "SKILL.md").exists()
+            assert (dest_claude / "skills" / "standards-testing" / "SKILL.md").read_text() == "new standards-testing skill"
 
     def test_skips_clearing_when_source_equals_destination(self):
         """Directories are NOT cleared when source == destination (same dir)."""
@@ -778,7 +775,7 @@ class TestDirectoryClearing:
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create .claude directory (source AND destination are same)
             claude_dir = Path(tmpdir) / ".claude"
-            skills_dir = claude_dir / "skills" / "plan"
+            skills_dir = claude_dir / "skills" / "standards-testing"
             skills_dir.mkdir(parents=True)
             (skills_dir / "SKILL.md").write_text("existing skill content")
 
@@ -846,22 +843,22 @@ class TestDirectoryClearing:
 
         step = ClaudeFilesStep()
         with tempfile.TemporaryDirectory() as tmpdir:
-            # Create source with standard skill (plan)
+            # Create source with standard skill (standards-testing)
             source_dir = Path(tmpdir) / "source"
             source_claude = source_dir / ".claude"
-            source_plan = source_claude / "skills" / "plan"
-            source_plan.mkdir(parents=True)
-            (source_plan / "SKILL.md").write_text("new plan skill")
+            source_standard = source_claude / "skills" / "standards-testing"
+            source_standard.mkdir(parents=True)
+            (source_standard / "SKILL.md").write_text("new standards-testing skill")
 
             # Create destination with custom skill AND old standard skill
             dest_dir = Path(tmpdir) / "dest"
             dest_claude = dest_dir / ".claude"
             dest_custom = dest_claude / "skills" / "my-custom-skill"  # Custom name
-            dest_plan = dest_claude / "skills" / "plan"  # Standard name
+            dest_standard = dest_claude / "skills" / "standards-testing"  # Standard name (standards-* prefix)
             dest_custom.mkdir(parents=True)
-            dest_plan.mkdir(parents=True)
+            dest_standard.mkdir(parents=True)
             (dest_custom / "SKILL.md").write_text("USER CUSTOM SKILL")
-            (dest_plan / "SKILL.md").write_text("old plan skill")
+            (dest_standard / "SKILL.md").write_text("old standards-testing skill")
 
             ctx = InstallContext(
                 project_dir=dest_dir,
@@ -877,5 +874,118 @@ class TestDirectoryClearing:
             assert (dest_custom / "SKILL.md").read_text() == "USER CUSTOM SKILL"
 
             # Standard skill should be updated
-            assert (dest_plan / "SKILL.md").exists()
-            assert (dest_plan / "SKILL.md").read_text() == "new plan skill"
+            assert (dest_standard / "SKILL.md").exists()
+            assert (dest_standard / "SKILL.md").read_text() == "new standards-testing skill"
+
+    def test_migrated_skills_are_removed(self):
+        """Skills that were migrated to commands (plan, implement, verify) are removed."""
+        from installer.context import InstallContext
+        from installer.steps.claude_files import ClaudeFilesStep
+        from installer.ui import Console
+
+        step = ClaudeFilesStep()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create source with some files (so clearing logic runs - early return if no files)
+            source_dir = Path(tmpdir) / "source"
+            source_claude = source_dir / ".claude"
+            source_rules = source_claude / "rules" / "standard"
+            source_rules.mkdir(parents=True)
+            (source_rules / "test-rule.md").write_text("# test rule")
+
+            # Create destination with old plan/implement/verify skills (should be migrated/removed)
+            dest_dir = Path(tmpdir) / "dest"
+            dest_claude = dest_dir / ".claude"
+            for skill_name in ["plan", "implement", "verify"]:
+                skill_dir = dest_claude / "skills" / skill_name
+                skill_dir.mkdir(parents=True)
+                (skill_dir / "SKILL.md").write_text(f"old {skill_name} skill")
+
+            ctx = InstallContext(
+                project_dir=dest_dir,
+                ui=Console(non_interactive=True),
+                local_mode=True,
+                local_repo_dir=source_dir,
+            )
+
+            step.run(ctx)
+
+            # Migrated skill directories should be REMOVED
+            for skill_name in ["plan", "implement", "verify"]:
+                skill_dir = dest_claude / "skills" / skill_name
+                assert not skill_dir.exists(), f"Skill '{skill_name}' should have been removed (migrated to command)"
+
+    def test_standard_commands_are_cleared(self):
+        """Standard commands (spec, sync, plan, implement, verify) are cleared and replaced."""
+        from installer.context import InstallContext
+        from installer.steps.claude_files import ClaudeFilesStep
+        from installer.ui import Console
+
+        step = ClaudeFilesStep()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create source with new standard command
+            source_dir = Path(tmpdir) / "source"
+            source_claude = source_dir / ".claude"
+            source_commands = source_claude / "commands"
+            source_commands.mkdir(parents=True)
+            (source_commands / "spec.md").write_text("new spec command")
+
+            # Create destination with OLD standard command
+            dest_dir = Path(tmpdir) / "dest"
+            dest_claude = dest_dir / ".claude"
+            dest_commands = dest_claude / "commands"
+            dest_commands.mkdir(parents=True)
+            (dest_commands / "spec.md").write_text("old spec command")
+            (dest_commands / "plan.md").write_text("old plan command")
+
+            ctx = InstallContext(
+                project_dir=dest_dir,
+                ui=Console(non_interactive=True),
+                local_mode=True,
+                local_repo_dir=source_dir,
+            )
+
+            step.run(ctx)
+
+            # New standard command should be installed
+            assert (dest_commands / "spec.md").exists()
+            assert (dest_commands / "spec.md").read_text() == "new spec command"
+
+    def test_custom_commands_never_cleared(self):
+        """Custom commands (non-standard names) are NEVER cleared."""
+        from installer.context import InstallContext
+        from installer.steps.claude_files import ClaudeFilesStep
+        from installer.ui import Console
+
+        step = ClaudeFilesStep()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create source with standard command
+            source_dir = Path(tmpdir) / "source"
+            source_claude = source_dir / ".claude"
+            source_commands = source_claude / "commands"
+            source_commands.mkdir(parents=True)
+            (source_commands / "spec.md").write_text("new spec command")
+
+            # Create destination with custom command AND standard command
+            dest_dir = Path(tmpdir) / "dest"
+            dest_claude = dest_dir / ".claude"
+            dest_commands = dest_claude / "commands"
+            dest_commands.mkdir(parents=True)
+            (dest_commands / "my-custom-workflow.md").write_text("USER CUSTOM COMMAND")
+            (dest_commands / "spec.md").write_text("old spec command")
+
+            ctx = InstallContext(
+                project_dir=dest_dir,
+                ui=Console(non_interactive=True),
+                local_mode=True,
+                local_repo_dir=source_dir,
+            )
+
+            step.run(ctx)
+
+            # Custom command should be PRESERVED
+            assert (dest_commands / "my-custom-workflow.md").exists()
+            assert (dest_commands / "my-custom-workflow.md").read_text() == "USER CUSTOM COMMAND"
+
+            # Standard command should be updated
+            assert (dest_commands / "spec.md").exists()
+            assert (dest_commands / "spec.md").read_text() == "new spec command"

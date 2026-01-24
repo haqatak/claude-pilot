@@ -1,6 +1,6 @@
 ---
-name: implement
 description: Execute implementation plans in batches with Claude CodePro
+model: opus
 ---
 # IMPLEMENT MODE: Task Execution with Mandatory Context Gathering
 
@@ -22,7 +22,7 @@ description: Execute implementation plans in batches with Claude CodePro
 
 ## Feedback Loop Awareness
 
-**This skill may be called multiple times in a feedback loop:**
+**This command may be called multiple times in a feedback loop:**
 
 ```
 /implement → /verify → issues found → /implement → /verify → ... → VERIFIED
@@ -228,9 +228,9 @@ Before marking complete:
 
 ---
 
-## ⛔ WHEN THIS SKILL COMPLETES - CRITICAL
+## ⛔ WHEN THIS COMMAND COMPLETES - CRITICAL
 
-**When all tasks are done and Status is set to COMPLETE, this skill ends.**
+**When all tasks are done and Status is set to COMPLETE, this command ends.**
 
 **YOU (as /spec orchestrator) MUST then in the SAME response:**
 1. Read the plan file to confirm Status: COMPLETE
