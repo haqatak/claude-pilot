@@ -30,6 +30,31 @@ This is a HARD RULE with NO EXCEPTIONS:
 
 ---
 
+## ⛔ ABSOLUTE BAN: No Background Tasks
+
+**NEVER run commands in the background. Period.**
+
+This is a HARD RULE with NO EXCEPTIONS:
+- ❌ `Bash(run_in_background=true)` - BANNED
+- ❌ `TaskOutput` tool - BANNED (used to read background task output)
+- ❌ Any `run_in_background` parameter - BANNED
+
+**Why:** Background tasks lose context visibility, make debugging harder, and create race conditions. Always run commands synchronously and wait for results.
+
+### What to Use Instead
+
+| DON'T do this | DO this instead |
+|---------------|-----------------|
+| `Bash(command="...", run_in_background=true)` | `Bash(command="...")` (synchronous) |
+| `TaskOutput(task_id="...")` | Don't need it - commands complete inline |
+| Long-running commands in background | Use `timeout` parameter if needed |
+
+**If a command takes too long:** Use the `timeout` parameter to extend the limit (up to 600000ms / 10 minutes), or break it into smaller operations.
+
+**If you catch yourself about to use `run_in_background`: STOP. Run the command synchronously.**
+
+---
+
 ## ⛔ ABSOLUTE BAN: No Built-in Plan Mode
 
 **NEVER use Claude Code's built-in plan mode tools. Period.**

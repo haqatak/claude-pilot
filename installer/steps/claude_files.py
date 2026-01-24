@@ -173,10 +173,6 @@ class ClaudeFilesStep(BaseStep):
                 if "agent-browser.md" in file_path:
                     continue
 
-            if not ctx.enable_firecrawl:
-                if "firecrawl-search.md" in file_path:
-                    continue
-
             if "/commands/" in file_path:
                 categories["commands"].append(file_path)
             elif "/rules/standard/" in file_path:
@@ -292,13 +288,14 @@ class ClaudeFilesStep(BaseStep):
                             installed_files.append(str(dest_file))
                         else:
                             failed_files.append(file_path)
-                ui.success(f"Installed {len(files)} {category_names[category]}:")
-                for file_path in files:
-                    if category == "skills":
-                        file_name = Path(file_path).parent.name
-                    else:
-                        file_name = Path(file_path).stem
-                    ui.print(f"    [dim]✓ {file_name}[/dim]")
+                ui.success(f"Installed {len(files)} {category_names[category]}")
+                if not ui.quiet:
+                    for file_path in files:
+                        if category == "skills":
+                            file_name = Path(file_path).parent.name
+                        else:
+                            file_name = Path(file_path).stem
+                        ui.print(f"    [dim]✓ {file_name}[/dim]")
             else:
                 for file_path in files:
                     dest_file = ctx.project_dir / file_path

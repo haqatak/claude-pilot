@@ -21,6 +21,8 @@ class TestInstallContext:
 
         ctx = InstallContext(project_dir=Path("/tmp/test"))
         assert ctx.enable_python is True
+        assert ctx.enable_oauth_token is True
+        assert ctx.oauth_token_value == ""
         assert ctx.non_interactive is False
         assert ctx.local_mode is False
         assert ctx.local_repo_dir is None

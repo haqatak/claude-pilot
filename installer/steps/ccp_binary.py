@@ -208,7 +208,7 @@ def _download_ccp_artifacts(version: str, bin_dir: Path, ui: Any = None) -> bool
         if not _download_file(so_url, so_path, executable=True):
             return False
 
-    wrapper_url = f"{base_url}/ccp-wrapper"
+    wrapper_url = f"{base_url}/ccp"
     wrapper_path = bin_dir / "ccp"
 
     if ui:

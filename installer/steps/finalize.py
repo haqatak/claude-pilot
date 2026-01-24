@@ -93,9 +93,10 @@ class FinalizeStep(BaseStep):
 
         ui.next_steps(steps)
 
-        ui.rule()
-        ui.print()
-        ui.print("  [bold yellow]⭐ Star this repo:[/bold yellow] https://github.com/maxritter/claude-codepro")
-        ui.print()
-        ui.print(f"  [dim]Installed version: {__version__}[/dim]")
-        ui.print()
+        if not ui.quiet:
+            ui.rule()
+            ui.print()
+            ui.print("  [bold yellow]⭐ Star this repo:[/bold yellow] https://github.com/maxritter/claude-codepro")
+            ui.print()
+            ui.print(f"  [dim]Installed version: {__version__}[/dim]")
+            ui.print()

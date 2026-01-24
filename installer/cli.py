@@ -12,13 +12,18 @@ import typer
 from installer import __build__
 from installer.config import load_config, save_config
 from installer.context import InstallContext
-from installer.errors import FatalInstallError
+from installer.errors import FatalInstallError, InstallationCancelled
 from installer.steps.base import BaseStep
 from installer.steps.bootstrap import BootstrapStep
 from installer.steps.claude_files import ClaudeFilesStep
 from installer.steps.config_files import ConfigFilesStep
 from installer.steps.dependencies import DependenciesStep
-from installer.steps.environment import EnvironmentStep
+from installer.steps.environment import (
+    EnvironmentStep,
+    create_claude_config,
+    create_claude_credentials,
+    credentials_exist,
+)
 from installer.steps.finalize import FinalizeStep
 from installer.steps.git_setup import GitSetupStep
 from installer.steps.prerequisites import PrerequisitesStep
@@ -242,13 +247,17 @@ def run_installation(ctx: InstallContext) -> None:
                 ui.info(f"Already complete, skipping")
             continue
 
-        step.run(ctx)
+        try:
+            step.run(ctx)
+        except KeyboardInterrupt:
+            raise InstallationCancelled(step.name) from None
         ctx.mark_completed(step.name)
 
 
 @app.command()
 def install(
     non_interactive: bool = typer.Option(False, "--non-interactive", "-n", help="Run without interactive prompts"),
+    quiet: bool = typer.Option(False, "--quiet", "-q", help="Minimal output (for updates)"),
     skip_env: bool = typer.Option(False, "--skip-env", help="Skip environment setup (API keys)"),
     local: bool = typer.Option(False, "--local", help="Use local files instead of downloading"),
     local_repo_dir: Optional[Path] = typer.Option(None, "--local-repo-dir", help="Local repository directory"),
@@ -258,7 +267,7 @@ def install(
     local_system: bool = typer.Option(False, "--local-system", help="Local installation (not in container)"),
 ) -> None:
     """Install Claude CodePro."""
-    console = Console(non_interactive=non_interactive)
+    console = Console(non_interactive=non_interactive, quiet=quiet)
 
     effective_local_repo_dir = local_repo_dir if local_repo_dir else (Path.cwd() if local else None)
     skip_prompts = non_interactive
@@ -415,61 +424,41 @@ def install(
             console.print("  This includes: Headless Chromium browser for web automation and testing")
             enable_agent_browser = console.confirm("Install agent-browser?", default=True)
 
-    from installer.steps.environment import add_env_key, key_is_set
+    enable_oauth_token = True
+    oauth_token_value = ""
 
-    env_file = project_dir / ".env"
-
-    enable_openai_embeddings = True
-    if not skip_prompts:
-        if "enable_openai_embeddings" in saved_config:
-            enable_openai_embeddings = saved_config["enable_openai_embeddings"]
-            console.print(f"  [dim]Using saved preference: OpenAI embeddings = {enable_openai_embeddings}[/dim]")
+    if credentials_exist():
+        console.print(f"  [dim]OAuth credentials already configured[/dim]")
+    elif not skip_env and not skip_prompts:
+        if "enable_oauth_token" in saved_config:
+            enable_oauth_token = saved_config["enable_oauth_token"]
+            console.print(f"  [dim]Using saved preference: OAuth token = {enable_oauth_token}[/dim]")
         else:
             console.print()
-            console.print("  [bold]Do you want to enable OpenAI embeddings for Vexor?[/bold]")
-            console.print("  This includes: Fast, high-quality semantic code search")
-            console.print("  [dim]Requires API key from platform.openai.com[/dim]")
-            enable_openai_embeddings = console.confirm("Enable OpenAI embeddings?", default=True)
-            if not enable_openai_embeddings:
-                console.info("Will use local embeddings (model downloaded during setup)")
+            console.print("  [bold]Do you want to configure a long lasting OAuth token?[/bold]")
+            console.print("  This enables: Usage limits (5h/7d) in the status bar")
+            enable_oauth_token = console.confirm("Configure OAuth token?", default=True)
 
-        if enable_openai_embeddings and not key_is_set("OPENAI_API_KEY", env_file):
-            console.print()
-            console.print("  [bold]Create at:[/bold] [cyan]https://platform.openai.com/api-keys[/cyan]")
-            openai_key = console.input("OPENAI_API_KEY", default="")
-            if openai_key:
-                add_env_key("OPENAI_API_KEY", openai_key, env_file)
-                console.success("OpenAI API key saved")
+            if enable_oauth_token:
+                console.print()
+                console.print("  [bold]Steps:[/bold]")
+                console.print("    1. Run [cyan]claude setup-token[/cyan] in a separate terminal")
+                console.print("    2. Complete the browser authentication")
+                console.print("    3. Copy the token and paste it below")
+                console.print()
+                oauth_token_value = console.input("Paste token", default="")
 
-    enable_firecrawl = True
-    if not skip_prompts:
-        if "enable_firecrawl" in saved_config:
-            enable_firecrawl = saved_config["enable_firecrawl"]
-            console.print(f"  [dim]Using saved preference: Firecrawl = {enable_firecrawl}[/dim]")
-        else:
-            console.print()
-            console.print("  [bold]Do you want to enable Firecrawl web scraping?[/bold]")
-            console.print("  This includes: Web scraping, search, and content extraction")
-            console.print("  [dim]Requires API key from firecrawl.dev (free tier available)[/dim]")
-            enable_firecrawl = console.confirm("Enable Firecrawl?", default=True)
-            if not enable_firecrawl:
-                console.info("Firecrawl disabled - web scraping features will not be available")
-
-        if enable_firecrawl and not key_is_set("FIRECRAWL_API_KEY", env_file):
-            console.print()
-            console.print("  [bold]Create at:[/bold] [cyan]https://www.firecrawl.dev/app/api-keys[/cyan] (free tier)")
-            firecrawl_key = console.input("FIRECRAWL_API_KEY", default="")
-            if firecrawl_key:
-                add_env_key("FIRECRAWL_API_KEY", firecrawl_key, env_file)
-                console.success("Firecrawl API key saved")
+                if oauth_token_value:
+                    if create_claude_credentials(oauth_token_value):
+                        create_claude_config()
+                        console.success("Token saved to ~/.claude/.credentials.json")
 
     if not skip_prompts:
         saved_config["enable_python"] = enable_python
         saved_config["enable_typescript"] = enable_typescript
         saved_config["enable_golang"] = enable_golang
         saved_config["enable_agent_browser"] = enable_agent_browser
-        saved_config["enable_openai_embeddings"] = enable_openai_embeddings
-        saved_config["enable_firecrawl"] = enable_firecrawl
+        saved_config["enable_oauth_token"] = enable_oauth_token
         save_config(project_dir, saved_config)
 
     ctx = InstallContext(
@@ -478,13 +467,13 @@ def install(
         enable_typescript=enable_typescript,
         enable_golang=enable_golang,
         enable_agent_browser=enable_agent_browser,
+        enable_oauth_token=enable_oauth_token,
+        oauth_token_value=oauth_token_value,
         non_interactive=non_interactive,
         skip_env=skip_env,
         local_mode=local,
         local_repo_dir=effective_local_repo_dir,
         is_local_install=local_system,
-        enable_openai_embeddings=enable_openai_embeddings,
-        enable_firecrawl=enable_firecrawl,
         ui=console,
     )
 
@@ -493,6 +482,10 @@ def install(
     except FatalInstallError as e:
         console.error(f"Installation failed: {e}")
         raise typer.Exit(1) from e
+    except InstallationCancelled as e:
+        console.warning(f"Installation cancelled during: {e.step_name}")
+        console.info("Run the installer again to resume from where you left off")
+        raise typer.Exit(130) from None
     except KeyboardInterrupt:
         console.warning("Installation cancelled")
         raise typer.Exit(130) from None

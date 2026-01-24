@@ -19,6 +19,7 @@ HOMEBREW_PACKAGES = [
     "pnpm",
     "bun",
     "uv",
+    "go",
 ]
 
 
@@ -97,6 +98,7 @@ def _get_command_for_package(package: str) -> str:
         "pnpm": "pnpm",
         "bun": "bun",
         "uv": "uv",
+        "go": "go",
     }
     return package_to_command.get(package, package)
 

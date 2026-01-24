@@ -50,9 +50,9 @@ const insideItems: InsideItem[] = [
     icon: Plug2,
     title: "Enhanced Context",
     items: [
+      "Zero API Keys - Everything works out of the box",
       "Persistent Memory - Cross-session context",
       "Semantic Search - Local vector store",
-      "External Context - Code/library & web",
       "Browser Automation - Headless testing",
     ],
   },

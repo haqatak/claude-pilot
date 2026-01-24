@@ -18,8 +18,8 @@ class InstallContext:
     enable_typescript: bool = True
     enable_golang: bool = True
     enable_agent_browser: bool = True
-    enable_openai_embeddings: bool = True
-    enable_firecrawl: bool = True
+    enable_oauth_token: bool = True
+    oauth_token_value: str = ""
     non_interactive: bool = False
     skip_env: bool = False
     local_mode: bool = False

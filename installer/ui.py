@@ -71,9 +71,10 @@ def _get_tty_input() -> TextIO:
 class Console:
     """Console wrapper for Rich with simple input prompts."""
 
-    def __init__(self, non_interactive: bool = False):
+    def __init__(self, non_interactive: bool = False, quiet: bool = False):
         self._console = RichConsole(theme=CCP_THEME)
         self._non_interactive = non_interactive
+        self._quiet = quiet
         self._current_step = 0
         self._total_steps = 0
         self._tty: TextIO | None = None
@@ -95,12 +96,20 @@ class Console:
         """Check if running in non-interactive mode."""
         return self._non_interactive
 
+    @property
+    def quiet(self) -> bool:
+        """Check if running in quiet mode (minimal output)."""
+        return self._quiet
+
     def banner(self, license_info: dict[str, Any] | None = None) -> None:
         """Print the Claude CodePro banner with feature highlights.
 
         Args:
             license_info: Current license info dict (tier, email, etc.) or None if not yet checked.
         """
+        if self._quiet:
+            return
+
         logo = """
 [bold cyan]   _____ _                 _          _____          _      _____
   / ____| |               | |        / ____|        | |    |  __ \\
@@ -133,7 +142,7 @@ class Console:
         features.append(" — TDD enforcer, linting, type checking, context monitor\n", style="white")
         features.append("  🔌 ", style="yellow")
         features.append("Enhanced Capabilities", style="bold green")
-        features.append(" — Vexor, Context7, Firecrawl, mcp-cli, LSP servers", style="white")
+        features.append(" — Vexor, Context7, web-search, mcp-cli, LSP servers", style="white")
 
         panel = Panel(
             features,
@@ -184,6 +193,8 @@ class Console:
     def step(self, name: str) -> None:
         """Print a step indicator with progress."""
         self._current_step += 1
+        if self._quiet:
+            return
         step_text = Text()
         step_text.append(f"[{self._current_step}/{self._total_steps}] ", style="bold magenta")
         step_text.append(name, style="bold white")
@@ -192,10 +203,14 @@ class Console:
 
     def status(self, message: str) -> None:
         """Print a status message in cyan with arrow."""
+        if self._quiet:
+            return
         self._console.print(f"  [cyan]→[/cyan] {message}")
 
     def success(self, message: str) -> None:
         """Print a success message in green with checkmark."""
+        if self._quiet:
+            return
         self._console.print(f"  [green]✓[/green] [green]{message}[/green]")
 
     def warning(self, message: str) -> None:
@@ -208,6 +223,8 @@ class Console:
 
     def info(self, message: str) -> None:
         """Print an info message with info icon."""
+        if self._quiet:
+            return
         self._console.print(f"  [dim]ℹ[/dim] [dim]{message}[/dim]")
 
     def section(self, title: str) -> None:
@@ -261,6 +278,9 @@ class Console:
 
     def next_steps(self, steps: list[tuple[str, str]]) -> None:
         """Print a styled next steps guide."""
+        if self._quiet:
+            return
+
         self._console.print()
         self._console.print(Rule("[bold cyan]📋 Next Steps[/bold cyan]", style="cyan"))
         self._console.print()

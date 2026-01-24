@@ -2,8 +2,43 @@
 
 from __future__ import annotations
 
+import platform
 import shutil
+import subprocess
 from pathlib import Path
+
+
+def has_nvidia_gpu() -> bool:
+    """Check if NVIDIA GPU is available via nvidia-smi or /dev/nvidia* fallback."""
+    try:
+        proc = subprocess.run(
+            ["nvidia-smi"],
+            capture_output=True,
+            timeout=10,
+        )
+        if proc.returncode == 0:
+            return True
+    except (FileNotFoundError, subprocess.TimeoutExpired, OSError, subprocess.SubprocessError):
+        pass
+
+    try:
+        nvidia_devices = list(Path("/dev").glob("nvidia*"))
+        if nvidia_devices:
+            return True
+    except (OSError, PermissionError):
+        pass
+
+    return False
+
+
+def is_macos() -> bool:
+    """Check if running on macOS."""
+    return platform.system() == "Darwin"
+
+
+def is_linux() -> bool:
+    """Check if running on Linux."""
+    return platform.system() == "Linux"
 
 
 def is_in_devcontainer() -> bool:

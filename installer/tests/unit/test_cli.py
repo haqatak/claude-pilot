@@ -134,6 +134,40 @@ class TestMainEntry:
         assert hasattr(installer.__main__, "main") or True  # May not have main function
 
 
+class TestKeyboardInterrupt:
+    """Test CTRL+C (KeyboardInterrupt) handling."""
+
+    @patch("installer.cli.get_all_steps")
+    def test_keyboard_interrupt_raises_installation_cancelled(self, mock_get_all_steps):
+        """KeyboardInterrupt during step raises InstallationCancelled with step name."""
+        from installer.cli import run_installation
+        from installer.context import InstallContext
+        from installer.errors import InstallationCancelled
+        from installer.ui import Console
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            ctx = InstallContext(
+                project_dir=Path(tmpdir),
+                ui=Console(non_interactive=True, quiet=True),
+                non_interactive=True,
+            )
+
+            # Create a step that raises KeyboardInterrupt
+            failing_step = MagicMock()
+            failing_step.name = "dependencies"
+            failing_step.check.return_value = False
+            failing_step.run.side_effect = KeyboardInterrupt()
+
+            mock_get_all_steps.return_value = [failing_step]
+
+            # Should raise InstallationCancelled with step name
+            with pytest.raises(InstallationCancelled) as exc_info:
+                run_installation(ctx)
+
+            assert exc_info.value.step_name == "dependencies"
+            assert "dependencies" in str(exc_info.value)
+
+
 class TestLicenseInfo:
     """Test license info retrieval."""
 

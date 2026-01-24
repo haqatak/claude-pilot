@@ -138,7 +138,45 @@ C) Improve it (new feature, needs implementation task)"
 
 ## Creating New Plans
 
-### Phase 0: Task Understanding & Clarification
+### Phase 0a: Early Plan File Creation (FIRST - before anything else)
+
+**Immediately upon starting /plan, create the plan file header for status bar detection.**
+
+1. **Generate filename:** `docs/plans/YYYY-MM-DD-<feature-slug>.md`
+   - Use current date
+   - Create slug from first 3-4 words of task description (lowercase, hyphens)
+   - Example: "add user authentication" → `2026-01-24-add-user-authentication.md`
+
+2. **Create directory if needed:** `mkdir -p docs/plans`
+
+3. **Write initial header immediately:**
+   ```markdown
+   # [Feature Name] Implementation Plan
+
+   Created: [Date]
+   Status: PENDING
+   Approved: No
+   Iterations: 0
+
+   > Planning in progress...
+
+   ## Summary
+   **Goal:** [Task description from user]
+
+   ---
+   *Exploring codebase and gathering requirements...*
+   ```
+
+4. **Why this matters:**
+   - Status bar shows "Spec: <name> [/plan]" immediately
+   - User sees progress even during exploration phase
+   - Plan file exists for continuation if session clears
+
+**CRITICAL:** Do this FIRST, before any exploration or questions. The file will be overwritten with full content in Phase 4.
+
+---
+
+### Phase 0b: Task Understanding & Clarification
 
 **First, clearly state your understanding of the task.**
 
@@ -254,7 +292,6 @@ Questions:
 ### Phase 3: Implementation Planning
 
 **Task Count Guidance**
-- **Aim for 10-12 tasks** as a general guideline for focused plans
 - Avoid bloating plans with unnecessary or overly granular tasks
 - If the work genuinely requires more tasks, that's fine - the `/spec` workflow handles multi-session execution, so longer plans will be executed across multiple context windows automatically
 - Focus on keeping tasks meaningful and necessary, not on hitting a specific number

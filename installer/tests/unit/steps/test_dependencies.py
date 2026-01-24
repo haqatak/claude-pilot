@@ -169,18 +169,16 @@ class TestDependencyInstallFunctions:
 
 
 class TestClaudeCodeInstall:
-    """Test Claude Code installation."""
+    """Test Claude Code installation via npm."""
 
-    @patch("installer.steps.dependencies._download_claude_binary_with_progress", return_value=False)
     @patch("installer.steps.dependencies._get_forced_claude_version", return_value=None)
-    @patch("installer.steps.dependencies._configure_firecrawl_mcp")
     @patch("installer.steps.dependencies._configure_claude_defaults")
     @patch("installer.steps.dependencies._run_bash_with_retry", return_value=True)
-    @patch("installer.steps.dependencies._remove_npm_claude_binaries")
-    def test_install_claude_code_removes_npm_binaries(
-        self, mock_remove, mock_run, mock_config, mock_firecrawl, mock_version, mock_download
+    @patch("installer.steps.dependencies._remove_native_claude_binaries")
+    def test_install_claude_code_removes_native_binaries(
+        self, mock_remove, mock_run, mock_config, mock_version
     ):
-        """install_claude_code removes npm binaries before native install."""
+        """install_claude_code removes native binaries before npm install."""
         from installer.steps.dependencies import install_claude_code
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -188,16 +186,14 @@ class TestClaudeCodeInstall:
 
         mock_remove.assert_called_once()
 
-    @patch("installer.steps.dependencies._download_claude_binary_with_progress", return_value=False)
     @patch("installer.steps.dependencies._get_forced_claude_version", return_value=None)
-    @patch("installer.steps.dependencies._configure_firecrawl_mcp")
     @patch("installer.steps.dependencies._configure_claude_defaults")
     @patch("installer.steps.dependencies._run_bash_with_retry", return_value=True)
-    @patch("installer.steps.dependencies._remove_npm_claude_binaries")
-    def test_install_claude_code_uses_native_installer(
-        self, mock_remove, mock_run, mock_config, mock_firecrawl, mock_version, mock_download
+    @patch("installer.steps.dependencies._remove_native_claude_binaries")
+    def test_install_claude_code_uses_npm(
+        self, mock_remove, mock_run, mock_config, mock_version
     ):
-        """install_claude_code uses native installer from claude.ai."""
+        """install_claude_code uses npm install -g."""
         from installer.steps.dependencies import install_claude_code
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -205,19 +201,40 @@ class TestClaudeCodeInstall:
 
         assert success is True
         assert version == "latest"
-        # Verify native installer was called via _run_bash_with_retry
+        # Verify npm install was called
         mock_run.assert_called()
+        # Check that npm install command was used
+        call_args = mock_run.call_args[0][0]
+        assert "npm install -g @anthropic-ai/claude-code" in call_args
 
-    @patch("installer.steps.dependencies._download_claude_binary_with_progress", return_value=False)
-    @patch("installer.steps.dependencies._get_forced_claude_version", return_value=None)
-    @patch("installer.steps.dependencies._configure_firecrawl_mcp")
+    @patch("installer.steps.dependencies._get_forced_claude_version", return_value="2.1.19")
     @patch("installer.steps.dependencies._configure_claude_defaults")
     @patch("installer.steps.dependencies._run_bash_with_retry", return_value=True)
-    @patch("installer.steps.dependencies._remove_npm_claude_binaries")
-    def test_install_claude_code_configures_defaults(
-        self, mock_remove, mock_run, mock_config, mock_firecrawl, mock_version, mock_download
+    @patch("installer.steps.dependencies._remove_native_claude_binaries")
+    def test_install_claude_code_uses_version_tag(
+        self, mock_remove, mock_run, mock_config, mock_version
     ):
-        """install_claude_code configures Claude defaults after native install."""
+        """install_claude_code uses npm version tag for pinned version."""
+        from installer.steps.dependencies import install_claude_code
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            success, version = install_claude_code(Path(tmpdir))
+
+        assert success is True
+        assert version == "2.1.19"
+        # Verify npm install with version tag was called
+        mock_run.assert_called()
+        call_args = mock_run.call_args[0][0]
+        assert "npm install -g @anthropic-ai/claude-code@2.1.19" in call_args
+
+    @patch("installer.steps.dependencies._get_forced_claude_version", return_value=None)
+    @patch("installer.steps.dependencies._configure_claude_defaults")
+    @patch("installer.steps.dependencies._run_bash_with_retry", return_value=True)
+    @patch("installer.steps.dependencies._remove_native_claude_binaries")
+    def test_install_claude_code_configures_defaults(
+        self, mock_remove, mock_run, mock_config, mock_version
+    ):
+        """install_claude_code configures Claude defaults after npm install."""
         from installer.steps.dependencies import install_claude_code
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -225,22 +242,30 @@ class TestClaudeCodeInstall:
 
         mock_config.assert_called_once()
 
-    @patch("installer.steps.dependencies._download_claude_binary_with_progress", return_value=False)
-    @patch("installer.steps.dependencies._get_forced_claude_version", return_value=None)
-    @patch("installer.steps.dependencies._configure_firecrawl_mcp")
+    @patch("installer.steps.dependencies._get_forced_claude_version", return_value="2.1.19")
     @patch("installer.steps.dependencies._configure_claude_defaults")
     @patch("installer.steps.dependencies._run_bash_with_retry", return_value=True)
-    @patch("installer.steps.dependencies._remove_npm_claude_binaries")
-    def test_install_claude_code_does_not_configure_firecrawl(
-        self, mock_remove, mock_run, mock_config, mock_firecrawl, mock_version, mock_download
+    @patch("installer.steps.dependencies._remove_native_claude_binaries")
+    def test_install_claude_code_with_ui_shows_pinned_version_info(
+        self, mock_remove, mock_run, mock_config, mock_version
     ):
-        """install_claude_code does not configure Firecrawl (handled by DependenciesStep)."""
-        from installer.steps.dependencies import install_claude_code
+        """_install_claude_code_with_ui shows info about pinned version."""
+        from installer.steps.dependencies import _install_claude_code_with_ui
+        from installer.ui import Console
+
+        ui = Console(non_interactive=True)
+        # Capture printed output by mocking ui.info
+        info_calls = []
+        original_info = ui.info
+        ui.info = lambda msg: info_calls.append(msg)
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            install_claude_code(Path(tmpdir))
+            result = _install_claude_code_with_ui(ui, Path(tmpdir))
 
-        mock_firecrawl.assert_not_called()
+        assert result is True
+        # Check that pinned version info was displayed
+        assert any("last stable release" in call for call in info_calls)
+        assert any("FORCE_CLAUDE_VERSION" in call for call in info_calls)
 
     def test_patch_claude_config_creates_file(self):
         """_patch_claude_config creates config file if it doesn't exist."""
@@ -290,90 +315,6 @@ class TestClaudeCodeInstall:
                 config_path = Path(tmpdir) / ".claude.json"
                 config = json.loads(config_path.read_text())
                 assert config["respectGitignore"] is False
-
-
-class TestFirecrawlMcpConfig:
-    """Test Firecrawl MCP server configuration."""
-
-    def test_configure_firecrawl_mcp_creates_config(self):
-        """_configure_firecrawl_mcp creates config with mcpServers if not exists."""
-        import json
-
-        from installer.steps.dependencies import _configure_firecrawl_mcp
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with patch.object(Path, "home", return_value=Path(tmpdir)):
-                result = _configure_firecrawl_mcp()
-
-                assert result is True
-                config_path = Path(tmpdir) / ".claude.json"
-                assert config_path.exists()
-                config = json.loads(config_path.read_text())
-                assert "mcpServers" in config
-                assert "firecrawl" in config["mcpServers"]
-                assert config["mcpServers"]["firecrawl"]["command"] == "npx"
-                assert config["mcpServers"]["firecrawl"]["args"] == ["-y", "firecrawl-mcp"]
-                assert config["mcpServers"]["firecrawl"]["env"]["FIRECRAWL_API_KEY"] == "${FIRECRAWL_API_KEY}"
-
-    def test_configure_firecrawl_mcp_preserves_existing_mcp_servers(self):
-        """_configure_firecrawl_mcp preserves other MCP servers."""
-        import json
-
-        from installer.steps.dependencies import _configure_firecrawl_mcp
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            config_path = Path(tmpdir) / ".claude.json"
-            existing_config = {"mcpServers": {"other_server": {"command": "other", "args": ["--flag"]}}}
-            config_path.write_text(json.dumps(existing_config))
-
-            with patch.object(Path, "home", return_value=Path(tmpdir)):
-                result = _configure_firecrawl_mcp()
-
-                assert result is True
-                config = json.loads(config_path.read_text())
-                assert "other_server" in config["mcpServers"]
-                assert config["mcpServers"]["other_server"]["command"] == "other"
-                assert "firecrawl" in config["mcpServers"]
-
-    def test_configure_firecrawl_mcp_skips_if_already_exists(self):
-        """_configure_firecrawl_mcp skips if firecrawl already configured."""
-        import json
-
-        from installer.steps.dependencies import _configure_firecrawl_mcp
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            config_path = Path(tmpdir) / ".claude.json"
-            existing_config = {"mcpServers": {"firecrawl": {"command": "custom", "args": ["custom"]}}}
-            config_path.write_text(json.dumps(existing_config))
-
-            with patch.object(Path, "home", return_value=Path(tmpdir)):
-                result = _configure_firecrawl_mcp()
-
-                assert result is True
-                config = json.loads(config_path.read_text())
-                # Should preserve custom config, not overwrite
-                assert config["mcpServers"]["firecrawl"]["command"] == "custom"
-
-    def test_configure_firecrawl_mcp_adds_to_existing_config(self):
-        """_configure_firecrawl_mcp adds mcpServers to existing config."""
-        import json
-
-        from installer.steps.dependencies import _configure_firecrawl_mcp
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            config_path = Path(tmpdir) / ".claude.json"
-            existing_config = {"theme": "dark", "verbose": True}
-            config_path.write_text(json.dumps(existing_config))
-
-            with patch.object(Path, "home", return_value=Path(tmpdir)):
-                result = _configure_firecrawl_mcp()
-
-                assert result is True
-                config = json.loads(config_path.read_text())
-                assert config["theme"] == "dark"
-                assert config["verbose"] is True
-                assert "mcpServers" in config
-                assert "firecrawl" in config["mcpServers"]
 
 
 class TestTypescriptLspInstall:
@@ -793,3 +734,69 @@ class TestVexorInstall:
                 config = json.loads(config_path.read_text())
                 assert config["custom_key"] == "custom_value"
                 assert config["model"] == "text-embedding-3-small"
+
+
+class TestWebMcpServersConfig:
+    """Test web MCP servers configuration."""
+
+    def test_configure_web_mcp_servers_sets_websearch_env_vars(self):
+        """_configure_web_mcp_servers sets correct env vars for web-search."""
+        import json
+
+        from installer.steps.dependencies import _configure_web_mcp_servers
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with patch.object(Path, "home", return_value=Path(tmpdir)):
+                _configure_web_mcp_servers(ui=None)
+
+                config_path = Path(tmpdir) / ".claude.json"
+                assert config_path.exists()
+                config = json.loads(config_path.read_text())
+
+                # Check web-search config
+                assert "mcpServers" in config
+                assert "web-search" in config["mcpServers"]
+                ws_config = config["mcpServers"]["web-search"]
+                assert ws_config["command"] == "npx"
+                assert ws_config["args"] == ["-y", "open-websearch@latest"]
+
+                # Check env vars - must have all three
+                env = ws_config["env"]
+                assert env["MODE"] == "stdio"
+                assert env["DEFAULT_SEARCH_ENGINE"] == "duckduckgo"
+                assert env["ALLOWED_SEARCH_ENGINES"] == "duckduckgo,bing,exa"
+
+    def test_configure_web_mcp_servers_sets_webfetch(self):
+        """_configure_web_mcp_servers configures web-fetch server."""
+        import json
+
+        from installer.steps.dependencies import _configure_web_mcp_servers
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with patch.object(Path, "home", return_value=Path(tmpdir)):
+                _configure_web_mcp_servers(ui=None)
+
+                config_path = Path(tmpdir) / ".claude.json"
+                config = json.loads(config_path.read_text())
+
+                # Check web-fetch config
+                assert "web-fetch" in config["mcpServers"]
+                wf_config = config["mcpServers"]["web-fetch"]
+                assert wf_config["command"] == "npx"
+                assert wf_config["args"] == ["-y", "fetcher-mcp"]
+
+    def test_configure_web_mcp_servers_does_not_add_firecrawl(self):
+        """_configure_web_mcp_servers does not add firecrawl server."""
+        import json
+
+        from installer.steps.dependencies import _configure_web_mcp_servers
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with patch.object(Path, "home", return_value=Path(tmpdir)):
+                _configure_web_mcp_servers(ui=None)
+
+                config_path = Path(tmpdir) / ".claude.json"
+                config = json.loads(config_path.read_text())
+
+                # firecrawl should NOT be in mcpServers
+                assert "firecrawl" not in config["mcpServers"]

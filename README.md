@@ -103,9 +103,10 @@ You'll be asked to choose between **Dev Container** or **Local Installation**.
 
 ### 🧠 Enhanced Context Capabilities
 
+- **Zero API Keys** - Web search and scraping work out of the box, no external API keys needed
 - **Persistent Memory** - Cross-session memory system that automatically ingests context
 - **Semantic Search** - Local vector store based semantic code search for token-efficient retrieval
-- **External Context** - External context retrieval for code / libraries and web search / scraping
+- **External Context** - Library docs via Context7, web search and scraping via MCP tools
 - **Browser Automation** - Headless browser automation and testing even within the Dev Container
 
 ### ✅ Quality Automation

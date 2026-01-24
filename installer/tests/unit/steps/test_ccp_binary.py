@@ -181,7 +181,7 @@ class TestDownloadCcpArtifacts:
         assert so_call[0][1] == tmp_path / "ccp.cpython-312-x86_64-linux-gnu.so"
         # Second call: wrapper
         wrapper_call = mock_download.call_args_list[1]
-        assert "ccp-wrapper" in wrapper_call[0][0]
+        assert "/ccp" in wrapper_call[0][0] and "ccp-" not in wrapper_call[0][0]
         assert wrapper_call[0][1] == tmp_path / "ccp"
 
     @patch("installer.steps.ccp_binary._get_platform_suffix")
