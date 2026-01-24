@@ -251,49 +251,6 @@ def install_claude_code(project_dir: Path, ui: Any = None) -> tuple[bool, str]:
     return True, version
 
 
-def install_qlty(project_dir: Path) -> tuple[bool, bool]:
-    """Install qlty code quality tool. Returns (success, was_fresh_install)."""
-    qlty_bin = Path.home() / ".qlty" / "bin" / "qlty"
-
-    if command_exists("qlty") or qlty_bin.exists():
-        return True, False
-
-    success = _run_bash_with_retry("curl https://qlty.sh | bash", cwd=project_dir)
-    return success, success
-
-
-def run_qlty_check(project_dir: Path, ui) -> bool:
-    """Run qlty check to download prerequisites (linters)."""
-    qlty_bin = Path.home() / ".qlty" / "bin" / "qlty"
-    if not qlty_bin.exists():
-        return False
-
-    env = os.environ.copy()
-    env["PATH"] = f"{qlty_bin.parent}:{env.get('PATH', '')}"
-
-    try:
-        process = subprocess.Popen(
-            [str(qlty_bin), "check", "--no-fix", "--no-formatters", "--no-fail", "--install-only"],
-            cwd=project_dir,
-            env=env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-        )
-
-        if process.stdout:
-            for line in process.stdout:
-                line = line.rstrip()
-                if line and ui:
-                    if "Installing" in line or "Downloading" in line or "✔" in line:
-                        ui.print(f"  {line}")
-
-        process.wait()
-        return True
-    except Exception:
-        return False
-
-
 def _ensure_official_marketplace() -> bool:
     """Ensure official Claude plugins marketplace is installed."""
     if _is_marketplace_installed("claude-plugins-official"):
@@ -311,32 +268,62 @@ def _ensure_official_marketplace() -> bool:
         return False
 
 
-def install_typescript_lsp() -> bool:
-    """Install TypeScript language server and plugin via npm and claude plugin."""
-    if not _run_bash_with_retry("npm install -g typescript-language-server typescript"):
-        return False
+def migrate_old_lsp_plugins() -> None:
+    """Uninstall old LSP plugins from claude-plugins-official if present."""
+    old_plugins = ["typescript-lsp", "pyright-lsp"]
+    for plugin in old_plugins:
+        if _is_plugin_installed(plugin, "claude-plugins-official"):
+            _run_bash_with_retry(f"claude plugin uninstall {plugin}")
 
-    if _is_plugin_installed("typescript-lsp", "claude-plugins-official"):
+
+def _ensure_lsp_marketplace() -> bool:
+    """Ensure LSP plugins marketplace is installed."""
+    if _is_marketplace_installed("claude-code-lsps"):
         return True
 
-    if not _ensure_official_marketplace():
+    try:
+        result = subprocess.run(
+            ["bash", "-c", "claude plugin marketplace add Piebald-AI/claude-code-lsps"],
+            capture_output=True,
+            text=True,
+        )
+        output = (result.stdout + result.stderr).lower()
+        return result.returncode == 0 or "already" in output
+    except Exception:
         return False
 
-    return _run_bash_with_retry("claude plugin install typescript-lsp")
+
+def install_typescript_lsp() -> bool:
+    """Install vtsls TypeScript language server plugin."""
+    if _is_plugin_installed("vtsls", "claude-code-lsps"):
+        return True
+
+    if not _ensure_lsp_marketplace():
+        return False
+
+    return _run_bash_with_retry("claude plugin install vtsls")
 
 
 def install_pyright_lsp() -> bool:
-    """Install pyright language server and plugin via npm and claude plugin."""
-    if not _run_bash_with_retry("npm install -g pyright"):
-        return False
-
-    if _is_plugin_installed("pyright-lsp", "claude-plugins-official"):
+    """Install basedpyright Python language server plugin."""
+    if _is_plugin_installed("basedpyright", "claude-code-lsps"):
         return True
 
-    if not _ensure_official_marketplace():
+    if not _ensure_lsp_marketplace():
         return False
 
-    return _run_bash_with_retry("claude plugin install pyright-lsp")
+    return _run_bash_with_retry("claude plugin install basedpyright")
+
+
+def install_gopls_lsp() -> bool:
+    """Install gopls Go language server plugin."""
+    if _is_plugin_installed("gopls", "claude-code-lsps"):
+        return True
+
+    if not _ensure_lsp_marketplace():
+        return False
+
+    return _run_bash_with_retry("claude plugin install gopls")
 
 
 def _configure_claude_mem_defaults() -> bool:
@@ -820,23 +807,6 @@ def _install_vexor_with_ui(ui: Any) -> bool:
         return False
 
 
-def _install_qlty_with_ui(ui: Any, project_dir: Path) -> bool:
-    """Install qlty with UI feedback."""
-    qlty_result = install_qlty(project_dir)
-    if qlty_result[0]:
-        if ui:
-            ui.success("qlty installed")
-            ui.status("Downloading qlty prerequisites (linters)...")
-        run_qlty_check(project_dir, ui)
-        if ui:
-            ui.success("qlty prerequisites ready")
-        return True
-    else:
-        if ui:
-            ui.warning("Could not install qlty - please install manually")
-        return False
-
-
 def _configure_web_mcp_servers(ui: Any) -> None:
     """Configure open-websearch and fetcher-mcp in ~/.claude.json."""
     import json
@@ -903,13 +873,19 @@ class DependenciesStep(BaseStep):
         if _install_claude_code_with_ui(ui, ctx.project_dir):
             installed.append("claude_code")
 
+        migrate_old_lsp_plugins()
+
         if ctx.enable_typescript:
             if _install_with_spinner(ui, "TypeScript LSP", install_typescript_lsp):
                 installed.append("typescript_lsp")
 
         if ctx.enable_python:
-            if _install_with_spinner(ui, "Pyright LSP", install_pyright_lsp):
-                installed.append("pyright_lsp")
+            if _install_with_spinner(ui, "Basedpyright LSP", install_pyright_lsp):
+                installed.append("basedpyright_lsp")
+
+        if ctx.enable_golang:
+            if _install_with_spinner(ui, "Gopls LSP", install_gopls_lsp):
+                installed.append("gopls_lsp")
 
         if _install_claude_mem_with_deps(ui):
             installed.append("claude_mem")
@@ -926,9 +902,6 @@ class DependenciesStep(BaseStep):
 
         if _install_vexor_with_ui(ui):
             installed.append("vexor")
-
-        if _install_qlty_with_ui(ui, ctx.project_dir):
-            installed.append("qlty")
 
         _configure_web_mcp_servers(ui)
 

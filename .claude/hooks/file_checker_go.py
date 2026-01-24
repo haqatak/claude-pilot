@@ -191,8 +191,12 @@ def main() -> int:
 
     if has_issues:
         print("", file=sys.stderr)
+        try:
+            display_path = target_file.relative_to(Path.cwd())
+        except ValueError:
+            display_path = target_file
         print(
-            f"{RED}🛑 Go Issues found in: {target_file.relative_to(Path.cwd())}{NC}",
+            f"{RED}🛑 Go Issues found in: {display_path}{NC}",
             file=sys.stderr,
         )
 

@@ -112,7 +112,7 @@ You'll be asked to choose between **Dev Container** or **Local Installation**.
 ### ✅ Quality Automation
 
 - **TDD Enforcer** - Pre-edit hook that warns when modifying code without failing tests first
-- **Quality Hooks** - Specific hooks for Python, TypeScript and Go, all other languages via qlty
+- **Quality Hooks** - Language-specific hooks for Python, TypeScript and Go that auto-fix issues
 - **Context Monitor** - Tracks context usage and triggers automatic session handoffs
 - **Status Line** - Live display of context usage, memory status, usage limits, and license info
 
@@ -123,24 +123,22 @@ You'll be asked to choose between **Dev Container** or **Local Installation**.
 - **Automated Updater** - Updates CCP to the latest version when launched over the binary
 - **Shell Integration** - Auto-configures bash, fish and zsh with `ccp` alias
 
-
 ---
 
 ## 🔄 Why Claude CodePro?
 
 Same task. Different results.
 
-| Ad-hoc Prompting | With Claude CodePro |
-|------------------|---------------------|
-| ❌ Writes code without tests | ✅ TDD enforced — tests first, then implementation |
-| ❌ No quality checks | ✅ Auto-formatted, linted, type-checked on every edit |
-| ❌ Inconsistent workflow | ✅ Structured Plan → Implement → Verify cycle |
-| ❌ Context lost between sessions | ✅ Persistent memory carries observations forward |
-| ❌ No codebase awareness | ✅ Semantic search understands your code |
-| ❌ Hope it works | ✅ Verified before marked complete |
+| Ad-hoc Prompting                 | With Claude CodePro                                   |
+| -------------------------------- | ----------------------------------------------------- |
+| ❌ Writes code without tests     | ✅ TDD enforced — tests first, then implementation    |
+| ❌ No quality checks             | ✅ Auto-formatted, linted, type-checked on every edit |
+| ❌ Inconsistent workflow         | ✅ Structured Plan → Implement → Verify cycle         |
+| ❌ Context lost between sessions | ✅ Persistent memory carries observations forward     |
+| ❌ No codebase awareness         | ✅ Semantic search understands your code              |
+| ❌ Hope it works                 | ✅ Verified before marked complete                    |
 
 **The result:** Production-grade code you can ship with confidence. Systematic. Tested. Verified.
-
 
 ---
 
@@ -193,22 +191,24 @@ ccp
 Claude CodePro extends Claude Code with a modular system of rules, commands, and skills:
 
 **Managed by CCP** (updated on install):
+
 - `.claude/rules/standard/` - Best practices and workflows
 - `.claude/commands/` - `spec`, `sync`, `plan`, `implement`, `verify`
 - `.claude/skills/standards-*/` - Coding standards for languages and frameworks
 
 **Yours to customize** (never touched by updates):
+
 - `.claude/rules/custom/` - Project-specific rules
 - `.claude/commands/` - Any command besides the standard ones
 - `.claude/skills/` - Any skill not prefixed with `standards-`
 
 **When to use what:**
 
-| Type | Loaded | Best for |
-|------|--------|----------|
-| **Rules** | Every session (always in context) | Guidelines Claude should always follow |
-| **Commands** | On demand via `/command` | Specific workflows or multi-step tasks |
-| **Skills** | Dynamically when relevant | Specialized knowledge, coding standards |
+| Type         | Loaded                            | Best for                                |
+| ------------ | --------------------------------- | --------------------------------------- |
+| **Rules**    | Every session (always in context) | Guidelines Claude should always follow  |
+| **Commands** | On demand via `/command`          | Specific workflows or multi-step tasks  |
+| **Skills**   | Dynamically when relevant         | Specialized knowledge, coding standards |
 
 ---
 
@@ -228,9 +228,9 @@ Claude CodePro extends Claude Code with a modular system of rules, commands, and
 
 After your trial, choose the tier that fits your needs [here](https://license.claude-code.pro):
 
-| Tier | Includes |
-|:-----|:---------|
-| **Standard** | All features, continuous updates with latest learnings, GitHub support |
-| **Enterprise** | Standard + dedicated email support and priority feature requests |
+| Tier           | Includes                                                               |
+| :------------- | :--------------------------------------------------------------------- |
+| **Standard**   | All features, continuous updates with latest learnings, GitHub support |
+| **Enterprise** | Standard + dedicated email support and priority feature requests       |
 
 See the [LICENSE](LICENSE) file for full terms.

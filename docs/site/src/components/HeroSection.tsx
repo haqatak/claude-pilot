@@ -37,9 +37,14 @@ const HeroSection = () => {
         </div>
 
         {/* Subtitle */}
-        <p className="text-muted-foreground text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl max-w-[90%] xs:max-w-xl sm:max-w-2xl mx-auto mb-6 xs:mb-8 animate-fade-in animation-delay-200 leading-relaxed px-1">
-          TDD enforced. Quality automated. Ship with confidence.
-        </p>
+        <div className="animate-fade-in animation-delay-200 mb-6 xs:mb-8 px-1">
+          <p className="text-muted-foreground text-[11px] xs:text-xs sm:text-sm md:text-base lg:text-lg max-w-[90%] xs:max-w-xl sm:max-w-2xl mx-auto leading-relaxed">
+            Quality automated. Context optimized. Testing enforced. Ship with confidence.
+          </p>
+          <p className="text-muted-foreground/70 text-[10px] xs:text-xs sm:text-sm md:text-base max-w-[90%] xs:max-w-xl sm:max-w-2xl mx-auto mt-2 leading-relaxed">
+            A shortcut to state-of-the-art Claude Code development, continuously improved.
+          </p>
+        </div>
 
         {/* Feature badges */}
         <div className="flex flex-wrap justify-center gap-1.5 xs:gap-2 mb-6 xs:mb-8 animate-fade-in animation-delay-300 px-2">

@@ -4,7 +4,7 @@ import {
   Plug2,
   ShieldCheck,
   Container,
-  Infinity as InfinityIcon
+  Infinity as InfinityIcon,
 } from "lucide-react";
 import { useInView } from "@/hooks/use-in-view";
 
@@ -78,7 +78,13 @@ const insideItems: InsideItem[] = [
   },
 ];
 
-const SectionHeader = ({ title, subtitle }: { title: string; subtitle?: string }) => (
+const SectionHeader = ({
+  title,
+  subtitle,
+}: {
+  title: string;
+  subtitle?: string;
+}) => (
   <div className="text-center mb-12">
     <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-4">
       {title}
@@ -132,7 +138,10 @@ const WhatsInside = () => {
                 </div>
                 <ul className="space-y-2">
                   {item.items.map((listItem, i) => (
-                    <li key={i} className="text-muted-foreground text-sm flex items-start gap-2">
+                    <li
+                      key={i}
+                      className="text-muted-foreground text-sm flex items-start gap-2"
+                    >
                       <span className="text-primary mt-1.5 text-xs">•</span>
                       <span>{listItem}</span>
                     </li>

@@ -80,10 +80,6 @@ class TestProcessSettings:
                     {
                         "matcher": "Write|Edit|MultiEdit",
                         "hooks": [
-                            {
-                                "type": "command",
-                                "command": "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_qlty.py",
-                            },
                             {"type": "command", "command": python_hook},
                         ],
                     }
@@ -97,7 +93,7 @@ class TestProcessSettings:
         hooks = parsed["hooks"]["PostToolUse"][0]["hooks"]
         commands = [h["command"] for h in hooks]
         assert any("file_checker_python.py" in cmd for cmd in commands)
-        assert len(hooks) == 2
+        assert len(hooks) == 1
 
     def test_process_settings_removes_python_hook_when_disabled(self):
         """process_settings removes Python hook when enable_python=False."""
@@ -105,17 +101,15 @@ class TestProcessSettings:
 
         # Use absolute path like real source file
         python_hook = "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_python.py"
+        ts_hook = "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_ts.py"
         settings = {
             "hooks": {
                 "PostToolUse": [
                     {
                         "matcher": "Write|Edit|MultiEdit",
                         "hooks": [
-                            {
-                                "type": "command",
-                                "command": "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_qlty.py",
-                            },
                             {"type": "command", "command": python_hook},
+                            {"type": "command", "command": ts_hook},
                         ],
                     }
                 ]
@@ -128,7 +122,7 @@ class TestProcessSettings:
         hooks = parsed["hooks"]["PostToolUse"][0]["hooks"]
         commands = [h["command"] for h in hooks]
         assert not any("file_checker_python.py" in cmd for cmd in commands)
-        assert any("file_checker_qlty.py" in cmd for cmd in commands)
+        assert any("file_checker_ts.py" in cmd for cmd in commands)
         assert len(hooks) == 1
 
     def test_process_settings_handles_missing_hooks(self):
@@ -197,16 +191,14 @@ class TestProcessSettings:
 
         # Use absolute path like real source file
         ts_hook = "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_ts.py"
+        go_hook = "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_go.py"
         settings = {
             "hooks": {
                 "PostToolUse": [
                     {
                         "matcher": "Write|Edit|MultiEdit",
                         "hooks": [
-                            {
-                                "type": "command",
-                                "command": "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_qlty.py",
-                            },
+                            {"type": "command", "command": go_hook},
                             {"type": "command", "command": ts_hook},
                         ],
                     }
@@ -220,7 +212,7 @@ class TestProcessSettings:
         hooks = parsed["hooks"]["PostToolUse"][0]["hooks"]
         commands = [h["command"] for h in hooks]
         assert not any("file_checker_ts.py" in cmd for cmd in commands)
-        assert any("file_checker_qlty.py" in cmd for cmd in commands)
+        assert any("file_checker_go.py" in cmd for cmd in commands)
         assert len(hooks) == 1
 
     def test_process_settings_removes_both_hooks_when_both_disabled(self):
@@ -230,18 +222,16 @@ class TestProcessSettings:
         # Use absolute paths like real source file
         python_hook = "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_python.py"
         ts_hook = "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_ts.py"
+        go_hook = "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_go.py"
         settings = {
             "hooks": {
                 "PostToolUse": [
                     {
                         "matcher": "Write|Edit|MultiEdit",
                         "hooks": [
-                            {
-                                "type": "command",
-                                "command": "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_qlty.py",
-                            },
                             {"type": "command", "command": python_hook},
                             {"type": "command", "command": ts_hook},
+                            {"type": "command", "command": go_hook},
                         ],
                     }
                 ]
@@ -255,7 +245,7 @@ class TestProcessSettings:
         commands = [h["command"] for h in hooks]
         assert not any("file_checker_python.py" in cmd for cmd in commands)
         assert not any("file_checker_ts.py" in cmd for cmd in commands)
-        assert any("file_checker_qlty.py" in cmd for cmd in commands)
+        assert any("file_checker_go.py" in cmd for cmd in commands)
         assert len(hooks) == 1
 
     def test_process_settings_removes_golang_hook_when_disabled(self):
@@ -263,16 +253,14 @@ class TestProcessSettings:
         from installer.steps.claude_files import process_settings
 
         go_hook = "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_go.py"
+        python_hook = "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_python.py"
         settings = {
             "hooks": {
                 "PostToolUse": [
                     {
                         "matcher": "Write|Edit|MultiEdit",
                         "hooks": [
-                            {
-                                "type": "command",
-                                "command": "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_qlty.py",
-                            },
+                            {"type": "command", "command": python_hook},
                             {"type": "command", "command": go_hook},
                         ],
                     }
@@ -286,7 +274,7 @@ class TestProcessSettings:
         hooks = parsed["hooks"]["PostToolUse"][0]["hooks"]
         commands = [h["command"] for h in hooks]
         assert not any("file_checker_go.py" in cmd for cmd in commands)
-        assert any("file_checker_qlty.py" in cmd for cmd in commands)
+        assert any("file_checker_python.py" in cmd for cmd in commands)
         assert len(hooks) == 1
 
     def test_process_settings_preserves_golang_hook_when_enabled(self):
@@ -294,16 +282,14 @@ class TestProcessSettings:
         from installer.steps.claude_files import process_settings
 
         go_hook = "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_go.py"
+        python_hook = "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_python.py"
         settings = {
             "hooks": {
                 "PostToolUse": [
                     {
                         "matcher": "Write|Edit|MultiEdit",
                         "hooks": [
-                            {
-                                "type": "command",
-                                "command": "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_qlty.py",
-                            },
+                            {"type": "command", "command": python_hook},
                             {"type": "command", "command": go_hook},
                         ],
                     }
@@ -429,7 +415,7 @@ class TestClaudeFilesStep:
                         {
                             "matcher": "Write|Edit|MultiEdit",
                             "hooks": [
-                                {"type": "command", "command": "uv run python .claude/hooks/file_checker_qlty.py"},
+                                {"type": "command", "command": "uv run python .claude/hooks/file_checker_go.py"},
                                 {"type": "command", "command": PYTHON_CHECKER_HOOK},
                             ],
                         }
@@ -480,7 +466,7 @@ class TestClaudeFilesStep:
                         {
                             "matcher": "Write|Edit|MultiEdit",
                             "hooks": [
-                                {"type": "command", "command": "uv run python .claude/hooks/file_checker_qlty.py"},
+                                {"type": "command", "command": "uv run python .claude/hooks/file_checker_go.py"},
                                 {"type": "command", "command": PYTHON_CHECKER_HOOK},
                             ],
                         }
@@ -512,7 +498,7 @@ class TestClaudeFilesStep:
             commands = [h["command"] for h in hooks]
             assert PYTHON_CHECKER_HOOK not in commands
             # Other hooks should still be present (with absolute paths)
-            assert any("file_checker_qlty.py" in cmd for cmd in commands)
+            assert any("file_checker_go.py" in cmd for cmd in commands)
 
     def test_claude_files_skips_python_when_disabled(self):
         """ClaudeFilesStep skips Python files when enable_python=False."""

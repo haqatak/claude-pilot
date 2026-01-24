@@ -12,7 +12,6 @@ from installer.steps.base import BaseStep
 CCP_ALIAS_MARKER = "# Claude CodePro alias"
 FZF_MARKER = "source <(fzf --zsh)"
 DOTENV_MARKER = "ZSH_DOTENV_PROMPT"
-QLTY_PATH_MARKER = "# qlty PATH"
 BUN_PATH_MARKER = "# bun PATH"
 
 
@@ -194,30 +193,6 @@ def _configure_zsh_dotenv(zshrc: Path, ui) -> bool:
     return modified
 
 
-def _configure_qlty_path(config_file: Path, ui, quiet: bool = False) -> bool:
-    """Add qlty to PATH in shell config (idempotent)."""
-    if not config_file.exists():
-        return False
-
-    content = config_file.read_text()
-    if QLTY_PATH_MARKER in content or ".qlty/bin" in content:
-        if ui and not quiet:
-            ui.info(f"qlty PATH already configured in {config_file.name}")
-        return False
-
-    if "fish" in config_file.name:
-        qlty_path_line = f"\n{QLTY_PATH_MARKER}\nset -gx PATH $HOME/.qlty/bin $PATH\n"
-    else:
-        qlty_path_line = f'\n{QLTY_PATH_MARKER}\nexport PATH="$HOME/.qlty/bin:$PATH"\n'
-
-    with open(config_file, "a") as f:
-        f.write(qlty_path_line)
-
-    if ui:
-        ui.success(f"Added qlty to PATH in {config_file.name}")
-    return True
-
-
 def _configure_bun_path(config_file: Path, ui, quiet: bool = False) -> bool:
     """Add bun to PATH in shell config (idempotent)."""
     if not config_file.exists():
@@ -294,11 +269,6 @@ class ShellConfigStep(BaseStep):
                 _configure_zsh_fzf(zshrc, ui)
                 _configure_zsh_dotenv(zshrc, ui)
                 _set_zsh_default_shell(ui)
-
-        if ui:
-            ui.status("Configuring qlty PATH...")
-        for config_file in config_files:
-            _configure_qlty_path(config_file, ui, quiet=True)
 
         if ui:
             ui.status("Configuring bun PATH...")
