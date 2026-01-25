@@ -4,14 +4,15 @@
 
 ### Production-Grade Development Environment for Claude Code
 
-Quality automated. Continuously improved. TDD enforced. Ship with confidence. 🚀
+Quality automated. Context optimized. Testing enforced. Ship with confidence.</br>
+A shortcut to state-of-the-art Claude Code development, continuously improved.
 
 [![Version](https://img.shields.io/github/v/release/maxritter/claude-codepro?label=Version&color=orange)](https://github.com/maxritter/claude-codepro/releases)
 [![Stars](https://img.shields.io/github/stars/maxritter/claude-codepro?style=flat&color=yellow)](https://github.com/maxritter/claude-codepro/stargazers)
 [![Last Commit](https://img.shields.io/github/last-commit/maxritter/claude-codepro?color=blue)](https://github.com/maxritter/claude-codepro/commits/main)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/maxritter/claude-codepro/pulls)
 
-#### ⭐ [Star this repository](https://github.com/maxritter/claude-codepro) · 🌐 [Visit the website](https://claude-code.pro) · 🔔 [Follow for updates](https://www.linkedin.com/in/rittermax/) · ✉️ [Get in touch](mailto:mail@maxritter.net)
+#### ⭐ [Star this repository](https://github.com/maxritter/claude-codepro) · 🌐 [Visit the website](https://claude-code.pro) · 🔔 [Follow for updates](https://www.linkedin.com/in/rittermax/)
 
 <br>
 
@@ -27,7 +28,7 @@ Quality automated. Continuously improved. TDD enforced. Ship with confidence. �
 curl -fsSL https://raw.githubusercontent.com/maxritter/claude-codepro/v5.1.12/install.sh | bash
 ```
 
-Then run `ccp` and `/sync` once. Use `/spec` or the quick mode for full quality.
+Then run `ccp` and `/sync` once to sync rules and skills. Use `/spec` or the quick mode for full quality.
 
 ---
 
@@ -94,24 +95,25 @@ You'll be asked to choose between **Dev Container** or **Local Installation**.
 - **Implementation** - Executes the plan with TDD enforcement and context management
 - **Verification** - Runs tests, quality checks, and validates completion based on the plan
 
-### 📚 Modular Rules System
+### 📚 Modular Rules, Commands & Skills
 
-- **Standard Rules** - Best-Practices for TDD, Context Management, etc. in `.claude/rules/standard/`
-- **Custom Rules** - Project-specific rules in `.claude/rules/custom/` (never touched by updates)
-- **Command Skills** - Workflow-specific modes: `/spec`, `/sync`, `/plan`, `/implement`, `/verify`
-- **Standards Skills** - Best-Practices for Frontend, Backend, Testing, etc. automatically injected
+- **Rules** - Best practices for TDD, debugging, context management, and more
+- **Commands** - Slash commands like `/spec`, `/sync`, `/plan`, `/implement`, `/verify`
+- **Skills** - Coding standards for Python, TypeScript, Go, testing, and components
+- **Customizable** - Add your own rules, commands, and skills that survive updates
 
 ### 🧠 Enhanced Context Capabilities
 
+- **Zero API Keys** - Web search and scraping work out of the box, no external API keys needed
 - **Persistent Memory** - Cross-session memory system that automatically ingests context
 - **Semantic Search** - Local vector store based semantic code search for token-efficient retrieval
-- **External Context** - External context retrieval for code / libraries and web search / scraping
+- **External Context** - Library docs via Context7, web search and scraping via MCP tools
 - **Browser Automation** - Headless browser automation and testing even within the Dev Container
 
 ### ✅ Quality Automation
 
 - **TDD Enforcer** - Pre-edit hook that warns when modifying code without failing tests first
-- **Quality Hooks** - Specific hooks for Python, TypeScript and Go, all other languages via qlty
+- **Quality Hooks** - Language-specific hooks for Python, TypeScript and Go that auto-fix issues
 - **Context Monitor** - Tracks context usage and triggers automatic session handoffs
 - **Status Line** - Live display of context usage, memory status, usage limits, and license info
 
@@ -122,32 +124,30 @@ You'll be asked to choose between **Dev Container** or **Local Installation**.
 - **Automated Updater** - Updates CCP to the latest version when launched over the binary
 - **Shell Integration** - Auto-configures bash, fish and zsh with `ccp` alias
 
-
 ---
 
 ## 🔄 Why Claude CodePro?
 
 Same task. Different results.
 
-| Ad-hoc Prompting | With Claude CodePro |
-|------------------|---------------------|
-| ❌ Writes code without tests | ✅ TDD enforced — tests first, then implementation |
-| ❌ No quality checks | ✅ Auto-formatted, linted, type-checked on every edit |
-| ❌ Inconsistent workflow | ✅ Structured Plan → Implement → Verify cycle |
-| ❌ Context lost between sessions | ✅ Persistent memory carries observations forward |
-| ❌ No codebase awareness | ✅ Semantic search understands your code |
-| ❌ Hope it works | ✅ Verified before marked complete |
+| Ad-hoc Prompting                 | With Claude CodePro                                   |
+| -------------------------------- | ----------------------------------------------------- |
+| ❌ Writes code without tests     | ✅ TDD enforced — tests first, then implementation    |
+| ❌ No quality checks             | ✅ Auto-formatted, linted, type-checked on every edit |
+| ❌ Inconsistent workflow         | ✅ Structured Plan → Implement → Verify cycle         |
+| ❌ Context lost between sessions | ✅ Persistent memory carries observations forward     |
+| ❌ No codebase awareness         | ✅ Semantic search understands your code              |
+| ❌ Hope it works                 | ✅ Verified before marked complete                    |
 
 **The result:** Production-grade code you can ship with confidence. Systematic. Tested. Verified.
-
 
 ---
 
 ## ⚡ Usage
 
-### 🔄 Sync Project Rules
+### 🔄 Sync Rules & Skills
 
-Run `/sync` to sync project rules with your codebase. Run it once initially, then anytime after major changes:
+Run `/sync` to sync custom rules and skills with your codebase. Run it once initially, then anytime after major changes:
 
 ```bash
 ccp
@@ -187,14 +187,29 @@ ccp
 > Fix the null pointer bug in user.py
 ```
 
-### 📐 Rules System
+### 📐 Rules, Commands & Skills
 
-Claude CodePro uses [Claude Code's modular rules](https://code.claude.com/docs/en/memory#modular-rules-with-claude/rules/):
+Claude CodePro extends Claude Code with a modular system of rules, commands, and skills:
 
-- **Standard Rules** in `.claude/rules/standard/` - Best-Practices updated on install, don't modify those
-- **Custom Rules** in `.claude/rules/custom/` - Your project-specific rules, never touched by updates
-- **Quality Hooks** - Pre-edit and post-edit hooks that enforce standards automatically
+**Managed by CCP** (updated on install):
 
+- `.claude/rules/standard/` - Best practices and workflows
+- `.claude/commands/` - `spec`, `sync`, `plan`, `implement`, `verify`
+- `.claude/skills/standards-*/` - Coding standards for languages and frameworks
+
+**Yours to customize** (never touched by updates):
+
+- `.claude/rules/custom/` - Project-specific rules
+- `.claude/commands/` - Any command besides the standard ones
+- `.claude/skills/` - Any skill not prefixed with `standards-`
+
+**When to use what:**
+
+| Type         | Loaded                            | Best for                                |
+| ------------ | --------------------------------- | --------------------------------------- |
+| **Rules**    | Every session (always in context) | Guidelines Claude should always follow  |
+| **Commands** | On demand via `/command`          | Specific workflows or multi-step tasks  |
+| **Skills**   | Dynamically when relevant         | Specialized knowledge, coding standards |
 
 ---
 

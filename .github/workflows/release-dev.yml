@@ -43,45 +43,6 @@ jobs:
             --cov=installer --cov=ccp \
             --cov-report=term --cov-report=xml
 
-  build-ccp-x86:
-    name: Build CCP Linux x86_64
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-
-      - name: Install git-crypt
-        run: sudo apt-get update && sudo apt-get install -y git-crypt
-
-      - name: Unlock repository
-        env:
-          GIT_CRYPT_KEY: ${{ secrets.GIT_CRYPT_KEY }}
-        run: bash .github/workflows/scripts/setup-git-crypt.sh
-
-      - name: Build binary
-        run: |
-          docker run --rm \
-            -v ${{ github.workspace }}:/workspace \
-            -w /workspace \
-            python:3.12-slim-bullseye \
-            bash -c "
-              apt-get update && apt-get install -y binutils build-essential && \
-              pip install . && \
-              python -m ccp.build --release && \
-              ls -la ccp/dist/
-            "
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ccp-linux-x86_64
-          path: |
-            ccp/dist/ccp-linux-x86_64.so
-            ccp/dist/ccp
-          retention-days: 1
-
   build-ccp-arm64:
     name: Build CCP Linux arm64
     runs-on: ubuntu-24.04-arm
@@ -99,6 +60,13 @@ jobs:
           GIT_CRYPT_KEY: ${{ secrets.GIT_CRYPT_KEY }}
         run: bash .github/workflows/scripts/setup-git-crypt.sh
 
+      - name: Generate version
+        id: version
+        run: |
+          COMMIT_SHA="${{ github.event.pull_request.head.sha || github.sha }}"
+          VERSION="dev-$(echo $COMMIT_SHA | cut -c1-7)-$(date +%Y%m%d)"
+          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
+
       - name: Build binary
         run: |
           docker run --rm \
@@ -108,7 +76,7 @@ jobs:
             bash -c "
               apt-get update && apt-get install -y binutils build-essential && \
               pip install . && \
-              python -m ccp.build --release && \
+              python -m ccp.build --release --version ${{ steps.version.outputs.VERSION }} && \
               ls -la ccp/dist/
             "
 
@@ -116,49 +84,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ccp-linux-arm64
-          path: ccp/dist/ccp-linux-arm64.so
-          retention-days: 1
-
-  build-ccp-darwin-x86:
-    name: Build CCP Darwin x86_64
-    runs-on: macos-15-intel
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-
-      - name: Install git-crypt
-        run: brew install git-crypt
-
-      - name: Unlock repository
-        env:
-          GIT_CRYPT_KEY: ${{ secrets.GIT_CRYPT_KEY }}
-        run: bash .github/workflows/scripts/setup-git-crypt.sh
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-
-      - name: Cache pip dependencies
-        uses: actions/cache@v5
-        with:
-          path: ~/Library/Caches/pip
-          key: ${{ runner.os }}-pip-pyinstaller
-          restore-keys: ${{ runner.os }}-pip-
-
-      - name: Build binary
-        run: |
-          pip install .
-          python -m ccp.build --release
-          ls -la ccp/dist/
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ccp-darwin-x86_64
-          path: ccp/dist/ccp-darwin-x86_64.so
+          path: |
+            ccp/dist/ccp-linux-arm64.so
+            ccp/dist/ccp
           retention-days: 1
 
   build-ccp-darwin-arm64:
@@ -190,10 +118,17 @@ jobs:
           key: ${{ runner.os }}-pip-pyinstaller
           restore-keys: ${{ runner.os }}-pip-
 
+      - name: Generate version
+        id: version
+        run: |
+          COMMIT_SHA="${{ github.event.pull_request.head.sha || github.sha }}"
+          VERSION="dev-$(echo $COMMIT_SHA | cut -c1-7)-$(date +%Y%m%d)"
+          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
+
       - name: Build binary
         run: |
           pip install .
-          python -m ccp.build --release
+          python -m ccp.build --release --version ${{ steps.version.outputs.VERSION }}
           ls -la ccp/dist/
 
       - name: Upload artifact
@@ -208,23 +143,17 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - python-tests
-      - build-ccp-x86
       - build-ccp-arm64
-      - build-ccp-darwin-x86
       - build-ccp-darwin-arm64
     steps:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          # For PRs: checkout the actual PR head commit (dev branch), not the merge commit
-          # For workflow_dispatch: checkout the branch being run on
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Generate version
         id: version
         run: |
-          # For PRs: use the PR head SHA (dev branch commit)
-          # For workflow_dispatch: use github.sha
           COMMIT_SHA="${{ github.event.pull_request.head.sha || github.sha }}"
           VERSION="dev-$(echo $COMMIT_SHA | cut -c1-7)-$(date +%Y%m%d)"
           echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
@@ -263,8 +192,6 @@ jobs:
           This is a development pre-release for testing. Not for production use."
           fi
 
-          # Create tag at current HEAD (which is the correct commit from checkout)
-          # Then create release from that tag
           git tag "$VERSION"
           git push origin "$VERSION"
 
@@ -272,11 +199,9 @@ jobs:
             --title "Dev Pre-release $VERSION" \
             --notes "$NOTES" \
             --prerelease \
-            artifacts/ccp-linux-x86_64/ccp-linux-x86_64.so \
             artifacts/ccp-linux-arm64/ccp-linux-arm64.so \
-            artifacts/ccp-darwin-x86_64/ccp-darwin-x86_64.so \
-            artifacts/ccp-darwin-arm64/ccp-darwin-arm64.so \
-            artifacts/ccp-linux-x86_64/ccp
+            artifacts/ccp-linux-arm64/ccp \
+            artifacts/ccp-darwin-arm64/ccp-darwin-arm64.so
 
           echo "Pre-release $VERSION created successfully"
 
@@ -287,8 +212,7 @@ jobs:
           echo "Cleaning up old dev pre-releases (keeping 5 most recent)..."
 
           gh api repos/${{ github.repository }}/releases \
-            --jq '.[] | select(.prerelease and (.tag_name | startswith("dev-"))) | .tag_name' \
-            | tail -n +6 \
+            --jq '[.[] | select(.prerelease and (.tag_name | startswith("dev-")))] | sort_by(.created_at) | reverse | .[5:] | .[].tag_name' \
             | while read -r tag; do
                 if [ -n "$tag" ]; then
                   echo "Deleting old pre-release: $tag"

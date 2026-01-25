@@ -156,7 +156,3 @@ class VSCodeExtensionsStep(BaseStep):
         ctx.config["installed_extensions"] = installed_count
         ctx.config["failed_extensions"] = failed
         ctx.config["local_extensions"] = LOCAL_EXTENSIONS
-
-    def rollback(self, ctx: InstallContext) -> None:
-        """Extensions are not rolled back (would be disruptive)."""
-        pass

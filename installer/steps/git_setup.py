@@ -249,7 +249,3 @@ class GitSetupStep(BaseStep):
         else:
             if ui:
                 ui.success("Repository has commits")
-
-    def rollback(self, ctx: InstallContext) -> None:
-        """Git setup is not rolled back (would be too disruptive)."""
-        pass

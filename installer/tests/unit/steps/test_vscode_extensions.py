@@ -112,9 +112,3 @@ class TestVSCodeExtensionsStep:
         ctx = MagicMock()
         step = VSCodeExtensionsStep()
         assert step.check(ctx) is False
-
-    def test_rollback_does_nothing(self):
-        """rollback() is a no-op (doesn't raise)."""
-        ctx = MagicMock()
-        step = VSCodeExtensionsStep()
-        step.rollback(ctx)

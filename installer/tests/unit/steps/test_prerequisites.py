@@ -208,6 +208,7 @@ class TestPrerequisitesHelpers:
         assert "node@22" in HOMEBREW_PACKAGES
         assert "bun" in HOMEBREW_PACKAGES
         assert "uv" in HOMEBREW_PACKAGES
+        assert "go" in HOMEBREW_PACKAGES
 
     @patch("subprocess.run")
     def test_add_bun_tap_runs_brew_tap(self, mock_run):

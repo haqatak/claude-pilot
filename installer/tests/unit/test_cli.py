@@ -66,38 +66,6 @@ class TestRunInstallation:
             mock_step2.run.assert_called_once_with(ctx)
 
 
-class TestRollback:
-    """Test rollback functionality."""
-
-    def test_rollback_completed_steps_exists(self):
-        """rollback_completed_steps function exists."""
-        from installer.cli import rollback_completed_steps
-
-        assert callable(rollback_completed_steps)
-
-    def test_rollback_calls_step_rollback(self):
-        """rollback_completed_steps calls rollback on completed steps."""
-        from installer.cli import rollback_completed_steps
-        from installer.context import InstallContext
-        from installer.ui import Console
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            ctx = InstallContext(
-                project_dir=Path(tmpdir),
-                ui=Console(non_interactive=True),
-            )
-            ctx.mark_completed("test_step")
-
-            # Mock step
-            mock_step = MagicMock()
-            mock_step.name = "test_step"
-
-            steps = [mock_step]
-            rollback_completed_steps(ctx, steps)
-
-            mock_step.rollback.assert_called_once_with(ctx)
-
-
 class TestBackupFeature:
     """Test backup feature ignores special files."""
 
@@ -164,6 +132,40 @@ class TestMainEntry:
         import installer.__main__
 
         assert hasattr(installer.__main__, "main") or True  # May not have main function
+
+
+class TestKeyboardInterrupt:
+    """Test CTRL+C (KeyboardInterrupt) handling."""
+
+    @patch("installer.cli.get_all_steps")
+    def test_keyboard_interrupt_raises_installation_cancelled(self, mock_get_all_steps):
+        """KeyboardInterrupt during step raises InstallationCancelled with step name."""
+        from installer.cli import run_installation
+        from installer.context import InstallContext
+        from installer.errors import InstallationCancelled
+        from installer.ui import Console
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            ctx = InstallContext(
+                project_dir=Path(tmpdir),
+                ui=Console(non_interactive=True, quiet=True),
+                non_interactive=True,
+            )
+
+            # Create a step that raises KeyboardInterrupt
+            failing_step = MagicMock()
+            failing_step.name = "dependencies"
+            failing_step.check.return_value = False
+            failing_step.run.side_effect = KeyboardInterrupt()
+
+            mock_get_all_steps.return_value = [failing_step]
+
+            # Should raise InstallationCancelled with step name
+            with pytest.raises(InstallationCancelled) as exc_info:
+                run_installation(ctx)
+
+            assert exc_info.value.step_name == "dependencies"
+            assert "dependencies" in str(exc_info.value)
 
 
 class TestLicenseInfo:

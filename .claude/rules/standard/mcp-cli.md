@@ -2,7 +2,7 @@
 
 Access custom MCP servers through the command line. MCP enables interaction with external systems like GitHub, filesystems, databases, and APIs.
 
-**Note:** This is for custom MCP servers configured in `mcp_servers.json`. Claude Code's built-in MCP servers (firecrawl, context7, claude-mem, ide) are accessed directly via their tool names in the conversation.
+**Note:** This is for custom MCP servers configured in `mcp_servers.json`. Claude Code's built-in MCP servers (context7, claude-mem, ide) are accessed directly via their tool names in the conversation.
 
 ### Configuration
 
@@ -101,7 +101,7 @@ mcp-cli filesystem/search_files '{"path": "src/", "pattern": "*.ts"}' --json | j
 
 | Situation | Use |
 |-----------|-----|
-| Built-in MCP servers (firecrawl, context7, claude-mem) | Direct tool calls in conversation |
+| Built-in MCP servers (context7, claude-mem, ide) | Direct tool calls in conversation |
 | Custom servers in `mcp_servers.json` | `mcp-cli` commands |
 | Discovering available tools | `mcp-cli` or `mcp-cli <server> -d` |
 | Complex JSON arguments with quotes | Use stdin: `mcp-cli server/tool -` |

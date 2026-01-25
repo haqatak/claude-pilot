@@ -58,7 +58,7 @@ class FinalizeStep(BaseStep):
             (
                 "Custom MCP Servers (Optional)",
                 "Add your MCP servers to mcp_servers.json, then run /sync\n"
-                "     to generate documentation. Use mcp-cli to interact with them.",
+                "     to generate rules. Use mcp-cli to interact with them.",
             )
         )
 
@@ -93,13 +93,10 @@ class FinalizeStep(BaseStep):
 
         ui.next_steps(steps)
 
-        ui.rule()
-        ui.print()
-        ui.print("  [bold yellow]⭐ Star this repo:[/bold yellow] https://github.com/maxritter/claude-codepro")
-        ui.print()
-        ui.print(f"  [dim]Installed version: {__version__}[/dim]")
-        ui.print()
-
-    def rollback(self, ctx: InstallContext) -> None:
-        """Finalize has no rollback (informational only)."""
-        pass
+        if not ui.quiet:
+            ui.rule()
+            ui.print()
+            ui.print("  [bold yellow]⭐ Star this repo:[/bold yellow] https://github.com/maxritter/claude-codepro")
+            ui.print()
+            ui.print(f"  [dim]Installed version: {__version__}[/dim]")
+            ui.print()

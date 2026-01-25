@@ -130,20 +130,25 @@ def run_context_monitor() -> int:
         print("", file=sys.stderr)
         print(f"{RED}⚠️  CONTEXT {percentage:.0f}% - HANDOFF NOW (not optional){NC}", file=sys.stderr)
         print(f"{RED}STOP current work. Your NEXT actions must be:{NC}", file=sys.stderr)
-        print(f"{RED}1. Check for active plan: ls docs/plans/*.md | sort -r | head -1{NC}", file=sys.stderr)
-        print(f"{RED}2. Write /tmp/claude-continuation.md (include Active Plan path){NC}", file=sys.stderr)
         print(
-            f"{RED}3. Run: $PWD/.claude/bin/ccp send-clear <plan-path>  (or --general ONLY if no plan){NC}",
+            f"{RED}1. Check for active plan: grep -l '^Status: PENDING\\|^Status: COMPLETE' docs/plans/*.md 2>/dev/null | head -1{NC}",
             file=sys.stderr,
         )
-        print(f"{RED}⚠️  NEVER use --general when a plan exists!{NC}", file=sys.stderr)
+        print(f"{RED}2. Write /tmp/claude-continuation.md (include Active Plan path if found){NC}", file=sys.stderr)
+        print(
+            f"{RED}3. Run: $PWD/.claude/bin/ccp send-clear <plan-path>  (or --general if no active plan){NC}",
+            file=sys.stderr,
+        )
         return 2
 
     if percentage >= THRESHOLD_WARN:
         print("", file=sys.stderr)
         print(
             f"{YELLOW}Context: {percentage:.0f}% - Finish current task with full quality or find a good place to wrap up, then hand off{NC}",
-            f"{YELLOW}IMPORTANT: NEVER rush to"
+            file=sys.stderr,
+        )
+        print(
+            f"{YELLOW}IMPORTANT: NEVER rush to finish a task when context is high. Always finish with full quality - next session can also do it!{NC}",
             file=sys.stderr,
         )
         return 2

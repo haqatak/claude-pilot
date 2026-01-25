@@ -20,10 +20,10 @@ allowed-tools: Skill
 
 **This is the #1 rule of /spec: NEVER stop between phases.**
 
-**When a skill (/implement, /verify) finishes and returns control to you:**
+**When a command (/implement, /verify) finishes and returns control to you:**
 1. **IMMEDIATELY** use Read tool to check plan file Status
-2. **IN THE SAME RESPONSE**, invoke the next skill based on status
-3. **DO NOT** end your response without invoking the next skill (unless VERIFIED)
+2. **IN THE SAME RESPONSE**, invoke the next command based on status
+3. **DO NOT** end your response without invoking the next command (unless VERIFIED)
 
 **After /implement completes → IMMEDIATELY invoke /verify:**
 ```
@@ -46,10 +46,10 @@ allowed-tools: Skill
 - The /spec command is an ORCHESTRATOR only
 - It invokes /plan, /implement, /verify via the Skill tool
 - It NEVER writes code, tests, or implementation files directly
-- ALL implementation happens inside the /implement skill
+- ALL implementation happens inside the /implement command
 
 **The ONLY time you stop is:**
-- When plan needs user approval (handled by /plan skill asking via AskUserQuestion)
+- When plan needs user approval (handled by /plan command asking via AskUserQuestion)
 - When Status is VERIFIED (workflow complete)
 - When context >= 90% (hand off to next session)
 
@@ -86,7 +86,8 @@ ELSE:
     task_description = arguments
     → Use Skill tool to run /plan with task_description
     → /plan handles user approval internally via AskUserQuestion
-    → After /plan completes, RE-READ plan status and continue (DO NOT STOP)
+    → ⛔ CRITICAL: After /plan completes, RE-READ plan status and IMMEDIATELY continue
+    → DO NOT STOP after /plan - invoke /implement in the SAME response
 ```
 
 ### Session Resume (--continue)
@@ -127,7 +128,7 @@ After reading the plan file's Status and Approved fields:
 LOOP:
   1. Read plan file status
   2. Dispatch based on status (table above)
-  3. After skill completes, go back to step 1
+  3. After command completes, go back to step 1
   4. EXIT loop only when: Status == VERIFIED OR context >= 90%
 ```
 

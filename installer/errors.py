@@ -19,3 +19,14 @@ class ConfigError(InstallError):
     """Configuration error."""
 
     pass
+
+
+class InstallationCancelled(InstallError):
+    """Installation was cancelled by user (CTRL+C)."""
+
+    def __init__(self, step_name: str) -> None:
+        self.step_name = step_name
+        super().__init__(f"Installation cancelled during {step_name}")
+
+    def __str__(self) -> str:
+        return f"Installation cancelled during {self.step_name}"

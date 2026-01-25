@@ -45,7 +45,3 @@ class BootstrapStep(BaseStep):
 
         if ui:
             ui.success("Directory structure ready")
-
-    def rollback(self, ctx: InstallContext) -> None:
-        """No rollback needed - files are merged, not replaced."""
-        pass

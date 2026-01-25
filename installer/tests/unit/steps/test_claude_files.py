@@ -6,7 +6,63 @@ import json
 import tempfile
 from pathlib import Path
 
-import pytest
+
+class TestPatchClaudePaths:
+    """Test the patch_claude_paths function."""
+
+    def test_patch_claude_paths_replaces_hooks_source_repo_path(self):
+        """patch_claude_paths replaces source repo hooks path with target project path."""
+        from installer.steps.claude_files import patch_claude_paths
+
+        content = '{"command": "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker.py"}'
+        result = patch_claude_paths(content, Path("/home/user/myproject"))
+
+        assert "/workspaces/claude-codepro/.claude/hooks/" not in result
+        assert "/home/user/myproject/.claude/hooks/file_checker.py" in result
+
+    def test_patch_claude_paths_replaces_bin_source_repo_path(self):
+        """patch_claude_paths replaces source repo bin path with target project path."""
+        from installer.steps.claude_files import patch_claude_paths
+
+        content = '{"command": "/workspaces/claude-codepro/.claude/bin/ccp statusline"}'
+        result = patch_claude_paths(content, Path("/home/user/myproject"))
+
+        assert "/workspaces/claude-codepro/.claude/bin/" not in result
+        assert "/home/user/myproject/.claude/bin/ccp statusline" in result
+
+    def test_patch_claude_paths_replaces_relative_hooks_path(self):
+        """patch_claude_paths replaces relative .claude/hooks/ paths."""
+        from installer.steps.claude_files import patch_claude_paths
+
+        content = '{"command": "uv run python .claude/hooks/file_checker.py"}'
+        result = patch_claude_paths(content, Path("/home/user/myproject"))
+
+        assert '".claude/hooks/' not in result
+        assert "/home/user/myproject/.claude/hooks/file_checker.py" in result
+
+    def test_patch_claude_paths_replaces_relative_bin_path(self):
+        """patch_claude_paths replaces relative .claude/bin/ paths."""
+        from installer.steps.claude_files import patch_claude_paths
+
+        content = '{"command": ".claude/bin/ccp statusline"}'
+        result = patch_claude_paths(content, Path("/home/user/myproject"))
+
+        assert '".claude/bin/' not in result
+        assert "/home/user/myproject/.claude/bin/ccp statusline" in result
+
+    def test_patch_claude_paths_handles_both_hooks_and_bin(self):
+        """patch_claude_paths replaces both hooks and bin paths in same content."""
+        from installer.steps.claude_files import patch_claude_paths
+
+        content = """{
+            "hooks": {"command": "/workspaces/claude-codepro/.claude/hooks/checker.py"},
+            "statusLine": {"command": "/workspaces/claude-codepro/.claude/bin/ccp statusline"}
+        }"""
+        result = patch_claude_paths(content, Path("/target"))
+
+        assert "/target/.claude/hooks/checker.py" in result
+        assert "/target/.claude/bin/ccp statusline" in result
+        assert "/workspaces/claude-codepro" not in result
 
 
 class TestPatchClaudePaths:
@@ -82,10 +138,6 @@ class TestProcessSettings:
                     {
                         "matcher": "Write|Edit|MultiEdit",
                         "hooks": [
-                            {
-                                "type": "command",
-                                "command": "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_qlty.py",
-                            },
                             {"type": "command", "command": python_hook},
                         ],
                     }
@@ -99,7 +151,7 @@ class TestProcessSettings:
         hooks = parsed["hooks"]["PostToolUse"][0]["hooks"]
         commands = [h["command"] for h in hooks]
         assert any("file_checker_python.py" in cmd for cmd in commands)
-        assert len(hooks) == 2
+        assert len(hooks) == 1
 
     def test_process_settings_removes_python_hook_when_disabled(self):
         """process_settings removes Python hook when enable_python=False."""
@@ -107,17 +159,15 @@ class TestProcessSettings:
 
         # Use absolute path like real source file
         python_hook = "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_python.py"
+        ts_hook = "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_ts.py"
         settings = {
             "hooks": {
                 "PostToolUse": [
                     {
                         "matcher": "Write|Edit|MultiEdit",
                         "hooks": [
-                            {
-                                "type": "command",
-                                "command": "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_qlty.py",
-                            },
                             {"type": "command", "command": python_hook},
+                            {"type": "command", "command": ts_hook},
                         ],
                     }
                 ]
@@ -130,7 +180,7 @@ class TestProcessSettings:
         hooks = parsed["hooks"]["PostToolUse"][0]["hooks"]
         commands = [h["command"] for h in hooks]
         assert not any("file_checker_python.py" in cmd for cmd in commands)
-        assert any("file_checker_qlty.py" in cmd for cmd in commands)
+        assert any("file_checker_ts.py" in cmd for cmd in commands)
         assert len(hooks) == 1
 
     def test_process_settings_handles_missing_hooks(self):
@@ -199,16 +249,14 @@ class TestProcessSettings:
 
         # Use absolute path like real source file
         ts_hook = "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_ts.py"
+        go_hook = "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_go.py"
         settings = {
             "hooks": {
                 "PostToolUse": [
                     {
                         "matcher": "Write|Edit|MultiEdit",
                         "hooks": [
-                            {
-                                "type": "command",
-                                "command": "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_qlty.py",
-                            },
+                            {"type": "command", "command": go_hook},
                             {"type": "command", "command": ts_hook},
                         ],
                     }
@@ -222,7 +270,7 @@ class TestProcessSettings:
         hooks = parsed["hooks"]["PostToolUse"][0]["hooks"]
         commands = [h["command"] for h in hooks]
         assert not any("file_checker_ts.py" in cmd for cmd in commands)
-        assert any("file_checker_qlty.py" in cmd for cmd in commands)
+        assert any("file_checker_go.py" in cmd for cmd in commands)
         assert len(hooks) == 1
 
     def test_process_settings_removes_both_hooks_when_both_disabled(self):
@@ -232,18 +280,16 @@ class TestProcessSettings:
         # Use absolute paths like real source file
         python_hook = "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_python.py"
         ts_hook = "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_ts.py"
+        go_hook = "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_go.py"
         settings = {
             "hooks": {
                 "PostToolUse": [
                     {
                         "matcher": "Write|Edit|MultiEdit",
                         "hooks": [
-                            {
-                                "type": "command",
-                                "command": "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_qlty.py",
-                            },
                             {"type": "command", "command": python_hook},
                             {"type": "command", "command": ts_hook},
+                            {"type": "command", "command": go_hook},
                         ],
                     }
                 ]
@@ -257,7 +303,7 @@ class TestProcessSettings:
         commands = [h["command"] for h in hooks]
         assert not any("file_checker_python.py" in cmd for cmd in commands)
         assert not any("file_checker_ts.py" in cmd for cmd in commands)
-        assert any("file_checker_qlty.py" in cmd for cmd in commands)
+        assert any("file_checker_go.py" in cmd for cmd in commands)
         assert len(hooks) == 1
 
     def test_process_settings_removes_golang_hook_when_disabled(self):
@@ -265,16 +311,14 @@ class TestProcessSettings:
         from installer.steps.claude_files import process_settings
 
         go_hook = "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_go.py"
+        python_hook = "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_python.py"
         settings = {
             "hooks": {
                 "PostToolUse": [
                     {
                         "matcher": "Write|Edit|MultiEdit",
                         "hooks": [
-                            {
-                                "type": "command",
-                                "command": "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_qlty.py",
-                            },
+                            {"type": "command", "command": python_hook},
                             {"type": "command", "command": go_hook},
                         ],
                     }
@@ -288,7 +332,7 @@ class TestProcessSettings:
         hooks = parsed["hooks"]["PostToolUse"][0]["hooks"]
         commands = [h["command"] for h in hooks]
         assert not any("file_checker_go.py" in cmd for cmd in commands)
-        assert any("file_checker_qlty.py" in cmd for cmd in commands)
+        assert any("file_checker_python.py" in cmd for cmd in commands)
         assert len(hooks) == 1
 
     def test_process_settings_preserves_golang_hook_when_enabled(self):
@@ -296,16 +340,14 @@ class TestProcessSettings:
         from installer.steps.claude_files import process_settings
 
         go_hook = "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_go.py"
+        python_hook = "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_python.py"
         settings = {
             "hooks": {
                 "PostToolUse": [
                     {
                         "matcher": "Write|Edit|MultiEdit",
                         "hooks": [
-                            {
-                                "type": "command",
-                                "command": "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_qlty.py",
-                            },
+                            {"type": "command", "command": python_hook},
                             {"type": "command", "command": go_hook},
                         ],
                     }
@@ -335,7 +377,6 @@ class TestClaudeFilesStep:
     def test_claude_files_check_returns_false_when_empty(self):
         """ClaudeFilesStep.check returns False when no files installed."""
         from installer.context import InstallContext
-        from installer.downloads import DownloadConfig
         from installer.steps.claude_files import ClaudeFilesStep
         from installer.ui import Console
 
@@ -432,7 +473,7 @@ class TestClaudeFilesStep:
                         {
                             "matcher": "Write|Edit|MultiEdit",
                             "hooks": [
-                                {"type": "command", "command": "uv run python .claude/hooks/file_checker_qlty.py"},
+                                {"type": "command", "command": "uv run python .claude/hooks/file_checker_go.py"},
                                 {"type": "command", "command": PYTHON_CHECKER_HOOK},
                             ],
                         }
@@ -483,7 +524,7 @@ class TestClaudeFilesStep:
                         {
                             "matcher": "Write|Edit|MultiEdit",
                             "hooks": [
-                                {"type": "command", "command": "uv run python .claude/hooks/file_checker_qlty.py"},
+                                {"type": "command", "command": "uv run python .claude/hooks/file_checker_go.py"},
                                 {"type": "command", "command": PYTHON_CHECKER_HOOK},
                             ],
                         }
@@ -515,7 +556,7 @@ class TestClaudeFilesStep:
             commands = [h["command"] for h in hooks]
             assert PYTHON_CHECKER_HOOK not in commands
             # Other hooks should still be present (with absolute paths)
-            assert any("file_checker_qlty.py" in cmd for cmd in commands)
+            assert any("file_checker_go.py" in cmd for cmd in commands)
 
     def test_claude_files_skips_python_when_disabled(self):
         """ClaudeFilesStep skips Python files when enable_python=False."""
@@ -741,19 +782,19 @@ class TestDirectoryClearing:
 
         step = ClaudeFilesStep()
         with tempfile.TemporaryDirectory() as tmpdir:
-            # Create source with skills
+            # Create source with standard skill (standards-* is a standard skill name)
             source_dir = Path(tmpdir) / "source"
             source_claude = source_dir / ".claude"
-            source_skills = source_claude / "skills" / "test-skill"
+            source_skills = source_claude / "skills" / "standards-testing"
             source_skills.mkdir(parents=True)
-            (source_skills / "SKILL.md").write_text("new skill")
+            (source_skills / "SKILL.md").write_text("new standards-testing skill")
 
-            # Create destination with OLD skills (should be cleared)
+            # Create destination with OLD standard skill (should be cleared)
             dest_dir = Path(tmpdir) / "dest"
             dest_claude = dest_dir / ".claude"
-            dest_skills = dest_claude / "skills" / "old-skill"
+            dest_skills = dest_claude / "skills" / "standards-testing"
             dest_skills.mkdir(parents=True)
-            (dest_skills / "SKILL.md").write_text("old skill to be removed")
+            (dest_skills / "SKILL.md").write_text("old standards-testing skill to be removed")
 
             ctx = InstallContext(
                 project_dir=dest_dir,
@@ -764,10 +805,9 @@ class TestDirectoryClearing:
 
             step.run(ctx)
 
-            # Old skill should be GONE (directory was cleared)
-            assert not (dest_claude / "skills" / "old-skill").exists()
-            # New skill should be installed
-            assert (dest_claude / "skills" / "test-skill" / "SKILL.md").exists()
+            # New standard skill should be installed (old was cleared)
+            assert (dest_claude / "skills" / "standards-testing" / "SKILL.md").exists()
+            assert (dest_claude / "skills" / "standards-testing" / "SKILL.md").read_text() == "new standards-testing skill"
 
     def test_skips_clearing_when_source_equals_destination(self):
         """Directories are NOT cleared when source == destination (same dir)."""
@@ -779,7 +819,7 @@ class TestDirectoryClearing:
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create .claude directory (source AND destination are same)
             claude_dir = Path(tmpdir) / ".claude"
-            skills_dir = claude_dir / "skills" / "my-skill"
+            skills_dir = claude_dir / "skills" / "standards-testing"
             skills_dir.mkdir(parents=True)
             (skills_dir / "SKILL.md").write_text("existing skill content")
 
@@ -839,33 +879,157 @@ class TestDirectoryClearing:
             # New standard rule should be installed
             assert (dest_standard / "new-rule.md").exists()
 
-
-class TestClaudeFilesRollback:
-    """Test ClaudeFilesStep rollback."""
-
-    def test_rollback_removes_installed_files(self):
-        """ClaudeFilesStep.rollback removes installed files."""
+    def test_custom_skills_never_cleared(self):
+        """Custom skills (non-standard names) are NEVER cleared, only standard skills."""
         from installer.context import InstallContext
         from installer.steps.claude_files import ClaudeFilesStep
         from installer.ui import Console
 
         step = ClaudeFilesStep()
         with tempfile.TemporaryDirectory() as tmpdir:
+            # Create source with standard skill (standards-testing)
+            source_dir = Path(tmpdir) / "source"
+            source_claude = source_dir / ".claude"
+            source_standard = source_claude / "skills" / "standards-testing"
+            source_standard.mkdir(parents=True)
+            (source_standard / "SKILL.md").write_text("new standards-testing skill")
+
+            # Create destination with custom skill AND old standard skill
+            dest_dir = Path(tmpdir) / "dest"
+            dest_claude = dest_dir / ".claude"
+            dest_custom = dest_claude / "skills" / "my-custom-skill"  # Custom name
+            dest_standard = dest_claude / "skills" / "standards-testing"  # Standard name (standards-* prefix)
+            dest_custom.mkdir(parents=True)
+            dest_standard.mkdir(parents=True)
+            (dest_custom / "SKILL.md").write_text("USER CUSTOM SKILL")
+            (dest_standard / "SKILL.md").write_text("old standards-testing skill")
+
             ctx = InstallContext(
-                project_dir=Path(tmpdir),
+                project_dir=dest_dir,
                 ui=Console(non_interactive=True),
+                local_mode=True,
+                local_repo_dir=source_dir,
             )
 
-            # Create some files
-            claude_dir = Path(tmpdir) / ".claude"
-            claude_dir.mkdir()
-            test_file = claude_dir / "test.md"
-            test_file.write_text("test")
+            step.run(ctx)
 
-            # Track installed files
-            ctx.config["installed_files"] = [str(test_file)]
+            # Custom skill should be PRESERVED (not a standard name)
+            assert (dest_custom / "SKILL.md").exists()
+            assert (dest_custom / "SKILL.md").read_text() == "USER CUSTOM SKILL"
 
-            step.rollback(ctx)
+            # Standard skill should be updated
+            assert (dest_standard / "SKILL.md").exists()
+            assert (dest_standard / "SKILL.md").read_text() == "new standards-testing skill"
 
-            # File should be removed
-            assert not test_file.exists()
+    def test_migrated_skills_are_removed(self):
+        """Skills that were migrated to commands (plan, implement, verify) are removed."""
+        from installer.context import InstallContext
+        from installer.steps.claude_files import ClaudeFilesStep
+        from installer.ui import Console
+
+        step = ClaudeFilesStep()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create source with some files (so clearing logic runs - early return if no files)
+            source_dir = Path(tmpdir) / "source"
+            source_claude = source_dir / ".claude"
+            source_rules = source_claude / "rules" / "standard"
+            source_rules.mkdir(parents=True)
+            (source_rules / "test-rule.md").write_text("# test rule")
+
+            # Create destination with old plan/implement/verify skills (should be migrated/removed)
+            dest_dir = Path(tmpdir) / "dest"
+            dest_claude = dest_dir / ".claude"
+            for skill_name in ["plan", "implement", "verify"]:
+                skill_dir = dest_claude / "skills" / skill_name
+                skill_dir.mkdir(parents=True)
+                (skill_dir / "SKILL.md").write_text(f"old {skill_name} skill")
+
+            ctx = InstallContext(
+                project_dir=dest_dir,
+                ui=Console(non_interactive=True),
+                local_mode=True,
+                local_repo_dir=source_dir,
+            )
+
+            step.run(ctx)
+
+            # Migrated skill directories should be REMOVED
+            for skill_name in ["plan", "implement", "verify"]:
+                skill_dir = dest_claude / "skills" / skill_name
+                assert not skill_dir.exists(), f"Skill '{skill_name}' should have been removed (migrated to command)"
+
+    def test_standard_commands_are_cleared(self):
+        """Standard commands (spec, sync, plan, implement, verify) are cleared and replaced."""
+        from installer.context import InstallContext
+        from installer.steps.claude_files import ClaudeFilesStep
+        from installer.ui import Console
+
+        step = ClaudeFilesStep()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create source with new standard command
+            source_dir = Path(tmpdir) / "source"
+            source_claude = source_dir / ".claude"
+            source_commands = source_claude / "commands"
+            source_commands.mkdir(parents=True)
+            (source_commands / "spec.md").write_text("new spec command")
+
+            # Create destination with OLD standard command
+            dest_dir = Path(tmpdir) / "dest"
+            dest_claude = dest_dir / ".claude"
+            dest_commands = dest_claude / "commands"
+            dest_commands.mkdir(parents=True)
+            (dest_commands / "spec.md").write_text("old spec command")
+            (dest_commands / "plan.md").write_text("old plan command")
+
+            ctx = InstallContext(
+                project_dir=dest_dir,
+                ui=Console(non_interactive=True),
+                local_mode=True,
+                local_repo_dir=source_dir,
+            )
+
+            step.run(ctx)
+
+            # New standard command should be installed
+            assert (dest_commands / "spec.md").exists()
+            assert (dest_commands / "spec.md").read_text() == "new spec command"
+
+    def test_custom_commands_never_cleared(self):
+        """Custom commands (non-standard names) are NEVER cleared."""
+        from installer.context import InstallContext
+        from installer.steps.claude_files import ClaudeFilesStep
+        from installer.ui import Console
+
+        step = ClaudeFilesStep()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create source with standard command
+            source_dir = Path(tmpdir) / "source"
+            source_claude = source_dir / ".claude"
+            source_commands = source_claude / "commands"
+            source_commands.mkdir(parents=True)
+            (source_commands / "spec.md").write_text("new spec command")
+
+            # Create destination with custom command AND standard command
+            dest_dir = Path(tmpdir) / "dest"
+            dest_claude = dest_dir / ".claude"
+            dest_commands = dest_claude / "commands"
+            dest_commands.mkdir(parents=True)
+            (dest_commands / "my-custom-workflow.md").write_text("USER CUSTOM COMMAND")
+            (dest_commands / "spec.md").write_text("old spec command")
+
+            ctx = InstallContext(
+                project_dir=dest_dir,
+                ui=Console(non_interactive=True),
+                local_mode=True,
+                local_repo_dir=source_dir,
+            )
+
+            step.run(ctx)
+
+            # Custom command should be PRESERVED
+            assert (dest_commands / "my-custom-workflow.md").exists()
+            assert (dest_commands / "my-custom-workflow.md").read_text() == "USER CUSTOM COMMAND"
+
+            # Standard command should be updated
+            assert (dest_commands / "spec.md").exists()
+            assert (dest_commands / "spec.md").read_text() == "new spec command"

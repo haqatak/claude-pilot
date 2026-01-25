@@ -1,13 +1,14 @@
 {
   "env": {
-    "FORCE_CLAUDE_VERSION": "2.1.6",
+    "FORCE_CLAUDE_VERSION": "2.1.19",
     "ENABLE_TOOL_SEARCH": "true",
     "ENABLE_LSP_TOOL": "true",
+    "CLAUDE_CODE_ENABLE_TASKS": "false",
     "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "63999",
-    "MAX_MCP_OUTPUT_TOKENS": "10000",
+    "MAX_MCP_OUTPUT_TOKENS": "19999",
     "MAX_THINKING_TOKENS": "31999",
-    "FORCE_AUTOUPDATE_PLUGINS": "true",
     "DISABLE_NON_ESSENTIAL_MODEL_CALLS": "true",
+    "DISABLE_INSTALLATION_CHECKS": "true",
     "DISABLE_AUTOUPDATER": "true",
     "DISABLE_TELEMETRY": "true"
   },
@@ -44,30 +45,40 @@
       "WebSearch",
       "Write",
       "mcp__ide__*",
-      "mcp__firecrawl__*",
       "mcp__plugin_claude-mem_mcp-search__*",
       "mcp__plugin_context7_context7__*",
+      "mcp__web-search__*",
+      "mcp__web-fetch__*",
       "Skill(ccp)",
       "Skill(vexor-cli)",
       "Skill(plan)",
       "Skill(implement)",
       "Skill(verify)",
       "Skill(setup)",
-      "Skill(spec)"
+      "Skill(spec)",
+      "Skill(skill-creator)",
+      "LSP"
     ],
     "deny": []
   },
   "model": "opus",
   "enableAllProjectMcpServers": true,
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "WebSearch|WebFetch|Grep|Task|EnterPlanMode|ExitPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run python /workspaces/claude-codepro/.claude/hooks/tool_redirect.py"
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Write|Edit|MultiEdit",
         "hooks": [
-          {
-            "type": "command",
-            "command": "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_qlty.py"
-          },
           {
             "type": "command",
             "command": "uv run python /workspaces/claude-codepro/.claude/hooks/file_checker_python.py"

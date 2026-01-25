@@ -22,10 +22,6 @@ class Step(Protocol):
         """Execute the installation step."""
         ...
 
-    def rollback(self, ctx: InstallContext) -> None:
-        """Rollback changes made by this step."""
-        ...
-
 
 class BaseStep(ABC, Step):
     """Abstract base class for installation steps with default implementations."""
@@ -41,10 +37,6 @@ class BaseStep(ABC, Step):
     def run(self, ctx: InstallContext) -> None:
         """Execute the installation step."""
         ...
-
-    def rollback(self, ctx: InstallContext) -> None:
-        """Rollback changes made by this step. Default is no-op."""
-        pass
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}(name={self.name!r})>"

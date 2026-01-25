@@ -1,6 +1,6 @@
 ---
-name: verify
 description: Run tests and fix issues end-to-end with Claude CodePro
+model: opus
 ---
 # VERIFY MODE: Verification and Quality Assurance Process with Code Review
 
@@ -272,3 +272,15 @@ curl -X DELETE http://localhost:8000/api/resource/1
 5. /spec will re-read status, see PENDING, and run /implement again
 
 **Fix immediately | Test after each fix | No "should work" - verify it works | Keep fixing until green**
+
+---
+
+## ⛔ WHEN THIS COMMAND COMPLETES - CRITICAL
+
+**This command ends after updating plan status. Control returns to /spec.**
+
+**What /spec MUST do next (in the SAME response):**
+- If Status: VERIFIED → Report completion, workflow done
+- If Status: PENDING → **IMMEDIATELY invoke Skill(implement, plan-path)**
+
+**DO NOT** end the response without /spec taking the appropriate action.

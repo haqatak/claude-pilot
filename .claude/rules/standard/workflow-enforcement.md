@@ -30,6 +30,31 @@ This is a HARD RULE with NO EXCEPTIONS:
 
 ---
 
+## ⛔ ABSOLUTE BAN: No Background Tasks
+
+**NEVER run commands in the background. Period.**
+
+This is a HARD RULE with NO EXCEPTIONS:
+- ❌ `Bash(run_in_background=true)` - BANNED
+- ❌ `TaskOutput` tool - BANNED (used to read background task output)
+- ❌ Any `run_in_background` parameter - BANNED
+
+**Why:** Background tasks lose context visibility, make debugging harder, and create race conditions. Always run commands synchronously and wait for results.
+
+### What to Use Instead
+
+| DON'T do this | DO this instead |
+|---------------|-----------------|
+| `Bash(command="...", run_in_background=true)` | `Bash(command="...")` (synchronous) |
+| `TaskOutput(task_id="...")` | Don't need it - commands complete inline |
+| Long-running commands in background | Use `timeout` parameter if needed |
+
+**If a command takes too long:** Use the `timeout` parameter to extend the limit (up to 600000ms / 10 minutes), or break it into smaller operations.
+
+**If you catch yourself about to use `run_in_background`: STOP. Run the command synchronously.**
+
+---
+
 ## ⛔ ABSOLUTE BAN: No Built-in Plan Mode
 
 **NEVER use Claude Code's built-in plan mode tools. Period.**
@@ -70,7 +95,7 @@ This is a HARD RULE with NO EXCEPTIONS:
 - ❌ Writing tests directly after plan approval - BANNED
 - ❌ Writing implementation code after plan approval - BANNED
 - ❌ Editing source files while in /spec orchestration - BANNED
-- ❌ Any implementation work outside of /implement skill - BANNED
+- ❌ Any implementation work outside of /implement command - BANNED
 
 **The correct flow after user approves a plan:**
 ```
@@ -111,7 +136,7 @@ The project uses a three-phase workflow with **automatic feedback loop**:
 
 ## ⛔ CRITICAL: Automatic Continuation is MANDATORY
 
-**"Auto-continue" means /spec MUST invoke the next skill in the SAME response.**
+**"Auto-continue" means /spec MUST invoke the next command in the SAME response.**
 
 When /implement finishes (Status: COMPLETE):
 ```

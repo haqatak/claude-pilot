@@ -4,7 +4,7 @@ import {
   Plug2,
   ShieldCheck,
   Container,
-  Infinity as InfinityIcon
+  Infinity as InfinityIcon,
 } from "lucide-react";
 import { useInView } from "@/hooks/use-in-view";
 
@@ -38,21 +38,21 @@ const insideItems: InsideItem[] = [
   },
   {
     icon: FileCode2,
-    title: "Modular Rules System",
+    title: "Rules, Commands & Skills",
     items: [
-      "Auto-loaded from .claude/rules/*.md",
-      "Standard rules for TDD, context, best practices",
-      "Custom rules in .claude/rules/custom/",
-      "Command and standards skills",
+      "Rules: Best practices for TDD and workflows",
+      "Commands: /spec, /sync, /plan, /implement, /verify",
+      "Skills: Coding standards for languages & frameworks",
+      "Customizable: Add your own, they survive updates",
     ],
   },
   {
     icon: Plug2,
     title: "Enhanced Context",
     items: [
+      "Zero API Keys - Everything works out of the box",
       "Persistent Memory - Cross-session context",
       "Semantic Search - Local vector store",
-      "External Context - Code/library & web",
       "Browser Automation - Headless testing",
     ],
   },
@@ -61,7 +61,7 @@ const insideItems: InsideItem[] = [
     title: "Quality Automation",
     items: [
       "TDD Enforcer - Pre-edit test requirement",
-      "Quality Hooks - Python, TypeScript, Go & QLTY",
+      "Quality Hooks - Python, TypeScript and Go",
       "Context Monitor - Usage tracking and handoffs",
       "Status Line - Live context, memory, and usage",
     ],
@@ -78,7 +78,13 @@ const insideItems: InsideItem[] = [
   },
 ];
 
-const SectionHeader = ({ title, subtitle }: { title: string; subtitle?: string }) => (
+const SectionHeader = ({
+  title,
+  subtitle,
+}: {
+  title: string;
+  subtitle?: string;
+}) => (
   <div className="text-center mb-12">
     <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-4">
       {title}
@@ -132,7 +138,10 @@ const WhatsInside = () => {
                 </div>
                 <ul className="space-y-2">
                   {item.items.map((listItem, i) => (
-                    <li key={i} className="text-muted-foreground text-sm flex items-start gap-2">
+                    <li
+                      key={i}
+                      className="text-muted-foreground text-sm flex items-start gap-2"
+                    >
                       <span className="text-primary mt-1.5 text-xs">•</span>
                       <span>{listItem}</span>
                     </li>

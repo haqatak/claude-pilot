@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""TDD enforcer - warns when implementation code is modified without failing tests.
+"""TDD enforcer - reminds to use TDD when modifying implementation code.
 
-This is a SOFT warning system (PostToolUse hook) - edits complete first,
-then a warning is shown to encourage TDD practices. Returns exit code 2
-for visibility alongside other quality hooks.
+This is a NON-BLOCKING reminder (PostToolUse hook) - edits always complete,
+then a reminder is shown to encourage TDD practices when appropriate.
+Returns exit code 2 to show TDD reminders to Claude.
 """
 
 from __future__ import annotations
@@ -147,9 +147,9 @@ def has_typescript_test_file(impl_path: str) -> bool:
 
 
 def warn(message: str, suggestion: str) -> int:
-    """Show warning and return exit code 2 for visibility."""
+    """Show warning and return exit code 2 (blocking)."""
     print("", file=sys.stderr)
-    print(f"{YELLOW}TDD: {message}{NC}", file=sys.stderr)
+    print(f"{YELLOW}TDD Reminder: {message}{NC}", file=sys.stderr)
     print(f"{YELLOW}    {suggestion}{NC}", file=sys.stderr)
     return 2
 
