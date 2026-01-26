@@ -52,6 +52,7 @@
       "mcp__plugin_plugin_web-search__*",
       "mcp__plugin_plugin_web-fetch__*",
       "Skill(skill-creator)",
+      "Skill(spec)",
       "LSP"
     ],
     "deny": []
