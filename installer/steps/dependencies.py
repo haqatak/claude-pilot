@@ -658,7 +658,7 @@ class DependenciesStep(BaseStep):
         if _install_with_spinner(ui, "mcp-cli", install_mcp_cli):
             installed.append("mcp_cli")
 
-        if _install_with_spinner(ui, "TypeScript LSP", install_typescript_lsp):
+        if _install_with_spinner(ui, "vtsls (TypeScript LSP server)", install_typescript_lsp):
             installed.append("typescript_lsp")
 
         if ctx.enable_agent_browser:

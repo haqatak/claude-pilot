@@ -305,6 +305,15 @@ class ClaudeFilesStep(BaseStep):
 
         ctx.config["installed_files"] = installed_files
 
+        scripts_dir = ctx.project_dir / ".claude" / "plugin" / "scripts"
+        if scripts_dir.exists():
+            for script in scripts_dir.glob("*.cjs"):
+                try:
+                    current_mode = script.stat().st_mode
+                    script.chmod(current_mode | 0o111)
+                except (OSError, IOError):
+                    pass
+
         custom_dir = ctx.project_dir / ".claude" / "rules" / "custom"
         if not custom_dir.exists():
             custom_dir.mkdir(parents=True, exist_ok=True)
