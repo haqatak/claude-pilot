@@ -139,7 +139,7 @@ def _configure_claude_defaults() -> bool:
             "autoConnectIde": True,
             "respectGitignore": False,
             "autoUpdates": False,
-            "claudeInChromeDefaultEnabled": False,
+            "lspRecommendationDisabled": True,
             "attribution": {"commit": "", "pr": ""},
         }
     )
@@ -169,11 +169,11 @@ def install_claude_code(project_dir: Path, ui: Any = None) -> tuple[bool, str]:
     if version != "latest":
         npm_cmd = f"npm install -g @anthropic-ai/claude-code@{version}"
         if ui:
-            ui.status(f"Installing Claude Code v{version} via npm...")
+            ui.status(f"Installing Claude Code v{version}...")
     else:
         npm_cmd = "npm install -g @anthropic-ai/claude-code"
         if ui:
-            ui.status("Installing Claude Code via npm...")
+            ui.status("Installing Claude Code...")
 
     if not _run_bash_with_retry(npm_cmd):
         return False, version
@@ -259,48 +259,6 @@ def _migrate_legacy_plugins(ui: Any = None) -> None:
         ui.success(f"Cleaned up {total} legacy plugins")
 
 
-def _configure_claude_mem_defaults() -> bool:
-    """Configure Claude Mem with recommended defaults."""
-    import json
-
-    settings_dir = Path.home() / ".claude-mem"
-    settings_path = settings_dir / "settings.json"
-
-    try:
-        settings_dir.mkdir(parents=True, exist_ok=True)
-
-        if settings_path.exists():
-            settings = json.loads(settings_path.read_text())
-        else:
-            settings = {}
-
-        settings.update(
-            {
-                "PROCESSING_MODE": "normal",
-                "CLAUDEMD_ENABLED": "false",
-                "CLAUDE_MEM_FOLDER_CLAUDEMD_ENABLED": "false",
-                "RETENTION_ENABLED": "true",
-                "CLEANUP_AUTO_ENABLED": "true",
-                "CLAUDE_MEM_RETENTION_ENABLED": "true",
-                "RETENTION_MAX_COUNT": "1000",
-                "MAX_WORKERS": "1",
-                "AUTO_SPAWN_WORKERS": "false",
-                "CLAUDE_MEM_RETENTION_MAX_COUNT": "1000",
-                "CLAUDE_MEM_CONTEXT_SHOW_LAST_SUMMARY": "true",
-                "CLAUDE_MEM_CONTEXT_SHOW_LAST_MESSAGE": "true",
-                "CLAUDE_MEM_CONTEXT_OBSERVATIONS": "50",
-                "CLAUDE_MEM_CONTEXT_SESSION_COUNT": "10",
-                "CLAUDE_MEM_CONTEXT_FULL_COUNT": "10",
-                "CLAUDE_MEM_CONTEXT_FULL_FIELD": "facts",
-                "CLAUDE_MEM_MODEL": "haiku",
-            }
-        )
-        settings_path.write_text(json.dumps(settings, indent=2) + "\n")
-        return True
-    except Exception:
-        return False
-
-
 def _configure_vexor_defaults() -> bool:
     """Configure Vexor with recommended defaults for semantic search (OpenAI)."""
     import json
@@ -369,8 +327,30 @@ def _configure_vexor_local() -> bool:
         return False
 
 
+def _is_vexor_local_model_installed() -> bool:
+    """Check if the local embedding model is already downloaded."""
+    cache_dirs = [
+        Path.home() / ".cache" / "huggingface" / "hub",
+        Path.home() / ".cache" / "torch" / "sentence_transformers",
+    ]
+    model_name = "intfloat--multilingual-e5-small"
+
+    for cache_dir in cache_dirs:
+        if cache_dir.exists():
+            for model_dir in cache_dir.glob(f"*{model_name}*"):
+                if model_dir.is_dir():
+                    return True
+            for model_dir in cache_dir.glob(f"models--{model_name}*"):
+                if model_dir.is_dir():
+                    return True
+    return False
+
+
 def _setup_vexor_local_model(ui: Any = None) -> bool:
     """Download and setup the local embedding model for Vexor."""
+    if _is_vexor_local_model_installed():
+        return True
+
     try:
         if ui:
             with ui.spinner("Downloading local embedding model..."):
@@ -394,8 +374,12 @@ def _setup_vexor_local_model(ui: Any = None) -> bool:
 def install_vexor(use_local: bool = False, ui: Any = None) -> bool:
     """Install Vexor semantic search tool and configure defaults."""
     if use_local:
-        if not _run_bash_with_retry("uv pip install 'vexor[local]'"):
-            return False
+        if command_exists("vexor") and _is_vexor_local_model_installed():
+            _configure_vexor_local()
+            return True
+        if not command_exists("vexor"):
+            if not _run_bash_with_retry("uv pip install 'vexor[local]'"):
+                return False
         _configure_vexor_local()
         return _setup_vexor_local_model(ui)
     else:
@@ -414,8 +398,23 @@ def install_mcp_cli() -> bool:
     return _run_bash_with_retry("bun install -g https://github.com/philschmid/mcp-cli")
 
 
+def _is_vtsls_installed() -> bool:
+    """Check if vtsls is already installed globally."""
+    try:
+        result = subprocess.run(
+            ["npm", "list", "-g", "@vtsls/language-server"],
+            capture_output=True,
+            text=True,
+        )
+        return result.returncode == 0 and "@vtsls/language-server" in result.stdout
+    except Exception:
+        return False
+
+
 def install_typescript_lsp() -> bool:
     """Install TypeScript language server and compiler globally."""
+    if _is_vtsls_installed():
+        return True
     return _run_bash_with_retry("npm install -g @vtsls/language-server typescript")
 
 
@@ -500,7 +499,7 @@ def _install_plugin_dependencies(project_dir: Path, ui: Any = None) -> bool:
     This installs all Node.js dependencies defined in plugin/package.json,
     which includes runtime dependencies for MCP servers and hooks.
     """
-    plugin_dir = project_dir / ".claude" / "plugin"
+    plugin_dir = project_dir / ".claude" / "ccp"
 
     if not plugin_dir.exists():
         if ui:
@@ -523,15 +522,14 @@ def _install_plugin_dependencies(project_dir: Path, ui: Any = None) -> bool:
 
 
 def _setup_claude_mem(ui: Any) -> bool:
-    """Migrate legacy plugins and configure claude-mem defaults.
+    """Migrate legacy plugins for claude-mem.
 
     Claude-mem MCP server is now defined in plugin/.mcp.json.
-    This function removes any legacy plugin installations and configures defaults.
+    This function removes any legacy plugin installations.
     """
     _migrate_legacy_plugins(ui)
-    _configure_claude_mem_defaults()
     if ui:
-        ui.success("claude-mem defaults configured")
+        ui.success("claude-mem legacy plugins cleaned")
     return True
 
 

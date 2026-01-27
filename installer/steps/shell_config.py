@@ -251,20 +251,24 @@ class ShellConfigStep(BaseStep):
         ui = ctx.ui
         config_files = get_shell_config_files()
         modified_files: list[str] = []
+        needs_reload = False  # Track if shell reload is actually needed
 
         if is_in_devcontainer():
             zshrc = Path.home() / ".zshrc"
             if zshrc.exists():
                 if ui:
                     ui.status("Configuring zsh environment...")
-                _configure_zsh_fzf(zshrc, ui)
-                _configure_zsh_dotenv(zshrc, ui)
+                if _configure_zsh_fzf(zshrc, ui):
+                    needs_reload = True
+                if _configure_zsh_dotenv(zshrc, ui):
+                    needs_reload = True
                 _set_zsh_default_shell(ui)
 
         if ui:
             ui.status("Configuring bun PATH...")
         for config_file in config_files:
-            _configure_bun_path(config_file, ui, quiet=True)
+            if _configure_bun_path(config_file, ui, quiet=True):
+                needs_reload = True
 
         if ui:
             ui.status("Configuring shell alias...")
@@ -289,13 +293,15 @@ class ShellConfigStep(BaseStep):
                         ui.success(f"Updated alias in {config_file.name}")
                     else:
                         ui.success(f"Added alias to {config_file.name}")
+                        needs_reload = True  # New alias added, reload needed
             except (OSError, IOError) as e:
                 if ui:
                     ui.warning(f"Could not modify {config_file.name}: {e}")
 
         ctx.config["modified_shell_configs"] = modified_files
 
-        if ui and modified_files:
+        # Only show reload prompt if new config was actually added
+        if ui and needs_reload and not ui.quiet:
             ui.print()
             ui.status("To use the 'ccp' command, reload your shell:")
             ui.print("  source ~/.bashrc  # or ~/.zshrc")

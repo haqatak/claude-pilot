@@ -11,8 +11,8 @@ model: opus
 1. **Read existing rules & skills** - Load all `.claude/rules/custom/*.md` and `.claude/skills/` to understand current state
 2. **Build search index** - Initialize/update Vexor for semantic code search
 3. **Explore codebase** - Use Vexor, Grep, and file analysis to discover patterns
-4. **Compare & sync** - Update outdated rules, add missing patterns
-5. **Create skills** - When reusable workflows are discovered, invoke skill-creator
+4. **Compare & sync** - Update outdated rules and skills, add missing patterns
+5. **Create new skills** - When reusable workflows are discovered, use `/learn` command
 
 All files in `.claude/rules/custom/` are project-specific rules loaded into every session.
 Custom skills in `.claude/skills/` (non-standard names) are preserved during updates.
@@ -31,9 +31,11 @@ Custom skills in `.claude/skills/` (non-standard names) are preserved during upd
 
 ## Execution Sequence
 
-### Phase 1: Read Existing Rules
+### Phase 1: Read Existing Rules & Skills
 
 **MANDATORY FIRST STEP: Understand what's already documented.**
+
+#### Step 1.1: Read Custom Rules
 
 1. **List all custom rules:**
    ```bash
@@ -46,12 +48,25 @@ Custom skills in `.claude/skills/` (non-standard names) are preserved during upd
    - What conventions are established
    - Last updated timestamps
 
+#### Step 1.2: Read Custom Skills
+
+1. **List all custom skills:**
+   ```bash
+   ls -la .claude/skills/*/SKILL.md 2>/dev/null
+   ```
+
+2. **Read each SKILL.md** to understand:
+   - What workflows/tools are documented
+   - Trigger conditions and use cases
+   - Referenced scripts or assets
+   - Whether the skill is still relevant
+
 3. **Build mental inventory:**
    ```
-   Documented areas: [list from reading files]
-   Documented patterns: [list key patterns found]
+   Documented rules: [list from reading files]
+   Documented skills: [list skill names and purposes]
    Potential gaps to investigate: [areas not covered]
-   Possibly outdated: [rules with old timestamps or suspicious content]
+   Possibly outdated: [rules/skills with old content or changed workflows]
    ```
 
 ### Phase 2: Initialize Vexor Index
@@ -215,7 +230,76 @@ Custom skills in `.claude/skills/` (non-standard names) are preserved during upd
 
 4. **Skip if no mcp_servers.json or user declines**
 
-### Phase 7: Discover New Standards
+### Phase 7: Sync Existing Skills
+
+**Update custom skills in `.claude/skills/` to reflect current codebase.**
+
+#### Step 7.1: Review Each Custom Skill
+
+For each skill found in Phase 1.2:
+
+1. **Check if skill is still relevant:**
+   - Does the workflow/tool still exist in codebase?
+   - Has the process changed?
+   - Are referenced files/scripts still valid?
+
+2. **Check if skill content is current:**
+   - Are the steps still accurate?
+   - Have APIs or commands changed?
+   - Are examples still working?
+
+3. **Check trigger conditions:**
+   - Is the description still accurate for discovery?
+   - Should trigger conditions be expanded/narrowed?
+
+#### Step 7.2: Update Outdated Skills
+
+For skills needing updates:
+
+1. **Use AskUserQuestion:**
+   ```
+   Question: "These skills need updates. Which should I update?"
+   Header: "Skill Updates"
+   multiSelect: true
+   Options:
+   - "[skill-name]" - [What changed and why]
+   - "[skill-name]" - [What changed and why]
+   - "None" - Skip skill updates
+   ```
+
+2. **For each selected skill:**
+   - Read the current SKILL.md
+   - Update content to reflect current state
+   - Bump version number
+   - Update any referenced scripts/assets
+
+3. **Confirm before writing:**
+   ```
+   Question: "Here's the updated [skill-name]. Apply changes?"
+   Header: "Confirm Update"
+   Options:
+   - "Yes, update it"
+   - "Edit first"
+   - "Skip this one"
+   ```
+
+#### Step 7.3: Remove Obsolete Skills
+
+If a skill is no longer relevant:
+
+1. **Use AskUserQuestion:**
+   ```
+   Question: "[skill-name] appears obsolete. Remove it?"
+   Header: "Remove Skill"
+   Options:
+   - "Yes, remove it"
+   - "Keep it" - Still useful
+   - "Update instead" - Workflow changed but still needed
+   ```
+
+2. **If removing:** Delete the skill directory
+
+### Phase 8: Discover New Standards
 
 **Find and document undocumented tribal knowledge.**
 
@@ -304,7 +388,7 @@ For each selected pattern:
 ```
 ```
 
-### Phase 8: Discover & Create Skills
+### Phase 9: Discover & Create Skills
 
 **Identify patterns that would be better as skills than rules.**
 
@@ -336,30 +420,32 @@ Options:
 
 #### Step 8.2: Create Selected Skills
 
-For each selected skill, **invoke the skill-creator skill**:
+For each selected skill, **invoke the `/learn` command**:
 
 ```
-Skill(skill="skill-creator", args="create skill for [selected pattern]")
+Skill(skill="learn")
 ```
 
-The skill-creator will:
-1. Ask clarifying questions about the workflow
-2. Plan reusable contents (scripts, references, assets)
+The `/learn` command will:
+1. Evaluate if the pattern is worth extracting
+2. Check for existing related skills
 3. Create the skill directory in `.claude/skills/`
-4. Write the SKILL.md with proper frontmatter
+4. Write the SKILL.md with proper frontmatter and trigger conditions
+
+See `.claude/commands/learn.md` for the full skill creation process.
 
 **Important:** Use a unique skill name (not `plan`, `implement`, `verify`, or `standards-*`) so it's preserved during updates.
 
 #### Step 8.3: Verify Skill Creation
 
-After skill-creator completes:
+After `/learn` completes:
 1. Verify skill directory exists in `.claude/skills/`
-2. Confirm SKILL.md has proper frontmatter (name, description)
+2. Confirm SKILL.md has proper frontmatter (name, description with triggers)
 3. Test skill is recognized: mention it in conversation to trigger
 
 ---
 
-### Phase 9: Summary
+### Phase 10: Summary
 
 **Report what was synced:**
 
@@ -375,8 +461,15 @@ After skill-creator completes:
 **New Rules Created:**
 - api-responses.md - Response envelope pattern
 
+**Skills Updated:**
+- my-workflow - Updated steps for new API
+- lsp-cleaner - Added new detection pattern
+
 **New Skills Created:**
-- my-workflow - Multi-step deployment process
+- deploy-process - Multi-step deployment workflow
+
+**Skills Removed:**
+- old-workflow - No longer relevant
 
 **No Changes Needed:**
 - cdk-rules.md - Still current

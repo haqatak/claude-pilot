@@ -28,7 +28,7 @@ A shortcut to state-of-the-art Claude Code development, continuously improved.
 curl -fsSL https://raw.githubusercontent.com/maxritter/claude-codepro/v5.3.1/install.sh | bash
 ```
 
-Then run `ccp` and `/sync` once to sync rules and skills. Use `/spec` or the quick mode for full quality.
+Then run `ccp` in your terminal to start Claude Code, and type `/sync` inside the session to sync rules and skills. Use `/spec` for Spec-Driven Development or Quick Mode for fast fixes.
 
 ---
 
@@ -98,8 +98,9 @@ You'll be asked to choose between **Dev Container** or **Local Installation**.
 ### 📚 Modular Rules, Commands & Skills
 
 - **Rules** - Best practices for TDD, debugging, context management, and more
-- **Commands** - `/spec` for Spec-Driven Development and `/sync` updating rules
+- **Commands** - `/spec` for Spec-Driven Development and `/sync` for updating rules
 - **Skills** - Coding standards for Python, TypeScript, Go, testing, and components
+- **Online Learning** - Automatically extracts reusable workflows and solutions into skills
 - **Customizable** - Add your own rules, commands, and skills that survive updates
 
 ### 🧠 Enhanced Context Capabilities
@@ -194,7 +195,7 @@ Claude CodePro extends Claude Code with a modular system of rules, commands, and
 
 - `.claude/commands/` - `spec` and `sync` commands are managed by CCP
 - `.claude/rules/standard/` - Best practices and workflows
-- `.claude/plugin/skills/` - Coding standards for languages and frameworks
+- `.claude/ccp/skills/` - Coding standards for languages and frameworks
 
 **Yours to customize** (never touched by updates):
 
