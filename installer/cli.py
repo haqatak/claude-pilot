@@ -361,7 +361,7 @@ def _prompt_for_features(
     1. CLI flag (--skip-python etc) - explicit override, always wins
     2. Saved config - always read, regardless of interactive mode
     3. User prompt - only in interactive mode when no saved config
-    4. Default (True) - non-interactive mode with no saved config
+    4. Default (False) - non-interactive mode with no saved config (don't enable by default)
     """
     enable_python = not skip_python
     if not skip_python:
@@ -375,6 +375,8 @@ def _prompt_for_features(
             console.print("  [bold]Do you want to install advanced Python features?[/bold]")
             console.print("  This includes: uv, ruff, basedpyright, and Python quality hooks")
             enable_python = console.confirm("Install Python support?", default=True)
+        else:
+            enable_python = False
 
     enable_typescript = not skip_typescript
     if not skip_typescript:
@@ -387,6 +389,8 @@ def _prompt_for_features(
             console.print("  [bold]Do you want to install TypeScript features?[/bold]")
             console.print("  This includes: TypeScript quality hooks (eslint, tsc, prettier)")
             enable_typescript = console.confirm("Install TypeScript support?", default=True)
+        else:
+            enable_typescript = False
 
     enable_golang = not skip_golang
     if not skip_golang:
@@ -399,6 +403,8 @@ def _prompt_for_features(
             console.print("  [bold]Do you want to install Go features?[/bold]")
             console.print("  This includes: Go quality hooks (gofmt, go vet, golangci-lint)")
             enable_golang = console.confirm("Install Go support?", default=True)
+        else:
+            enable_golang = False
 
     return enable_python, enable_typescript, enable_golang
 

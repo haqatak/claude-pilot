@@ -268,8 +268,8 @@ class TestPromptForFeatures:
         assert typescript is False
         assert golang is False
 
-    def test_default_true_when_no_saved_config_non_interactive(self):
-        """Default to True when no saved config and non-interactive."""
+    def test_default_false_when_no_saved_config_non_interactive(self):
+        """Default to False when no saved config and non-interactive (auto-update safe)."""
         from installer.cli import _prompt_for_features
         from installer.ui import Console
 
@@ -285,6 +285,6 @@ class TestPromptForFeatures:
             skip_prompts=True,
         )
 
-        assert python is True
-        assert typescript is True
-        assert golang is True
+        assert python is False
+        assert typescript is False
+        assert golang is False

@@ -278,6 +278,11 @@ class ClaudeFilesStep(BaseStep):
                             hook_path.unlink()
                         except (OSError, IOError):
                             pass
+                if hooks_dir.exists() and not any(hooks_dir.iterdir()):
+                    try:
+                        hooks_dir.rmdir()
+                    except (OSError, IOError):
+                        pass
 
             skills_dir = ctx.project_dir / ".claude" / "skills"
             if skills_dir.exists():
