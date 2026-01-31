@@ -138,7 +138,7 @@ class Console:
 
         tagline = Text()
         tagline.append("  ✨ ", style="yellow")
-        tagline.append("Production-Grade Development Environment for Claude Code", style="bold white")
+        tagline.append("Pilot Takes Control of Claude Code", style="bold white")
         tagline.append(" ✨", style="yellow")
         self._console.print(tagline)
         self._console.print()

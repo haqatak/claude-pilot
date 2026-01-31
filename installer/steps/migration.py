@@ -14,7 +14,15 @@ def _detect_codepro_installation(project_dir: Path) -> bool:
     """Detect if old CodePro installation exists in project directory."""
     old_ccp_dir = project_dir / ".claude" / "ccp"
     old_config = project_dir / ".claude" / "config" / "ccp-config.json"
-    return old_ccp_dir.exists() or old_config.exists()
+    # Also detect old rules structure that needs migration
+    old_custom_rules = project_dir / ".claude" / "rules" / "custom"
+    old_standard_rules = project_dir / ".claude" / "rules" / "standard"
+    return (
+        old_ccp_dir.exists()
+        or old_config.exists()
+        or old_custom_rules.exists()
+        or old_standard_rules.exists()
+    )
 
 
 def _detect_global_codepro() -> bool:
@@ -149,17 +157,43 @@ def _cleanup_global_old_folders() -> list[str]:
     return removed
 
 
-def _preserve_custom_rules(project_dir: Path) -> int:
-    """Move custom rules from old location to keep them in project.
+def _migrate_custom_rules(project_dir: Path) -> int:
+    """Move custom rules from .claude/rules/custom/ to .claude/rules/.
 
-    Custom rules stay in .claude/rules/custom/ (unchanged location).
-    Returns count of preserved rules.
+    Returns count of migrated rules.
     """
-    custom_rules_dir = project_dir / ".claude" / "rules" / "custom"
-    if not custom_rules_dir.exists():
+    old_custom_dir = project_dir / ".claude" / "rules" / "custom"
+    new_rules_dir = project_dir / ".claude" / "rules"
+
+    if not old_custom_dir.exists():
         return 0
 
-    return len(list(custom_rules_dir.glob("*.md")))
+    migrated = 0
+    new_rules_dir.mkdir(parents=True, exist_ok=True)
+
+    for rule_file in old_custom_dir.glob("*.md"):
+        try:
+            dest = new_rules_dir / rule_file.name
+            shutil.move(str(rule_file), str(dest))
+            migrated += 1
+        except (OSError, IOError):
+            pass
+
+    # Remove empty custom dir and .gitkeep
+    gitkeep = old_custom_dir / ".gitkeep"
+    if gitkeep.exists():
+        try:
+            gitkeep.unlink()
+        except (OSError, IOError):
+            pass
+
+    if old_custom_dir.exists() and not any(old_custom_dir.iterdir()):
+        try:
+            old_custom_dir.rmdir()
+        except (OSError, IOError):
+            pass
+
+    return migrated
 
 
 class MigrationStep(BaseStep):
@@ -191,7 +225,7 @@ class MigrationStep(BaseStep):
 
         migrated_config = False
         removed_folders: list[str] = []
-        preserved_rules = 0
+        migrated_rules = 0
 
         if has_global_codepro:
             if _migrate_global_config():
@@ -201,20 +235,20 @@ class MigrationStep(BaseStep):
         if has_project_codepro:
             if _migrate_project_config(ctx.project_dir):
                 migrated_config = True
-            preserved_rules = _preserve_custom_rules(ctx.project_dir)
+            migrated_rules = _migrate_custom_rules(ctx.project_dir)
             removed_folders.extend(_cleanup_old_folders(ctx.project_dir))
 
         if ui:
             if migrated_config:
                 ui.success("Config migrated to ~/.pilot/config.json")
-            if preserved_rules > 0:
-                ui.success(f"Preserved {preserved_rules} custom rules")
+            if migrated_rules > 0:
+                ui.success(f"Migrated {migrated_rules} custom rules to .claude/rules/")
             if removed_folders:
                 ui.success(f"Cleaned up {len(removed_folders)} old CodePro folders")
             ui.success("Migration complete")
 
         ctx.config["migration"] = {
             "config_migrated": migrated_config,
-            "preserved_rules": preserved_rules,
+            "migrated_rules": migrated_rules,
             "removed_folders": removed_folders,
         }

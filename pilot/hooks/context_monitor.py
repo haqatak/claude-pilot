@@ -206,7 +206,7 @@ def run_context_monitor() -> int:
             file=sys.stderr,
         )
         print(
-            f"{RED}4. Run: $CLAUDE_PROJECT_ROOT/.claude/bin/pilot send-clear <plan-path>  (or --general if no active plan){NC}",
+            f"{RED}4. Run: ~/.pilot/bin/pilot send-clear <plan-path>  (or --general if no active plan){NC}",
             file=sys.stderr,
         )
         return 2

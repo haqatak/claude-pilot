@@ -205,19 +205,9 @@ Run `/sync` after adding servers to generate documentation.
 
 ---
 
-## 🤝 Contributing
-
-**Pull Requests** - New features, improvements, and bug fixes are welcome. Fun fact: Pilot is built with Pilot — a self-improving loop where your contributions make the tool that makes contributions better. 🔄
-
-**Issues** - Found a bug or have a feature request? [Open an issue](https://github.com/maxritter/claude-pilot/issues).
-
----
-
 ## 📄 License
 
 > **Try free for 7 days** — No signup, no credit card. Just install and go.
-
-**Why subscribe?** Claude Pilot is actively developed with daily usage in production environments. Your subscription gives you instant access to the latest best practices, workflows, and learnings — a shortcut to state-of-the-art Claude Code development without spending weeks figuring it out yourself.
 
 After your trial, choose the tier that fits your needs [here](https://license.claude-pilot.com):
 
@@ -227,3 +217,14 @@ After your trial, choose the tier that fits your needs [here](https://license.cl
 | **Enterprise** | Standard + dedicated email support and priority feature requests |
 
 See the [LICENSE](LICENSE) file for full terms.
+
+---
+
+## 🤝 Contributing
+
+**Pull Requests** - New features, improvements, and bug fixes are welcome. Fun fact: Pilot is built with Pilot — a self-improving loop where your contributions make the tool that makes contributions better. 🔄
+
+**Issues** - Found a bug or have a feature request? [Open an issue](https://github.com/maxritter/claude-pilot/issues).
+
+
+

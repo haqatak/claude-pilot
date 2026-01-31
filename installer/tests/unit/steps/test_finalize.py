@@ -23,8 +23,8 @@ class TestGetPilotVersion:
         )
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            with patch("installer.steps.finalize.Path.cwd", return_value=Path(tmpdir)):
-                bin_dir = Path(tmpdir) / ".claude" / "bin"
+            with patch("installer.steps.finalize.Path.home", return_value=Path(tmpdir)):
+                bin_dir = Path(tmpdir) / ".pilot" / "bin"
                 bin_dir.mkdir(parents=True)
                 pilot_path = bin_dir / "pilot"
                 pilot_path.write_text("#!/bin/bash\necho 'Claude Pilot v5.2.3'")
@@ -43,8 +43,8 @@ class TestGetPilotVersion:
         )
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            with patch("installer.steps.finalize.Path.cwd", return_value=Path(tmpdir)):
-                bin_dir = Path(tmpdir) / ".claude" / "bin"
+            with patch("installer.steps.finalize.Path.home", return_value=Path(tmpdir)):
+                bin_dir = Path(tmpdir) / ".pilot" / "bin"
                 bin_dir.mkdir(parents=True)
                 pilot_path = bin_dir / "pilot"
                 pilot_path.write_text("#!/bin/bash")
@@ -58,7 +58,7 @@ class TestGetPilotVersion:
         from installer.steps.finalize import _get_pilot_version
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            with patch("installer.steps.finalize.Path.cwd", return_value=Path(tmpdir)):
+            with patch("installer.steps.finalize.Path.home", return_value=Path(tmpdir)):
                 version = _get_pilot_version()
                 assert version == __version__
 

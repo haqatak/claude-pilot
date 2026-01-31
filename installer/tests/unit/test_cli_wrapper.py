@@ -14,8 +14,8 @@ class TestFindPilotBinary:
         """find_pilot_binary returns path when binary exists."""
         from installer.cli import find_pilot_binary
 
-        with patch("installer.cli.Path.cwd", return_value=tmp_path):
-            bin_dir = tmp_path / ".claude" / "bin"
+        with patch("installer.cli.Path.home", return_value=tmp_path):
+            bin_dir = tmp_path / ".pilot" / "bin"
             bin_dir.mkdir(parents=True)
             (bin_dir / "pilot").touch()
 
@@ -28,7 +28,7 @@ class TestFindPilotBinary:
         """find_pilot_binary returns None if binary doesn't exist."""
         from installer.cli import find_pilot_binary
 
-        with patch("installer.cli.Path.cwd", return_value=tmp_path):
+        with patch("installer.cli.Path.home", return_value=tmp_path):
             path = find_pilot_binary()
             assert path is None
 
@@ -42,7 +42,7 @@ class TestLaunchCommand:
 
         with patch("installer.cli.subprocess.call") as mock_call:
             with patch("installer.cli.find_pilot_binary") as mock_find:
-                mock_find.return_value = tmp_path / ".claude" / "bin" / "pilot"
+                mock_find.return_value = tmp_path / ".pilot" / "bin" / "pilot"
                 mock_call.return_value = 0
 
                 args = argparse.Namespace(args=[])
@@ -72,7 +72,7 @@ class TestLaunchCommand:
 
         with patch("installer.cli.subprocess.call") as mock_call:
             with patch("installer.cli.find_pilot_binary") as mock_find:
-                mock_find.return_value = tmp_path / ".claude" / "bin" / "pilot"
+                mock_find.return_value = tmp_path / ".pilot" / "bin" / "pilot"
                 mock_call.return_value = 0
 
                 args = argparse.Namespace(args=["--model", "opus"])

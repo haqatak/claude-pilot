@@ -13,7 +13,7 @@ from installer.steps.base import BaseStep
 
 def _get_pilot_version() -> str:
     """Get version from Pilot binary, fallback to installer version."""
-    pilot_path = Path.cwd() / ".claude" / "bin" / "pilot"
+    pilot_path = Path.home() / ".pilot" / "bin" / "pilot"
     if pilot_path.exists():
         try:
             result = subprocess.run(

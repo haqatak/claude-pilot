@@ -6,7 +6,8 @@
     },
     "mem-search": {
       "type": "stdio",
-      "command": "~/.claude/pilot/scripts/mcp-server.cjs"
+      "command": "sh",
+      "args": ["-c", "bun run ~/.claude/pilot/scripts/mcp-server.cjs"]
     },
     "web-search": {
       "command": "npx",

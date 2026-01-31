@@ -460,15 +460,18 @@ class TestInstallPluginDependencies:
 
         assert callable(_install_plugin_dependencies)
 
-    def test_install_plugin_dependencies_returns_false_if_no_plugin_dir(self):
+    @patch("installer.steps.dependencies.Path")
+    def test_install_plugin_dependencies_returns_false_if_no_plugin_dir(self, mock_path):
         """_install_plugin_dependencies returns False if plugin directory doesn't exist."""
         from installer.steps.dependencies import _install_plugin_dependencies
 
         with tempfile.TemporaryDirectory() as tmpdir:
+            mock_path.home.return_value = Path(tmpdir)
             result = _install_plugin_dependencies(Path(tmpdir), ui=None)
             assert result is False
 
-    def test_install_plugin_dependencies_returns_false_if_no_package_json(self):
+    @patch("installer.steps.dependencies.Path")
+    def test_install_plugin_dependencies_returns_false_if_no_package_json(self, mock_path):
         """_install_plugin_dependencies returns False if no package.json exists."""
         from installer.steps.dependencies import _install_plugin_dependencies
 
@@ -476,12 +479,16 @@ class TestInstallPluginDependencies:
             plugin_dir = Path(tmpdir) / ".claude" / "pilot"
             plugin_dir.mkdir(parents=True)
 
+            mock_path.home.return_value = Path(tmpdir)
             result = _install_plugin_dependencies(Path(tmpdir), ui=None)
             assert result is False
 
     @patch("installer.steps.dependencies._run_bash_with_retry")
     @patch("installer.steps.dependencies.command_exists")
-    def test_install_plugin_dependencies_runs_bun_install(self, mock_cmd_exists, mock_run):
+    @patch("installer.steps.dependencies.Path")
+    def test_install_plugin_dependencies_runs_bun_install(
+        self, mock_path, mock_cmd_exists, mock_run
+    ):
         """_install_plugin_dependencies runs bun install when bun is available."""
         from installer.steps.dependencies import _install_plugin_dependencies
 
@@ -493,6 +500,7 @@ class TestInstallPluginDependencies:
             plugin_dir.mkdir(parents=True)
             (plugin_dir / "package.json").write_text('{"name": "test"}')
 
+            mock_path.home.return_value = Path(tmpdir)
             result = _install_plugin_dependencies(Path(tmpdir), ui=None)
 
             assert result is True

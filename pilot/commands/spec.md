@@ -600,7 +600,7 @@ If you notice ANY of these, STOP and report to user:
     **Completed:** X | **Remaining:** Y
     ```
     **You MUST do this BEFORE proceeding to the next task.**
-11. **Check context usage** - Run `$CLAUDE_PROJECT_ROOT/.claude/bin/pilot check-context --json`
+11. **Check context usage** - Run `~/.pilot/bin/pilot check-context --json`
 
 ## Critical Task Rules
 
@@ -974,7 +974,7 @@ See `.claude/rules/standard/agent-browser.md` for commands and E2E testing patte
 After each major operation, check context:
 
 ```bash
-$CLAUDE_PROJECT_ROOT/.claude/bin/pilot check-context --json
+~/.pilot/bin/pilot check-context --json
 ```
 
 **Between iterations:**
@@ -1010,7 +1010,7 @@ Write to `/tmp/claude-continuation.md`:
 **Step 2: Trigger session clear**
 
 ```bash
-$CLAUDE_PROJECT_ROOT/.claude/bin/pilot send-clear <plan-path>
+~/.pilot/bin/pilot send-clear <plan-path>
 ```
 
 Pilot will restart with `/spec --continue <plan-path>`

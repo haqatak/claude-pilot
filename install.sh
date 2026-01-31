@@ -160,7 +160,7 @@ show_macos_gatekeeper_warning() {
 	echo "    4. Re-run this installer"
 	echo ""
 	echo "  Or run this command to remove the quarantine flag:"
-	echo "    xattr -cr $PWD/.claude/bin"
+	echo "    xattr -cr $HOME/.pilot/bin"
 	echo ""
 }
 
@@ -307,7 +307,7 @@ get_local_so_name() {
 }
 
 download_pilot_binary() {
-	local bin_dir=".claude/bin"
+	local bin_dir="$HOME/.pilot/bin"
 	local platform_suffix
 	local so_name
 	local base_url
@@ -495,7 +495,7 @@ download_pilot_binary
 run_installer $INSTALLER_ARGS
 
 if [ "$RESTART_PILOT" = true ]; then
-	PILOT_BIN=".claude/bin/pilot"
+	PILOT_BIN="$HOME/.pilot/bin/pilot"
 	if [ -x "$PILOT_BIN" ]; then
 		echo ""
 		echo "  Restarting Claude Pilot..."

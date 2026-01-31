@@ -13,7 +13,6 @@ from installer.config import load_config, save_config
 from installer.context import InstallContext
 from installer.errors import FatalInstallError, InstallationCancelled
 from installer.steps.base import BaseStep
-from installer.steps.bootstrap import BootstrapStep
 from installer.steps.claude_files import ClaudeFilesStep
 from installer.steps.config_files import ConfigFilesStep
 from installer.steps.dependencies import DependenciesStep
@@ -29,7 +28,6 @@ from installer.ui import Console
 def get_all_steps() -> list[BaseStep]:
     """Get all installation steps in order."""
     return [
-        BootstrapStep(),
         PrerequisitesStep(),
         GitSetupStep(),
         MigrationStep(),
@@ -42,20 +40,10 @@ def get_all_steps() -> list[BaseStep]:
     ]
 
 
-def _validate_license_key(
-    console: Console,
-    project_dir: Path,
-    license_key: str,
-    local_mode: bool,
-    local_repo_dir: Path | None,
-) -> bool:
+def _validate_license_key(console: Console, project_dir: Path, license_key: str) -> bool:
     """Validate license key using pilot binary."""
-    bin_path = project_dir / ".claude" / "bin" / "pilot"
-
-    if local_mode and local_repo_dir:
-        local_bin = local_repo_dir / ".claude" / "bin" / "pilot"
-        if local_bin.exists():
-            bin_path = local_bin
+    _ = project_dir
+    bin_path = Path.home() / ".pilot" / "bin" / "pilot"
 
     if not bin_path.exists():
         console.warning("Pilot binary not found - skipping license validation")
@@ -91,11 +79,8 @@ def _start_trial(
     local_repo_dir: Path | None,
 ) -> bool:
     """Start a 7-day trial using pilot binary."""
-    bin_path = project_dir / ".claude" / "bin" / "pilot"
-    if not bin_path.exists() and local_mode and local_repo_dir:
-        local_bin = local_repo_dir / ".claude" / "bin" / "pilot"
-        if local_bin.exists():
-            bin_path = local_bin
+    _ = project_dir, local_mode, local_repo_dir
+    bin_path = Path.home() / ".pilot" / "bin" / "pilot"
 
     if not bin_path.exists():
         console.error("Pilot binary not found")
@@ -142,17 +127,9 @@ def _check_trial_used(
     local_mode: bool,
     local_repo_dir: Path | None,
 ) -> tuple[bool | None, bool]:
-    """Check if trial has been used via pilot binary.
-
-    Returns (trial_used, can_reactivate):
-    - trial_used: True if trial was used, False if not, None if check failed
-    - can_reactivate: True if within 7-day window and can reactivate
-    """
-    bin_path = project_dir / ".claude" / "bin" / "pilot"
-    if not bin_path.exists() and local_mode and local_repo_dir:
-        local_bin = local_repo_dir / ".claude" / "bin" / "pilot"
-        if local_bin.exists():
-            bin_path = local_bin
+    """Check if trial has been used via pilot binary."""
+    _ = project_dir, local_mode, local_repo_dir
+    bin_path = Path.home() / ".pilot" / "bin" / "pilot"
 
     if not bin_path.exists():
         return None, False
@@ -181,16 +158,9 @@ def _get_license_info(
     local_repo_dir: Path | None = None,
     console: Console | None = None,
 ) -> dict | None:
-    """Get current license information using pilot binary.
-
-    Returns dict with: tier, email, created_at, expires_at, days_remaining, is_expired
-    or None if no license exists or pilot binary not found.
-    """
-    bin_path = project_dir / ".claude" / "bin" / "pilot"
-    if not bin_path.exists() and local and local_repo_dir:
-        local_bin = local_repo_dir / ".claude" / "bin" / "pilot"
-        if local_bin.exists():
-            bin_path = local_bin
+    """Get current license information using pilot binary."""
+    _ = project_dir, local, local_repo_dir, console
+    bin_path = Path.home() / ".pilot" / "bin" / "pilot"
 
     if not bin_path.exists():
         return None
@@ -247,8 +217,6 @@ def run_installation(ctx: InstallContext) -> None:
 def _prompt_license_key(
     console: Console,
     project_dir: Path,
-    local_mode: bool,
-    local_repo_dir: Path | None,
     max_attempts: int = 3,
 ) -> bool:
     """Prompt user for license key with retry logic."""
@@ -260,7 +228,7 @@ def _prompt_license_key(
                 console.print("  [dim]Please try again.[/dim]")
             continue
 
-        validated = _validate_license_key(console, project_dir, license_key, local_mode, local_repo_dir)
+        validated = _validate_license_key(console, project_dir, license_key)
         if validated:
             return True
         if attempt < max_attempts - 1:
@@ -293,7 +261,7 @@ def _handle_license_flow(
             console.print()
             console.print("  [bold]Enter your license key to continue:[/bold]")
             console.print()
-            if not _prompt_license_key(console, project_dir, local_mode, local_repo_dir):
+            if not _prompt_license_key(console, project_dir):
                 return 1
             console.print()
         return None
@@ -328,7 +296,7 @@ def _handle_license_flow(
         console.print("  [bold green]Use code TRIAL50OFF for 50% off your first month![/bold green]")
         console.print("  [dim](Regular pricing applies after first month)[/dim]")
         console.print()
-        if not _prompt_license_key(console, project_dir, local_mode, local_repo_dir):
+        if not _prompt_license_key(console, project_dir):
             return 1
     else:
         started = _start_trial(console, project_dir, local_mode, local_repo_dir)
@@ -357,14 +325,7 @@ def _prompt_for_features(
     skip_golang: bool,
     skip_prompts: bool,
 ) -> tuple[bool, bool, bool]:
-    """Prompt for feature installation preferences. Returns (python, typescript, golang).
-
-    Priority order for each feature:
-    1. CLI flag (--skip-python etc) - explicit override, always wins
-    2. Saved config - always read, regardless of interactive mode
-    3. User prompt - only in interactive mode when no saved config
-    4. Default (False) - non-interactive mode with no saved config (don't enable by default)
-    """
+    """Prompt for feature installation preferences. Returns (python, typescript, golang)."""
     enable_python = not skip_python
     if not skip_python:
         if "enable_python" in saved_config:
@@ -418,7 +379,7 @@ def cmd_install(args: argparse.Namespace) -> int:
     effective_local_repo_dir = args.local_repo_dir if args.local_repo_dir else (Path.cwd() if args.local else None)
     skip_prompts = args.non_interactive
     project_dir = Path.cwd()
-    saved_config = load_config(project_dir)
+    saved_config = load_config()
 
     license_info = _get_license_info(project_dir, args.local, effective_local_repo_dir, console)
     license_acknowledged = license_info is not None and license_info.get("tier") in ("trial", "standard", "enterprise")
@@ -440,7 +401,7 @@ def cmd_install(args: argparse.Namespace) -> int:
         saved_config["enable_python"] = enable_python
         saved_config["enable_typescript"] = enable_typescript
         saved_config["enable_golang"] = enable_golang
-        save_config(project_dir, saved_config)
+        save_config(saved_config)
 
     ctx = InstallContext(
         project_dir=project_dir,
@@ -479,8 +440,8 @@ def cmd_version(_args: argparse.Namespace) -> int:
 
 
 def find_pilot_binary() -> Path | None:
-    """Find the pilot binary in .claude/bin/."""
-    binary_path = Path.cwd() / ".claude" / "bin" / "pilot"
+    """Find the pilot binary in ~/.pilot/bin/."""
+    binary_path = Path.home() / ".pilot" / "bin" / "pilot"
     if binary_path.exists():
         return binary_path
     return None

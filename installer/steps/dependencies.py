@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import subprocess
 import time
 from pathlib import Path
@@ -111,7 +112,6 @@ def _patch_claude_config(config_updates: dict) -> bool:
 
     Creates the file if it doesn't exist. Merges updates with existing config.
     """
-    import json
 
     config_path = Path.home() / ".claude.json"
 
@@ -133,7 +133,6 @@ def _patch_claude_settings(settings_updates: dict) -> bool:
 
     Creates the file if it doesn't exist. Merges updates with existing settings.
     """
-    import json
 
     settings_dir = Path.home() / ".claude"
     settings_dir.mkdir(parents=True, exist_ok=True)
@@ -179,7 +178,6 @@ def _configure_claude_defaults() -> bool:
 
 def _get_forced_claude_version(project_dir: Path) -> str | None:
     """Check settings.local.json for FORCE_CLAUDE_VERSION in env section."""
-    import json
 
     settings_path = project_dir / ".claude" / "settings.local.json"
     if settings_path.exists():
@@ -227,7 +225,6 @@ def _migrate_legacy_plugins(ui: Any = None) -> None:
 
     Uses 'claude plugin uninstall' CLI for proper cleanup.
     """
-    import json
     import shutil
     import subprocess
 
@@ -293,7 +290,6 @@ def _migrate_legacy_plugins(ui: Any = None) -> None:
 
 def _configure_vexor_defaults() -> bool:
     """Configure Vexor with recommended defaults for semantic search (OpenAI)."""
-    import json
 
     config_dir = Path.home() / ".vexor"
     config_path = config_dir / "config.json"
@@ -327,7 +323,6 @@ def _configure_vexor_defaults() -> bool:
 
 def _configure_vexor_local() -> bool:
     """Configure Vexor for local embeddings (no API key needed)."""
-    import json
 
     config_dir = Path.home() / ".vexor"
     config_path = config_dir / "config.json"
@@ -362,6 +357,7 @@ def _configure_vexor_local() -> bool:
 def _is_vexor_local_model_installed() -> bool:
     """Check if the local embedding model is already downloaded."""
     cache_dirs = [
+        Path.home() / ".vexor" / "models",
         Path.home() / ".cache" / "huggingface" / "hub",
         Path.home() / ".cache" / "torch" / "sentence_transformers",
     ]
@@ -525,13 +521,13 @@ def _install_with_spinner(ui: Any, name: str, install_fn: Any, *args: Any) -> bo
         return install_fn(*args) if args else install_fn()
 
 
-def _install_plugin_dependencies(project_dir: Path, ui: Any = None) -> bool:
+def _install_plugin_dependencies(_project_dir: Path, ui: Any = None) -> bool:
     """Install plugin dependencies by running bun/npm install in the plugin folder.
 
     This installs all Node.js dependencies defined in plugin/package.json,
     which includes runtime dependencies for MCP servers and hooks.
     """
-    plugin_dir = project_dir / ".claude" / "pilot"
+    plugin_dir = Path.home() / ".claude" / "pilot"
 
     if not plugin_dir.exists():
         if ui:
@@ -554,14 +550,29 @@ def _install_plugin_dependencies(project_dir: Path, ui: Any = None) -> bool:
 
 
 def _setup_claude_mem(ui: Any) -> bool:
-    """Migrate legacy plugins for claude-mem.
+    """Migrate legacy plugins and ensure correct model for claude-mem.
 
     Claude-mem MCP server is now defined in plugin/.mcp.json.
-    This function removes any legacy plugin installations.
+    This function removes any legacy plugin installations and ensures
+    the model is set to haiku (removes settings.json if not).
     """
     _migrate_legacy_plugins(ui)
     if ui:
         ui.success("claude-mem legacy plugins cleaned")
+
+    settings_path = Path.home() / ".claude-mem" / "settings.json"
+    if settings_path.exists():
+        try:
+            settings = json.loads(settings_path.read_text())
+            current_model = settings.get("CLAUDE_MEM_MODEL", "")
+            if current_model != "haiku":
+                settings_path.unlink()
+                if ui:
+                    ui.info(f"Removed claude-mem settings (model was '{current_model}', will reset to haiku)")
+        except (json.JSONDecodeError, OSError) as e:
+            if ui:
+                ui.warning(f"Could not check claude-mem settings: {e}")
+
     return True
 
 
@@ -622,7 +633,6 @@ def _install_vexor_with_ui(ui: Any) -> bool:
 
 def _clean_mcp_servers_from_claude_config(ui: Any) -> None:
     """Remove mcpServers section from ~/.claude.json (now in plugin/.mcp.json)."""
-    import json
 
     claude_config_path = Path.home() / ".claude.json"
 

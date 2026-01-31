@@ -230,13 +230,10 @@ CLAUDE.md
 !.claude/rules/custom/typescript-rules.md
 .claude/config/
 tmp/
-
-# Skills directory (generated/user-specific)
 .claude/skills/
+.claude/rules/
 
 # Build artifacts
-.claude/bin/
-.claude/installer/
 docs/plans
 docs/license
 .install-version

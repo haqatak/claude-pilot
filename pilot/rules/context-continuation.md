@@ -65,8 +65,8 @@ Then check the Status field in the most recent plan file(s). An **active plan** 
 **Decision Tree:**
 | Situation | Command to Use |
 |-----------|----------------|
-| Active plan exists (PENDING/COMPLETE) | `$CLAUDE_PROJECT_ROOT/.claude/bin/pilot send-clear docs/plans/YYYY-MM-DD-name.md` |
-| No active plan (all VERIFIED or none exist) | `$CLAUDE_PROJECT_ROOT/.claude/bin/pilot send-clear --general` |
+| Active plan exists (PENDING/COMPLETE) | `~/.pilot/bin/pilot send-clear docs/plans/YYYY-MM-DD-name.md` |
+| No active plan (all VERIFIED or none exist) | `~/.pilot/bin/pilot send-clear --general` |
 
 **NEVER use `--general` when there's an active plan file. This loses the plan context!**
 
@@ -118,10 +118,10 @@ Then execute the send-clear command (do NOT wait for user response):
 
 ```bash
 # If active plan exists (PREFERRED - preserves plan context):
-$CLAUDE_PROJECT_ROOT/.claude/bin/pilot send-clear docs/plans/YYYY-MM-DD-name.md
+~/.pilot/bin/pilot send-clear docs/plans/YYYY-MM-DD-name.md
 
 # ONLY if NO active plan exists:
-$CLAUDE_PROJECT_ROOT/.claude/bin/pilot send-clear --general
+~/.pilot/bin/pilot send-clear --general
 ```
 
 This triggers session continuation in Endless Mode:
@@ -185,16 +185,16 @@ If you're in general development (no plan file):
 
 ```bash
 # Check context percentage
-$CLAUDE_PROJECT_ROOT/.claude/bin/pilot check-context --json
+~/.pilot/bin/pilot check-context --json
 
 # Trigger session continuation (no continuation prompt)
-$CLAUDE_PROJECT_ROOT/.claude/bin/pilot send-clear
+~/.pilot/bin/pilot send-clear
 
 # Trigger continuation WITH plan (PREFERRED when plan exists):
-$CLAUDE_PROJECT_ROOT/.claude/bin/pilot send-clear docs/plans/YYYY-MM-DD-name.md
+~/.pilot/bin/pilot send-clear docs/plans/YYYY-MM-DD-name.md
 
 # Trigger continuation WITHOUT plan (ONLY when no active plan):
-$CLAUDE_PROJECT_ROOT/.claude/bin/pilot send-clear --general
+~/.pilot/bin/pilot send-clear --general
 ```
 
 **⚠️ ALWAYS check for active plans before using `--general`. See Step 2 above.**
