@@ -8,13 +8,15 @@ model: opus
 
 ## What It Does
 
-1. **Read existing rules & skills** - Load all `.claude/rules/custom/*.md` and `.claude/skills/` to understand current state
-2. **Build search index** - Initialize/update Vexor for semantic code search
-3. **Explore codebase** - Use Vexor, Grep, and file analysis to discover patterns
-4. **Compare & sync** - Update outdated rules and skills, add missing patterns
-5. **Create new skills** - When reusable workflows are discovered, use `/learn` command
+1. **Check team vault** - Check if sx team vault is configured, offer to set up
+2. **Read existing rules & skills** - Load all `.claude/rules/*.md` and `.claude/skills/` to understand current state
+3. **Build search index** - Initialize/update Vexor for semantic code search
+4. **Explore codebase** - Use Vexor, Grep, and file analysis to discover patterns
+5. **Compare & sync** - Update outdated rules and skills, add missing patterns
+6. **Create new skills** - When reusable workflows are discovered, use `/learn` command
+7. **Sync to team vault** - Offer to share rules/skills with team via sx
 
-All files in `.claude/rules/custom/` are project-specific rules loaded into every session.
+All files in `.claude/rules/` are project-specific rules loaded into every session.
 Custom skills in `.claude/skills/` (non-standard names) are preserved during updates.
 
 ---
@@ -31,6 +33,66 @@ Custom skills in `.claude/skills/` (non-standard names) are preserved during upd
 
 ## Execution Sequence
 
+### Phase 0: Team Vault Setup (sx)
+
+**Check if team skill sharing is configured.**
+
+1. **Check sx availability and update:**
+   ```bash
+   sx --version && sx update
+   ```
+
+2. **Check if team vault is configured:**
+   ```bash
+   cat ~/.pilot/config.json 2>/dev/null | grep -q "team_vault"
+   ```
+
+3. **If not configured, ask user:**
+   ```
+   Question: "Would you like to set up team skill/rule sharing with sx?"
+   Header: "Team Vault"
+   Options:
+   - "Yes, set up git vault" - I want to share skills/rules with my team
+   - "Skip for now" - I'll set this up later
+   ```
+
+4. **If user chooses to set up:**
+   ```
+   Question: "Enter your team git repository URL:"
+   Header: "Git Repo"
+   Options:
+   - "github.com/myteam/skills" - Example: git@github.com:team/claude-skills.git
+   ```
+
+   Then run:
+   ```bash
+   sx init --type git --repo-url <user-provided-repo>
+   ```
+
+5. **Save config to ~/.pilot/config.json:**
+   ```json
+   {
+     "team_vault": {
+       "enabled": true,
+       "repo": "<repo-url>"
+     }
+   }
+   ```
+
+   Or if skipped:
+   ```json
+   {
+     "team_vault": {
+       "enabled": false
+     }
+   }
+   ```
+
+6. **Install team assets:**
+   ```bash
+   sx install
+   ```
+
 ### Phase 1: Read Existing Rules & Skills
 
 **MANDATORY FIRST STEP: Understand what's already documented.**
@@ -39,7 +101,7 @@ Custom skills in `.claude/skills/` (non-standard names) are preserved during upd
 
 1. **List all custom rules:**
    ```bash
-   ls -la .claude/rules/custom/*.md 2>/dev/null
+   ls -la .claude/rules/*.md 2>/dev/null
    ```
 
 2. **Read each existing rule file** to understand:
@@ -615,7 +677,7 @@ When an error occurs in our application, we have established a consistent patter
 
 ## Output Locations
 
-**Custom rules** in `.claude/rules/custom/`:
+**Custom rules** in `.claude/rules/`:
 
 | Rule Type | File | Purpose |
 |-----------|------|---------|
@@ -637,9 +699,55 @@ Vexor index: `.vexor/` (auto-managed)
 
 ---
 
+### Phase 11: Sync to Team Vault (sx)
+
+**If team vault is enabled, offer to share new/updated assets.**
+
+1. **Check if team vault is enabled:**
+   ```bash
+   cat ~/.pilot/config.json | jq -r '.team_vault.enabled'
+   ```
+
+2. **If enabled, collect shareable assets:**
+   - New rules created this session
+   - New skills created this session
+   - Updated rules/skills
+
+3. **Ask which to share:**
+   ```
+   Question: "Which assets would you like to share with your team?"
+   Header: "Share to Vault"
+   multiSelect: true
+   Options:
+   - "[rule] project.md" - Project configuration
+   - "[skill] my-workflow" - Custom workflow skill
+   - "None" - Skip sharing
+   ```
+
+4. **For each selected asset, run sx add:**
+   ```bash
+   # For rules
+   sx add .claude/rules/my-rule.md --yes --type rule --name "my-rule"
+
+   # For skills
+   sx add .claude/skills/my-skill --yes --type skill --name "my-skill"
+
+   # For commands
+   sx add .claude/commands/my-cmd.md --yes --type command --name "my-cmd"
+   ```
+
+5. **Verify vault state:**
+   ```bash
+   sx vault
+   ```
+
+---
+
 ## Important Notes
 
 - **Read existing rules first** — Never create duplicates or conflicts
 - **All custom rules load every session** — Keep them concise
-- **Don't duplicate `.claude/rules/standard/`** — Those are framework/tooling rules
+- **Standard rules in `~/.claude/rules/`** — Global framework/tooling rules
+- **Custom rules in `.claude/rules/`** — Project-specific rules
 - **Run `/sync` anytime** — After major changes, new patterns emerge, or periodically
+- **Use sx for team sharing** — Share rules/skills across projects and teams

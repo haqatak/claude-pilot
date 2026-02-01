@@ -426,6 +426,15 @@ def install_mcp_cli() -> bool:
     return _run_bash_with_retry("bun install -g https://github.com/philschmid/mcp-cli")
 
 
+def install_sx() -> bool:
+    """Install sx (sleuth.io skills exchange) for team skill sharing."""
+    if command_exists("sx"):
+        _run_bash_with_retry("sx update")
+        return True
+
+    return _run_bash_with_retry("curl -fsSL https://raw.githubusercontent.com/sleuth-io/sx/main/install.sh | bash")
+
+
 def _is_vtsls_installed() -> bool:
     """Check if vtsls is already installed globally."""
     try:
@@ -699,6 +708,9 @@ class DependenciesStep(BaseStep):
 
         if _install_vexor_with_ui(ui):
             installed.append("vexor")
+
+        if _install_with_spinner(ui, "sx (skills exchange)", install_sx):
+            installed.append("sx")
 
         _clean_mcp_servers_from_claude_config(ui)
 

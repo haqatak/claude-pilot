@@ -225,11 +225,7 @@ __marimo__/
 CLAUDE.md
 .claude.backup.*
 *.backup
-.claude/rules/custom/*
-!.claude/rules/custom/python-rules.md
-!.claude/rules/custom/typescript-rules.md
 .claude/config/
-tmp/
 .claude/skills/
 .claude/rules/
 

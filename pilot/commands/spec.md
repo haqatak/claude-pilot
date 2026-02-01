@@ -736,16 +736,16 @@ This step exists because we often forget our own rules. By re-reading each rule 
 
 ```bash
 # List ALL rule files - BOTH directories are MANDATORY
-ls -la .claude/rules/standard/*.md   # Standard rules - REQUIRED
-ls -la .claude/rules/custom/*.md     # Custom rules - REQUIRED
+ls -la ~/.claude/rules/*.md    # Standard rules (global) - REQUIRED
+ls -la .claude/rules/*.md      # Custom rules (project) - REQUIRED
 ```
 
 Then use `Read` tool to read EACH file completely from BOTH directories:
 
 | Directory | What It Contains | Required? |
 |-----------|------------------|-----------|
-| `.claude/rules/standard/*.md` | Core development standards (TDD, testing, execution, Python/TS/Go rules, etc.) | **YES - MANDATORY** |
-| `.claude/rules/custom/*.md` | Project-specific rules (git commits, project conventions) | **YES - MANDATORY** |
+| `~/.claude/rules/*.md` | Core development standards (TDD, testing, execution, Python/TS/Go rules, etc.) | **YES - MANDATORY** |
+| `.claude/rules/*.md` | Project-specific rules (git commits, project conventions) | **YES - MANDATORY** |
 
 **DO NOT skip standard rules. They contain critical requirements like TDD enforcement, execution verification, and testing standards.**
 
@@ -797,18 +797,18 @@ For each violation found:
 ```
 ## Rules Compliance Audit Complete
 
-### Standard Rules Checked: [N] files
-- .claude/rules/standard/execution-verification.md ✅
-- .claude/rules/standard/tdd-enforcement.md ✅
-- .claude/rules/standard/testing-strategies-coverage.md ✅
-- .claude/rules/standard/python-rules.md ✅
-- .claude/rules/standard/verification-before-completion.md ✅
-- .claude/rules/standard/systematic-debugging.md ✅
+### Standard Rules Checked: [N] files (from ~/.claude/rules/)
+- ~/.claude/rules/execution-verification.md ✅
+- ~/.claude/rules/tdd-enforcement.md ✅
+- ~/.claude/rules/testing-strategies-coverage.md ✅
+- ~/.claude/rules/python-rules.md ✅
+- ~/.claude/rules/verification-before-completion.md ✅
+- ~/.claude/rules/systematic-debugging.md ✅
 - ... (ALL standard rules)
 
-### Custom Rules Checked: [N] files
-- .claude/rules/custom/git-commits.md ✅
-- .claude/rules/custom/project.md ✅
+### Custom Rules Checked: [N] files (from .claude/rules/)
+- .claude/rules/git-commits.md ✅
+- .claude/rules/project.md ✅
 - ... (ALL custom rules)
 
 ### Violations Found: [N]
@@ -823,8 +823,8 @@ For each violation found:
 #### Completion Gate
 
 **DO NOT proceed to Step 5 until:**
-- Every rule file in `.claude/rules/standard/` has been READ
-- Every rule file in `.claude/rules/custom/` has been READ
+- Every rule file in `~/.claude/rules/` has been READ
+- Every rule file in `.claude/rules/` has been READ
 - Every key requirement has been checked
 - All fixable violations have been remediated
 - Compliance report has been output
@@ -912,7 +912,7 @@ curl -X DELETE http://localhost:8000/api/resource/1
 
 Use `agent-browser` to test the actual UI renders correctly and user workflows complete successfully. API tests verify the backend; Agent Browser verifies **what the user sees**.
 
-See `.claude/rules/standard/agent-browser.md` for commands and E2E testing patterns.
+See `~/.claude/rules/agent-browser.md` for commands and E2E testing patterns.
 
 ### Step 10: Final Verification
 
