@@ -8,20 +8,15 @@ from installer.context import InstallContext
 from installer.platform_utils import get_shell_config_files
 from installer.steps.base import BaseStep
 
-OLD_CCP_MARKER = "# Claude Pilot alias"
+OLD_CCP_MARKER = "# Claude CodePro alias"
 CLAUDE_ALIAS_MARKER = "# Claude Pilot"
 PILOT_BIN = "$HOME/.pilot/bin/pilot"
 
 
-def get_claude_alias_line(shell_type: str) -> str:
-    """Get the claude alias line for the given shell type.
-
-    Simple alias that points to the global ~/.pilot/bin/pilot binary.
-    """
-    if shell_type == "fish":
-        return f'{CLAUDE_ALIAS_MARKER}\nalias claude="{PILOT_BIN}"'
-    else:
-        return f'{CLAUDE_ALIAS_MARKER}\nalias claude="{PILOT_BIN}"'
+def get_alias_lines(shell_type: str) -> str:
+    """Get both claude and ccp alias lines for the given shell type."""
+    _ = shell_type
+    return f'{CLAUDE_ALIAS_MARKER}\nalias claude="{PILOT_BIN}"\nalias ccp="{PILOT_BIN}"'
 
 
 def alias_exists_in_file(config_file: Path) -> bool:
@@ -128,11 +123,11 @@ class ShellConfigStep(BaseStep):
                 remove_old_alias(config_file)
 
             shell_type = "fish" if "fish" in config_file.name else "bash"
-            claude_alias_line = get_claude_alias_line(shell_type)
+            alias_lines = get_alias_lines(shell_type)
 
             try:
                 with open(config_file, "a") as f:
-                    f.write(f"\n{claude_alias_line}\n")
+                    f.write(f"\n{alias_lines}\n")
                 modified_files.append(str(config_file))
                 if ui:
                     if alias_existed:

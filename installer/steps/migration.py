@@ -17,12 +17,7 @@ def _detect_codepro_installation(project_dir: Path) -> bool:
     # Also detect old rules structure that needs migration
     old_custom_rules = project_dir / ".claude" / "rules" / "custom"
     old_standard_rules = project_dir / ".claude" / "rules" / "standard"
-    return (
-        old_ccp_dir.exists()
-        or old_config.exists()
-        or old_custom_rules.exists()
-        or old_standard_rules.exists()
-    )
+    return old_ccp_dir.exists() or old_config.exists() or old_custom_rules.exists() or old_standard_rules.exists()
 
 
 def _detect_global_codepro() -> bool:

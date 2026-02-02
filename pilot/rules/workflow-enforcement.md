@@ -72,15 +72,28 @@ Tasks 3 and 4 won't show as ready until Task 2 completes.
 
 ## ⛔ ABSOLUTE BANS
 
-### No Sub-Agents (Except Verification)
-**NEVER use the Task tool to spawn sub-agents during planning or implementation.**
+### No Sub-Agents (Except Multi-Pass Verification)
+**NEVER use the Task tool to spawn sub-agents during planning exploration or implementation.**
 - Use `Read`, `Grep`, `Glob`, `Bash` directly for exploration
 - Sub-agents lose context and make mistakes during implementation
 
-**Exception: Verification phase in /spec workflow.**
-- Multi-pass verification uses parallel sub-agents for unbiased code review
+**Exception: Multi-pass verification in /spec workflow.**
+
+There are TWO verification points that use parallel sub-agents:
+
+| Phase | Agent | Purpose |
+|-------|-------|---------|
+| **End of Planning** | `plan-verifier` | Verify plan captures user requirements before approval |
+| **End of Implementation** | `spec-verifier` | Verify code implements the plan correctly |
+
+Both spawn 3 parallel agents for independent perspectives:
 - Each verifier runs with fresh context to avoid anchoring bias
-- This is the ONLY allowed use of sub-agents
+- Multiple passes catch different issues (60-70% per pass → 90%+ combined)
+- Issues found by 2+ passes have higher confidence
+
+**⚠️ Sub-agents do NOT inherit rules.** Rules are loaded by Claude Code at session start, but Task sub-agents start fresh. The verifier agents have key rules embedded directly and can read rule files from:
+- `~/.claude/rules/*.md` (global rules)
+- `.claude/rules/*.md` (project rules)
 
 Note: Task management tools (TaskCreate, TaskList, etc.) are ALWAYS allowed.
 
@@ -99,10 +112,31 @@ Note: Task management tools (TaskCreate, TaskList, etc.) are ALWAYS allowed.
 The `/spec` command handles everything in one flow:
 
 ```
-Plan → Approve → Implement → Verify → Done
-         ↑                      ↓
-         └──── if issues ───────┘
+Plan → Verify Plan → Approve → Implement → Verify Code → Done
+              ↓         ↑                        ↓
+              fix       │                        fix
+              ↓         │                        ↓
+              ──────────┘         ←──────────────┘
 ```
+
+**Two Multi-Pass Verification Points:**
+
+| Point | What | When |
+|-------|------|------|
+| **Plan Verification** | 3 agents verify plan matches user requirements | Before approval |
+| **Code Verification** | 3 agents verify code matches plan | After implementation |
+
+**⛔ CRITICAL: Only ONE user interaction point exists: Plan Approval.**
+
+Everything else is automatic:
+- Plan verification findings are fixed automatically before showing to user
+- Implementation proceeds without asking
+- Code verification findings are fixed automatically (must_fix AND should_fix)
+- Re-verification loops automatically until clean
+- Session handoffs happen automatically
+
+**NEVER ask "Should I fix these findings?" or "Want me to address these issues?"**
+The user approved the plan. Verification fixes are part of that approval.
 
 **Status values in plan files:**
 - `PENDING` - Awaiting implementation (or fixes from verify)

@@ -417,7 +417,67 @@ Iterations: 0
 - [Decisions deferred to implementation]
 ```
 
-### Step 7: Get User Approval
+### Step 7: Multi-Pass Plan Verification (MANDATORY)
+
+**⛔ THIS STEP IS NON-NEGOTIABLE. You MUST spawn 3 parallel verifiers before asking for approval.**
+
+Before presenting the plan to the user, verify it independently with 3 parallel reviewers. This catches missing requirements, scope issues, and misalignments BEFORE the user sees the plan.
+
+#### 7a: Launch Parallel Plan Verification
+
+Spawn 3 `plan-verifier` agents in parallel using the Task tool:
+
+```
+Task(
+  subagent_type="pilot:plan-verifier",
+  prompt="""
+  **Plan file:** <plan-path>
+  **User request:** <original task description from user>
+  **Clarifications:** <any Q&A that clarified requirements>
+
+  Verify this plan correctly captures the user's requirements.
+  Check for missing features, scope issues, and ambiguities.
+  """
+)
+```
+
+**CRITICAL:** Launch all 3 in a single message with 3 Task tool calls (parallel execution).
+
+Each verifier:
+- Reviews plan against original user request
+- Checks if clarification answers are incorporated
+- Identifies missing requirements or scope issues
+- Returns structured JSON findings
+
+#### 7b: Aggregate and Fix Findings
+
+After all passes complete:
+
+1. **Collect** all JSON findings from 3 passes
+2. **Deduplicate** on (title, plan_section) - same issue = one entry
+3. **Score confidence**: (passes finding issue) / 3 × 100%
+
+**For each issue found:**
+
+| Severity | Action |
+|----------|--------|
+| **must_fix** | Fix immediately - update plan before proceeding |
+| **should_fix** | Fix immediately - update plan before proceeding |
+| **suggestion** | Incorporate if reasonable, or note in Open Questions |
+
+**After fixing all issues:**
+
+```
+## Plan Verification Complete
+
+**Passes:** 3 | **Unique Issues:** X | **Fixed:** Y
+
+Plan has been updated to address findings. Proceeding to approval...
+```
+
+**Only proceed to Step 8 (approval) after all must_fix and should_fix issues are resolved.**
+
+### Step 8: Get User Approval
 
 **⛔ MANDATORY APPROVAL GATE - This is NON-NEGOTIABLE**
 
@@ -862,7 +922,15 @@ Verify test coverage meets requirements.
 
 Run automated quality tools and fix any issues found.
 
-### Step 8: Multi-Pass Code Review (MANDATORY)
+### Step 8: Multi-Pass Code Review (MANDATORY - NEVER SKIP)
+
+**⛔ THIS STEP IS NON-NEGOTIABLE. You MUST spawn 3 parallel verifiers.**
+
+Do NOT skip this step because:
+- You're confident the code is correct
+- Context is getting high (do handoff AFTER verification, not instead of it)
+- Tests pass (tests don't catch everything)
+- The implementation seems simple
 
 **⚠️ Fresh contexts catch more issues. This step spawns 3 parallel reviewers.**
 
@@ -875,7 +943,7 @@ A single code review pass catches ~60-70% of issues. Multiple independent passes
 
 Get list of files changed in this implementation:
 ```bash
-git diff --name-only HEAD~N  # N = number of commits in implementation
+git status --short  # Shows staged and unstaged changes
 ```
 
 #### 8b: Launch Parallel Verification Passes
@@ -885,13 +953,23 @@ Spawn 3 `spec-verifier` agents in parallel using the Task tool:
 ```
 Task(
   subagent_type="pilot:spec-verifier",
-  prompt="Review these files: [file list]. Plan summary: [brief description of what was implemented]"
+  prompt="""
+  **Plan file:** <plan-path>
+  **Changed files:** [file list from git status]
+
+  Review the implementation against the plan. Read the plan file first to understand
+  the requirements, then verify the changed files implement them correctly.
+  You may read related files for context as needed.
+  """
 )
 ```
 
 **CRITICAL:** Launch all 3 in a single message with 3 Task tool calls (parallel execution).
 
 Each verifier:
+- Receives the plan file path as source of truth
+- Reviews changed files against plan requirements
+- Can read related files for context (imports, dependencies, etc.)
 - Runs with fresh context (no anchoring bias)
 - Doesn't know what other passes found
 - Returns structured JSON findings
@@ -907,37 +985,41 @@ After all passes complete:
 
 #### 8d: Report Findings
 
-Present aggregated findings:
+Present aggregated findings briefly:
 
 ```
 ## Multi-Pass Verification Complete
 
 **Passes:** 3 | **Unique Issues:** X
 
-### Must Fix (N issues)
+### Must Fix (N) | Should Fix (N) | Suggestions (N)
 
-| Issue | File | Line | Confidence |
-|-------|------|------|------------|
-| ...   | ...  | ...  | ...%       |
-
-### Should Fix (N issues)
-...
-
-### Suggestions (N issues)
-...
+Implementing fixes automatically...
 ```
 
-#### 8e: Handle Must-Fix Issues
+#### 8e: Automatically Implement ALL Findings
 
-**If must_fix issues found:**
-1. Fix each issue immediately
-2. Add a note: "Fixed: [issue title]"
-3. After all fixes, re-run verification (spawn 3 new passes)
-4. Repeat until no must_fix issues remain (max 3 iterations)
+**⛔ DO NOT ask user for permission. Fix everything automatically.**
 
-**If only should_fix/suggestions:**
-- Document them in the verification report
-- Continue to Step 9
+This is part of the automated /spec workflow. The user approved the plan - verification fixes are part of that approval. Never stop to ask "Should I fix these?" or "Want me to address these findings?"
+
+**Implementation order (by severity, then confidence):**
+
+1. **must_fix issues** - Fix immediately (security, crashes, TDD violations)
+2. **should_fix issues** - Fix immediately (spec deviations, missing tests, error handling)
+3. **suggestions** - Implement if reasonable and quick (< 5 min each)
+
+**For each fix:**
+1. Implement the fix
+2. Run relevant tests to verify
+3. Log: "✅ Fixed: [issue title]"
+
+**After all fixes:**
+1. Re-run verification (spawn 3 new passes) to catch any regressions
+2. Repeat until no must_fix or should_fix issues remain (max 3 iterations)
+3. If iterations exhausted with remaining issues, add them to plan and loop back to Phase 2
+
+**The only stopping point in /spec is plan approval. Everything else is automatic.**
 
 ### Step 9: E2E Verification (MANDATORY for apps with UI/API)
 

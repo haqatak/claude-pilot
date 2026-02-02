@@ -98,7 +98,7 @@ REDIRECTS = {
         "alternative": "Use Read, Grep, Glob, Bash directly. For progress tracking, use TaskCreate/TaskList/TaskUpdate",
         "example": "TaskCreate(subject='...') or Read/Grep/Glob for exploration",
         "condition": lambda data: (
-            data.get("tool_input", {}).get("subagent_type", "") != "pilot:spec-verifier"
+            data.get("tool_input", {}).get("subagent_type", "") not in ("pilot:spec-verifier", "pilot:plan-verifier")
             if isinstance(data.get("tool_input"), dict)
             else True
         ),

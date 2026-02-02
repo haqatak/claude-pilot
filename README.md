@@ -21,7 +21,7 @@ All systems go. Pilot engaged. Ready for takeoff.
 ## ⚡ TL;DR
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/maxritter/claude-pilot/v5.4.12/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/maxritter/claude-pilot/main/install.sh | bash
 ```
 
 Inside Claude Code, type `/sync` to sync rules and skills. Use `/spec` for Spec-Driven Development or Quick Mode for fast fixes.
@@ -49,18 +49,27 @@ Choose your installation method:
 
 Install directly on your system using Homebrew. Works on macOS, Linux, and Windows (WSL2).
 
-**Option B: 🐳 Dev Container (Any OS)**
+**Option B: 🐳 Dev Container**
 
-Pre-configured, isolated environment with all tools ready. No system conflicts, consistent across machines.
+Pre-configured, isolated environment with all tools ready. No system conflicts and works on any OS.
+
 ### 🔧 Installation
 
 Run the following command in your **project folder root**:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/maxritter/claude-pilot/v5.4.12/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/maxritter/claude-pilot/main/install.sh | bash
 ```
 
 You'll be asked to choose between **Dev Container** or **Local Installation**.
+
+### 📌 Installing a Specific Version
+
+If the current version has issues, you can install a specific stable version:
+
+```bash
+VERSION=5.4.12 curl -fsSL https://raw.githubusercontent.com/maxritter/claude-pilot/main/install.sh | bash
+```
 
 ---
 

@@ -119,8 +119,7 @@ class TestPrerequisitesStep:
                         with patch("installer.steps.prerequisites.command_exists", return_value=False):
                             result = step.check(ctx)
                             assert result == should_skip, (
-                                f"is_local={is_local}, in_dc={in_dc}: "
-                                f"expected skip={should_skip}, got skip={result}"
+                                f"is_local={is_local}, in_dc={in_dc}: expected skip={should_skip}, got skip={result}"
                             )
 
 

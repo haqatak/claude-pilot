@@ -12,7 +12,7 @@ from installer.steps.shell_config import (
     PILOT_BIN,
     ShellConfigStep,
     alias_exists_in_file,
-    get_claude_alias_line,
+    get_alias_lines,
     remove_old_alias,
 )
 
@@ -60,6 +60,7 @@ class TestShellConfigStep:
             content = bashrc.read_text()
             assert CLAUDE_ALIAS_MARKER in content
             assert "alias claude=" in content
+            assert "alias ccp=" in content
             assert PILOT_BIN in content
 
     @patch("installer.steps.shell_config.get_shell_config_files")
@@ -88,26 +89,28 @@ class TestShellConfigStep:
             assert "alias claude=" in content
 
 
-class TestClaudeAliasLine:
-    """Test claude alias line generation."""
+class TestAliasLines:
+    """Test alias line generation."""
 
-    def test_get_claude_alias_line_returns_string(self):
-        """get_claude_alias_line returns a string."""
-        result = get_claude_alias_line("bash")
+    def test_get_alias_lines_returns_string(self):
+        """get_alias_lines returns a string."""
+        result = get_alias_lines("bash")
         assert isinstance(result, str)
         assert len(result) > 0
 
-    def test_get_claude_alias_line_bash_contains_alias(self):
-        """Bash claude alias defines simple alias pointing to pilot binary."""
-        result = get_claude_alias_line("bash")
+    def test_get_alias_lines_contains_both_aliases(self):
+        """Alias lines contain both claude and ccp aliases."""
+        result = get_alias_lines("bash")
         assert "alias claude=" in result
+        assert "alias ccp=" in result
         assert PILOT_BIN in result
         assert CLAUDE_ALIAS_MARKER in result
 
-    def test_get_claude_alias_line_fish_uses_alias_syntax(self):
-        """Fish claude alias uses alias syntax."""
-        result = get_claude_alias_line("fish")
+    def test_get_alias_lines_fish_uses_alias_syntax(self):
+        """Fish alias uses alias syntax for both aliases."""
+        result = get_alias_lines("fish")
         assert "alias claude=" in result
+        assert "alias ccp=" in result
         assert PILOT_BIN in result
         assert CLAUDE_ALIAS_MARKER in result
 
@@ -180,7 +183,7 @@ class TestAliasRemoval:
         """remove_old_alias removes claude() function definition."""
         with tempfile.TemporaryDirectory() as tmpdir:
             config = Path(tmpdir) / ".bashrc"
-            config.write_text(f"# before\n{CLAUDE_ALIAS_MARKER}\nclaude() {{\n    ccp \"$@\"\n}}\n# after\n")
+            config.write_text(f'# before\n{CLAUDE_ALIAS_MARKER}\nclaude() {{\n    ccp "$@"\n}}\n# after\n')
 
             result = remove_old_alias(config)
 

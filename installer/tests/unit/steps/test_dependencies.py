@@ -220,7 +220,7 @@ class TestClaudeCodeInstall:
         ui = Console(non_interactive=True)
         info_calls = []
         _original_info = ui.info  # noqa: F841 - stored for potential restoration
-        ui.info = lambda msg: info_calls.append(msg)
+        ui.info = lambda message: info_calls.append(message)
 
         with tempfile.TemporaryDirectory() as tmpdir:
             result = _install_claude_code_with_ui(ui, Path(tmpdir))
@@ -486,9 +486,7 @@ class TestInstallPluginDependencies:
     @patch("installer.steps.dependencies._run_bash_with_retry")
     @patch("installer.steps.dependencies.command_exists")
     @patch("installer.steps.dependencies.Path")
-    def test_install_plugin_dependencies_runs_bun_install(
-        self, mock_path, mock_cmd_exists, mock_run
-    ):
+    def test_install_plugin_dependencies_runs_bun_install(self, mock_path, mock_cmd_exists, mock_run):
         """_install_plugin_dependencies runs bun install when bun is available."""
         from installer.steps.dependencies import _install_plugin_dependencies
 

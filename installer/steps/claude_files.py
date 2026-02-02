@@ -13,6 +13,9 @@ from installer.steps.base import BaseStep
 
 SETTINGS_FILE = "settings.json"
 
+REPO_URL_PRIMARY = "https://github.com/maxritter/claude-pilot"
+REPO_URL_FALLBACK = "https://github.com/maxritter/claude-codepro"
+
 SKIP_PATTERNS = (
     "__pycache__",
     ".pyc",
@@ -176,12 +179,34 @@ class ClaudeFilesStep(BaseStep):
             else:
                 repo_branch = f"v{ctx.target_version}"
 
+        repo_url = self._resolve_repo_url(repo_branch)
+
         return DownloadConfig(
-            repo_url="https://github.com/maxritter/claude-pilot",
+            repo_url=repo_url,
             repo_branch=repo_branch,
             local_mode=ctx.local_mode,
             local_repo_dir=ctx.local_repo_dir,
         )
+
+    def _resolve_repo_url(self, branch: str) -> str:
+        """Try primary repo, fallback to secondary if release not found."""
+        import urllib.error
+        import urllib.request
+
+        for repo_url in [REPO_URL_PRIMARY, REPO_URL_FALLBACK]:
+            repo = repo_url.replace("https://github.com/", "")
+            api_url = f"https://api.github.com/repos/{repo}/git/refs/tags/{branch}"
+
+            try:
+                req = urllib.request.Request(api_url)
+                req.add_header("User-Agent", "pilot-installer")
+                with urllib.request.urlopen(req, timeout=5) as response:
+                    if response.status == 200:
+                        return repo_url
+            except (urllib.error.URLError, TimeoutError, Exception):
+                continue
+
+        return REPO_URL_PRIMARY
 
     def _handle_no_files(self, ui: Any, config: DownloadConfig) -> None:
         """Handle case when no pilot files are found."""

@@ -2,30 +2,17 @@
 
 set -e
 
-DEFAULT_VERSION="5.4.12"
-VERSION="$DEFAULT_VERSION"
+REPO_PRIMARY="maxritter/claude-pilot"
+REPO_FALLBACK="maxritter/claude-codepro"
+REPO="$REPO_PRIMARY"
 
-REPO="maxritter/claude-pilot"
+VERSION="${VERSION:-}"
 
-INSTALL_DEV=false
-INSTALL_VERSION=""
 INSTALLER_ARGS=""
 RESTART_PILOT=false
 
 while [ $# -gt 0 ]; do
 	case "$1" in
-	--dev)
-		INSTALL_DEV=true
-		shift
-		;;
-	--version)
-		INSTALL_VERSION="$2"
-		shift 2
-		;;
-	--version=*)
-		INSTALL_VERSION="${1#*=}"
-		shift
-		;;
 	--restart-pilot)
 		RESTART_PILOT=true
 		shift
@@ -41,36 +28,70 @@ while [ $# -gt 0 ]; do
 	esac
 done
 
-get_latest_prerelease() {
-	local api_url="https://api.github.com/repos/${REPO}/releases"
-	local releases=""
+get_latest_release() {
+	local repo="$1"
+	local api_url="https://api.github.com/repos/${repo}/releases/latest"
+	local version=""
 
 	if command -v curl >/dev/null 2>&1; then
-		releases=$(curl -fsSL "$api_url" 2>/dev/null) || true
+		version=$(curl -fsSL "$api_url" 2>/dev/null | grep -m1 '"tag_name"' | sed 's/.*"v\([^"]*\)".*/\1/') || true
 	elif command -v wget >/dev/null 2>&1; then
-		releases=$(wget -qO- "$api_url" 2>/dev/null) || true
+		version=$(wget -qO- "$api_url" 2>/dev/null | grep -m1 '"tag_name"' | sed 's/.*"v\([^"]*\)".*/\1/') || true
 	fi
 
-	if [ -z "$releases" ]; then
-		return 1
+	if [ -n "$version" ]; then
+		echo "$version"
+		return 0
 	fi
-
-	echo "$releases" | tr ',' '\n' | grep -E '"(tag_name|created_at)"' | paste - - |
-		grep 'dev-' | sed 's/.*"tag_name"[^"]*"\([^"]*\)".*"created_at"[^"]*"\([^"]*\)".*/\2|\1/' |
-		sort -t'|' -k1 -r | head -1 | cut -d'|' -f2
+	return 1
 }
 
-if [ "$INSTALL_DEV" = true ]; then
-	echo "  [..] Fetching latest dev pre-release..."
-	VERSION=$(get_latest_prerelease)
+check_repo_exists() {
+	local repo="$1"
+	local version="$2"
+	local api_url
+
+	case "$version" in
+	dev-*) api_url="https://api.github.com/repos/${repo}/releases/tags/${version}" ;;
+	*) api_url="https://api.github.com/repos/${repo}/releases/tags/v${version}" ;;
+	esac
+
+	if command -v curl >/dev/null 2>&1; then
+		curl -fsSL "$api_url" >/dev/null 2>&1 && return 0
+	elif command -v wget >/dev/null 2>&1; then
+		wget -q --spider "$api_url" 2>/dev/null && return 0
+	fi
+	return 1
+}
+
+if [ -z "$VERSION" ]; then
+	echo "  [..] Fetching latest version..."
+	VERSION=$(get_latest_release "$REPO_PRIMARY") || true
 	if [ -z "$VERSION" ]; then
-		echo "  [!!] No dev pre-release found. Create a PR from dev to main first."
+		VERSION=$(get_latest_release "$REPO_FALLBACK") || true
+		if [ -n "$VERSION" ]; then
+			REPO="$REPO_FALLBACK"
+		fi
+	fi
+	if [ -z "$VERSION" ]; then
+		echo "  [!!] Failed to fetch latest version from GitHub."
+		echo "  [!!] Please specify a version: VERSION=5.4.12 curl ... | bash"
 		exit 1
 	fi
-	echo "  [OK] Found dev version: $VERSION"
-elif [ -n "$INSTALL_VERSION" ]; then
-	VERSION="$INSTALL_VERSION"
+	echo "  [OK] Latest version: $VERSION"
+else
 	echo "  Using specified version: $VERSION"
+	if ! check_repo_exists "$REPO_PRIMARY" "$VERSION"; then
+		if check_repo_exists "$REPO_FALLBACK" "$VERSION"; then
+			REPO="$REPO_FALLBACK"
+			echo "  [..] Using fallback repository: $REPO_FALLBACK"
+		else
+			echo "  [!!] Version $VERSION not found in either repository."
+			echo "  [!!] Please verify the version exists at:"
+			echo "       https://github.com/${REPO_PRIMARY}/releases"
+			exit 1
+		fi
+	fi
 fi
 
 case "$VERSION" in
@@ -97,14 +118,27 @@ save_install_mode() {
 	local mode="$1"
 	local config_file="$HOME/.pilot/config.json"
 	mkdir -p "$(dirname "$config_file")"
-	if [ -f "$config_file" ]; then
-		if grep -q '"install_mode"' "$config_file"; then
-			sed -i.bak "s/\"install_mode\"[[:space:]]*:[[:space:]]*\"[^\"]*\"/\"install_mode\": \"$mode\"/" "$config_file"
-		else
-			sed -i.bak 's/^{$/{\
-  "install_mode": "'"$mode"'",/' "$config_file"
-		fi
-		rm -f "${config_file}.bak"
+
+	if command -v python3 >/dev/null 2>&1; then
+		python3 -c "
+import json
+import os
+
+config_file = os.path.expanduser('$config_file')
+config = {}
+
+if os.path.exists(config_file):
+    try:
+        with open(config_file) as f:
+            config = json.load(f)
+    except (json.JSONDecodeError, IOError):
+        pass
+
+config['install_mode'] = '$mode'
+
+with open(config_file, 'w') as f:
+    json.dump(config, f, indent=2)
+"
 	else
 		echo "{\"install_mode\": \"$mode\"}" >"$config_file"
 	fi
@@ -409,17 +443,14 @@ run_installer() {
 
 	export PYTHONPATH="$installer_dir:${PYTHONPATH:-}"
 
-	local version_arg=""
-	if [ -n "$VERSION" ] && [ "$VERSION" != "$DEFAULT_VERSION" ]; then
-		version_arg="--target-version $VERSION"
-	fi
+	local version_arg="--target-version $VERSION"
 
 	if ! is_in_container && [ "$saved_mode" = "local" ]; then
 		uv run --python 3.12 --no-project --with rich \
-			python -m installer install --local-system $version_arg "$@"
+			python -m installer install --local-system "$version_arg" "$@"
 	else
 		uv run --python 3.12 --no-project --with rich \
-			python -m installer install $version_arg "$@"
+			python -m installer install "$version_arg" "$@"
 	fi
 }
 
@@ -447,7 +478,7 @@ if ! is_in_container; then
 	else
 		echo "  Choose installation method:"
 		echo ""
-		echo "    1) Local - Install directly on your system (RECOMMENDED)"
+		echo "    1) Local - Install directly on your system"
 		echo "    2) Dev Container - Isolated, pre-configured environment"
 		echo ""
 
@@ -492,7 +523,7 @@ fi
 download_installer
 download_pilot_binary
 
-run_installer $INSTALLER_ARGS
+run_installer "$INSTALLER_ARGS"
 
 if [ "$RESTART_PILOT" = true ]; then
 	PILOT_BIN="$HOME/.pilot/bin/pilot"

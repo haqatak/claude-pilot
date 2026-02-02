@@ -45,7 +45,7 @@ aws <service> get-<resource> --output json
 
 **The failure that prompted this:** Lambda logged `failureReasonsCount: 1`, I accepted it. Actual API had 18 reasons. Data parsing bug went undetected.
 
-### ⛔ Fix ALL Errors - No Exceptions
+### ⛔ Fix ALL Errors - No Exceptions, No Asking
 
 When verification reveals errors, fix ALL of them - not just the ones "related" to your current task.
 
@@ -53,10 +53,22 @@ When verification reveals errors, fix ALL of them - not just the ones "related" 
 - ❌ "These are pre-existing errors" → Fix them anyway
 - ❌ "Unrelated to my changes" → You found them, you fix them
 - ❌ "Type errors in other files" → Fix them anyway
+- ❌ "Should I fix these?" → **NEVER ASK** - just fix them
+- ❌ "Want me to address these findings?" → **NEVER ASK** - just fix them
 
-**Valid response:** Fix the error, then continue.
+**Valid response:** Fix the error silently, then continue.
 
 The user trusts you to leave the codebase better than you found it. If you ran the check and saw the error, you own it.
+
+### ⛔ Auto-Fix in /spec Workflow
+
+In /spec workflows, verification findings (from multi-pass code review) are **automatically implemented**:
+
+- **must_fix** issues → Fix immediately without asking
+- **should_fix** issues → Fix immediately without asking
+- **suggestions** → Implement if quick and reasonable
+
+**The ONLY user interaction in /spec is plan approval.** Everything else - implementation, verification, fixing, re-verification - happens automatically. Never interrupt the flow to ask for permission to fix issues.
 
 ### Stop Signals
 

@@ -153,9 +153,7 @@ def test_install_sh_replaces_devcontainer_project_name():
 
 
 def test_install_sh_preserves_github_url_in_devcontainer(tmp_path: Path):
-    """Verify sed commands replace project name but preserve GitHub URLs."""
-    import subprocess
-
+    """Verify string replacement preserves GitHub URLs while replacing project name."""
     devcontainer_dir = tmp_path / ".devcontainer"
     devcontainer_dir.mkdir()
     devcontainer_json = devcontainer_dir / "devcontainer.json"
@@ -167,14 +165,10 @@ def test_install_sh_preserves_github_url_in_devcontainer(tmp_path: Path):
 }""")
 
     project_slug = "my-cool-project"
-    subprocess.run(
-        ["sed", "-i", f's/"claude-pilot"/"{project_slug}"/g', str(devcontainer_json)],
-        check=True,
-    )
-    subprocess.run(
-        ["sed", "-i", f"s|/workspaces/claude-pilot|/workspaces/{project_slug}|g", str(devcontainer_json)],
-        check=True,
-    )
+    content = devcontainer_json.read_text()
+    content = content.replace('"claude-pilot"', f'"{project_slug}"')
+    content = content.replace("/workspaces/claude-pilot", f"/workspaces/{project_slug}")
+    devcontainer_json.write_text(content)
 
     result = devcontainer_json.read_text()
 
@@ -186,8 +180,12 @@ def test_install_sh_preserves_github_url_in_devcontainer(tmp_path: Path):
 
 
 def test_install_sh_sed_handles_special_project_names(tmp_path: Path):
-    """Verify sed commands work with various project name formats."""
-    import subprocess
+    """Verify project name slugification works with various formats."""
+    import re
+
+    def slugify(name: str) -> str:
+        """Convert project name to slug (lowercase, spaces/underscores to hyphens)."""
+        return re.sub(r"[ _]+", "-", name.lower())
 
     test_cases = [
         ("My Project", "my-project"),
@@ -206,25 +204,57 @@ def test_install_sh_sed_handles_special_project_names(tmp_path: Path):
   "workspaceFolder": "/workspaces/claude-pilot"
 }""")
 
-        result = subprocess.run(
-            ["bash", "-c", f"echo '{project_name}' | tr '[:upper:]' '[:lower:]' | tr ' _' '-'"],
-            capture_output=True,
-            text=True,
-            check=True,
+        project_slug = slugify(project_name)
+        assert project_slug == expected_slug, (
+            f"Slug for '{project_name}' should be '{expected_slug}', got '{project_slug}'"
         )
-        project_slug = result.stdout.strip()
 
-        assert project_slug == expected_slug, f"Slug for '{project_name}' should be '{expected_slug}', got '{project_slug}'"
-
-        subprocess.run(
-            ["sed", "-i", f's/"claude-pilot"/"{project_slug}"/g', str(devcontainer_json)],
-            check=True,
-        )
-        subprocess.run(
-            ["sed", "-i", f"s|/workspaces/claude-pilot|/workspaces/{project_slug}|g", str(devcontainer_json)],
-            check=True,
-        )
+        content = devcontainer_json.read_text()
+        content = content.replace('"claude-pilot"', f'"{project_slug}"')
+        content = content.replace("/workspaces/claude-pilot", f"/workspaces/{project_slug}")
+        devcontainer_json.write_text(content)
 
         content = devcontainer_json.read_text()
         assert f'"name": "{project_slug}"' in content, f"Failed for project '{project_name}'"
         assert f'"/workspaces/{project_slug}"' in content, f"Failed workspace for '{project_name}'"
+
+
+def test_install_sh_has_auto_version_fetch():
+    """Verify install.sh has get_latest_release function for auto-fetching version."""
+    install_sh = Path(__file__).parent.parent.parent.parent / "install.sh"
+    content = install_sh.read_text()
+
+    assert "get_latest_release()" in content, "Must have get_latest_release function"
+    assert "api.github.com" in content, "Must use GitHub API"
+    assert "releases/latest" in content, "Must query releases/latest endpoint"
+    assert "tag_name" in content, "Must parse tag_name from API response"
+
+
+def test_install_sh_has_repo_fallback():
+    """Verify install.sh has repo fallback from claude-pilot to claude-codepro."""
+    install_sh = Path(__file__).parent.parent.parent.parent / "install.sh"
+    content = install_sh.read_text()
+
+    assert "REPO_PRIMARY" in content, "Must have REPO_PRIMARY variable"
+    assert "REPO_FALLBACK" in content, "Must have REPO_FALLBACK variable"
+    assert "claude-pilot" in content, "Primary repo must be claude-pilot"
+    assert "claude-codepro" in content, "Fallback repo must be claude-codepro"
+    assert "check_repo_exists()" in content, "Must have check_repo_exists function"
+    assert "Using fallback repository" in content, "Must have fallback message"
+
+
+def test_install_sh_supports_version_env_var():
+    """Verify install.sh supports VERSION environment variable."""
+    install_sh = Path(__file__).parent.parent.parent.parent / "install.sh"
+    content = install_sh.read_text()
+
+    assert 'VERSION="${VERSION:-}"' in content, "Must read VERSION env var with empty default"
+    assert "Fetching latest version" in content, "Must have message for auto-fetch mode"
+
+
+def test_install_sh_handles_api_failure():
+    """Verify install.sh handles GitHub API failures gracefully."""
+    install_sh = Path(__file__).parent.parent.parent.parent / "install.sh"
+    content = install_sh.read_text()
+
+    assert "Failed to fetch" in content or "Could not" in content, "Must have error message for API failure"
