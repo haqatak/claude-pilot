@@ -558,29 +558,57 @@ def _install_plugin_dependencies(_project_dir: Path, ui: Any = None) -> bool:
     return success
 
 
+def _patch_claude_mem_config() -> bool:
+    """Patch claude-mem settings with required configuration.
+
+    Creates ~/.claude-mem/settings.json if it doesn't exist.
+    Always patches the required fields to ensure correct configuration.
+    """
+    settings_dir = Path.home() / ".claude-mem"
+    settings_path = settings_dir / "settings.json"
+
+    required_settings = {
+        "CLAUDE_MEM_MODEL": "haiku",
+        "CLAUDE_MEM_CONTEXT_OBSERVATIONS": "50",
+        "CLAUDE_MEM_CONTEXT_FULL_COUNT": "10",
+        "CLAUDE_MEM_CONTEXT_FULL_FIELD": "facts",
+        "CLAUDE_MEM_CONTEXT_SESSION_COUNT": "10",
+        "CLAUDE_MEM_CHROMA_ENABLED": False,
+        "CLAUDE_MEM_VECTOR_DB": "none",
+    }
+
+    try:
+        settings_dir.mkdir(parents=True, exist_ok=True)
+
+        if settings_path.exists():
+            settings = json.loads(settings_path.read_text())
+        else:
+            settings = {}
+
+        settings.update(required_settings)
+        settings_path.write_text(json.dumps(settings, indent=2) + "\n")
+        return True
+    except Exception:
+        return False
+
+
 def _setup_claude_mem(ui: Any) -> bool:
-    """Migrate legacy plugins and ensure correct model for claude-mem.
+    """Migrate legacy plugins and configure claude-mem settings.
 
     Claude-mem MCP server is now defined in plugin/.mcp.json.
-    This function removes any legacy plugin installations and ensures
-    the model is set to haiku (removes settings.json if not).
+    This function removes any legacy plugin installations and patches
+    the claude-mem config with required settings.
     """
     _migrate_legacy_plugins(ui)
     if ui:
         ui.success("claude-mem legacy plugins cleaned")
 
-    settings_path = Path.home() / ".claude-mem" / "settings.json"
-    if settings_path.exists():
-        try:
-            settings = json.loads(settings_path.read_text())
-            current_model = settings.get("CLAUDE_MEM_MODEL", "")
-            if current_model != "haiku":
-                settings_path.unlink()
-                if ui:
-                    ui.info(f"Removed claude-mem settings (model was '{current_model}', will reset to haiku)")
-        except (json.JSONDecodeError, OSError) as e:
-            if ui:
-                ui.warning(f"Could not check claude-mem settings: {e}")
+    if _patch_claude_mem_config():
+        if ui:
+            ui.success("claude-mem config patched")
+    else:
+        if ui:
+            ui.warning("Could not patch claude-mem config")
 
     return True
 

@@ -543,26 +543,54 @@ After `/learn` completes:
 
 2. **If vault not configured, ask user:**
    ```
-   Question: "Would you like to set up team skill/rule sharing with sx?"
+   Question: "sx vault not configured. Set up team skill/rule sharing? (repo can be empty or existing)"
    Header: "Team Vault"
    Options:
-   - "Yes, set up git vault" - Share skills/rules with my team
+   - "Yes, I'll provide my git repo URL" - Share skills/rules with my team (Recommended)
    - "Skip" - Continue without team vault
    ```
 
 3. **If user chooses to set up:**
+
+   The user will type their repo URL via the "Other" option. Ask:
    ```
-   Question: "Enter your team git repository URL (HTTPS recommended):"
-   Header: "Git Repo"
+   Question: "Enter your git repository URL (select Other and paste your URL):"
+   Header: "Git Repo URL"
    Options:
-   - "https://github.com/myteam/claude-skills.git" - Example HTTPS URL (recommended)
-   - "Use SSH instead" - I prefer git@github.com:...
+   - "https://github.com/..." - HTTPS format (recommended)
+   - "git@github.com:..." - SSH format
    ```
+
+   **Note:** User MUST select "Other" and type their actual repo URL. The options above are format hints only.
 
    Then run:
    ```bash
    echo "y" | sx init --type git --repo-url <user-provided-repo>
    ```
+
+   The repo can be empty (will be initialized) or already contain assets (will be synced).
+
+4. **If authentication fails (HTTPS repos):**
+
+   After `sx init`, try `sx vault list`. If it fails with authentication error:
+   ```
+   Question: "Git authentication failed. How would you like to fix this?"
+   Header: "Auth Fix"
+   Options:
+   - "Use gh auth login" - Authenticate via GitHub CLI (recommended)
+   - "Switch to SSH" - Reinitialize with SSH URL
+   - "Skip for now" - Continue without vault
+   ```
+
+   **If user chooses gh auth:**
+   ```bash
+   gh auth status  # Check if already logged in
+   gh auth login --web --git-protocol https  # Interactive login
+   gh auth setup-git  # Configure git credential helper
+   sx vault list  # Retry vault access
+   ```
+
+   This sets up the GitHub credential helper so HTTPS repos work seamlessly.
 
 #### Step 10.2: Sync Team Assets
 

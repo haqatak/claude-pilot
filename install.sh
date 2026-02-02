@@ -11,11 +11,22 @@ VERSION="${VERSION#v}"
 
 INSTALLER_ARGS=""
 RESTART_PILOT=false
+SKIP_VERSION_CHECK=false
+USE_LOCAL_INSTALLER=false
 
 while [ $# -gt 0 ]; do
 	case "$1" in
 	--restart-pilot)
 		RESTART_PILOT=true
+		shift
+		;;
+	--skip-version-check)
+		SKIP_VERSION_CHECK=true
+		shift
+		;;
+	--local)
+		USE_LOCAL_INSTALLER=true
+		SKIP_VERSION_CHECK=true
 		shift
 		;;
 	*)
@@ -82,7 +93,11 @@ if [ -z "$VERSION" ]; then
 	echo "  [OK] Latest version: $VERSION"
 else
 	echo "  Using specified version: $VERSION"
-	if ! check_repo_exists "$REPO_PRIMARY" "$VERSION"; then
+	if [ "$SKIP_VERSION_CHECK" = true ]; then
+		echo "  [..] Skipping version check (--skip-version-check)"
+		# Default to fallback repo for dev versions when skipping check
+		REPO="$REPO_FALLBACK"
+	elif ! check_repo_exists "$REPO_PRIMARY" "$VERSION"; then
 		if check_repo_exists "$REPO_FALLBACK" "$VERSION"; then
 			REPO="$REPO_FALLBACK"
 			echo "  [..] Using fallback repository: $REPO_FALLBACK"
@@ -90,6 +105,7 @@ else
 			echo "  [!!] Version $VERSION not found in either repository."
 			echo "  [!!] Please verify the version exists at:"
 			echo "       https://github.com/${REPO_PRIMARY}/releases"
+			echo "  [!!] If you're rate-limited, try: --skip-version-check"
 			exit 1
 		fi
 	fi
@@ -266,7 +282,7 @@ setup_devcontainer() {
 }
 
 download_installer() {
-	local installer_dir=".claude/installer"
+	local installer_dir="$HOME/.pilot/installer"
 
 	echo "  [..] Downloading installer..."
 
@@ -436,7 +452,7 @@ download_pilot_binary() {
 }
 
 run_installer() {
-	local installer_dir=".claude/installer"
+	local installer_dir="$HOME/.pilot/installer"
 	local saved_mode
 	saved_mode=$(get_saved_install_mode)
 
@@ -445,13 +461,17 @@ run_installer() {
 	export PYTHONPATH="$installer_dir:${PYTHONPATH:-}"
 
 	local version_arg="--target-version $VERSION"
+	local local_arg=""
+	if [ "$USE_LOCAL_INSTALLER" = true ]; then
+		local_arg="--local --local-repo-dir $(pwd)"
+	fi
 
 	if ! is_in_container && [ "$saved_mode" = "local" ]; then
 		uv run --python 3.12 --no-project --with rich \
-			python -m installer install --local-system $version_arg "$@"
+			python -m installer install --local-system $version_arg $local_arg "$@"
 	else
 		uv run --python 3.12 --no-project --with rich \
-			python -m installer install $version_arg "$@"
+			python -m installer install $version_arg $local_arg "$@"
 	fi
 }
 
@@ -521,7 +541,22 @@ else
 	install_uv
 fi
 
-download_installer
+if [ "$USE_LOCAL_INSTALLER" = true ]; then
+	if [ -d "installer" ] && [ -f "pyproject.toml" ]; then
+		echo "  [OK] Using local installer from current directory"
+		# Create symlink structure expected by run_installer
+		rm -rf "$HOME/.pilot/installer"
+		mkdir -p "$HOME/.pilot/installer"
+		ln -sf "$(pwd)/installer" "$HOME/.pilot/installer/installer"
+		ln -sf "$(pwd)/pyproject.toml" "$HOME/.pilot/installer/pyproject.toml"
+	else
+		echo "  [!!] --local requires running from claude-pilot repo root"
+		echo "  [!!] Missing: installer/ directory or pyproject.toml"
+		exit 1
+	fi
+else
+	download_installer
+fi
 download_pilot_binary
 
 run_installer $INSTALLER_ARGS
@@ -535,3 +570,4 @@ if [ "$RESTART_PILOT" = true ]; then
 		exec "$PILOT_BIN" --skip-update-check
 	fi
 fi
+

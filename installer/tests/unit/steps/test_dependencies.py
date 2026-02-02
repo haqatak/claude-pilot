@@ -370,7 +370,7 @@ class TestMigrateLegacyPlugins:
 
 
 class TestSetupClaudeMem:
-    """Test claude-mem setup (legacy plugin migration)."""
+    """Test claude-mem setup (legacy plugin migration and config patching)."""
 
     def test_setup_claude_mem_exists(self):
         """_setup_claude_mem function exists."""
@@ -378,15 +378,98 @@ class TestSetupClaudeMem:
 
         assert callable(_setup_claude_mem)
 
+    @patch("installer.steps.dependencies._patch_claude_mem_config")
     @patch("installer.steps.dependencies._migrate_legacy_plugins")
-    def test_setup_claude_mem_calls_migration(self, mock_migrate):
-        """_setup_claude_mem calls legacy plugin migration."""
+    def test_setup_claude_mem_calls_migration_and_patches_config(self, mock_migrate, mock_patch):
+        """_setup_claude_mem calls legacy plugin migration and patches config."""
         from installer.steps.dependencies import _setup_claude_mem
+
+        mock_patch.return_value = True
 
         result = _setup_claude_mem(ui=None)
 
         assert result is True
         mock_migrate.assert_called_once()
+        mock_patch.assert_called_once()
+
+    def test_patch_claude_mem_config_creates_file(self):
+        """_patch_claude_mem_config creates config file if it doesn't exist."""
+        import json
+
+        from installer.steps.dependencies import _patch_claude_mem_config
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with patch.object(Path, "home", return_value=Path(tmpdir)):
+                result = _patch_claude_mem_config()
+
+                assert result is True
+                config_path = Path(tmpdir) / ".claude-mem" / "settings.json"
+                assert config_path.exists()
+                config = json.loads(config_path.read_text())
+                assert config["CLAUDE_MEM_MODEL"] == "haiku"
+                assert config["CLAUDE_MEM_CONTEXT_OBSERVATIONS"] == "50"
+                assert config["CLAUDE_MEM_CONTEXT_FULL_COUNT"] == "10"
+                assert config["CLAUDE_MEM_CONTEXT_FULL_FIELD"] == "facts"
+                assert config["CLAUDE_MEM_CONTEXT_SESSION_COUNT"] == "10"
+                assert config["CLAUDE_MEM_CHROMA_ENABLED"] is False
+                assert config["CLAUDE_MEM_VECTOR_DB"] == "none"
+
+    def test_patch_claude_mem_config_merges_existing(self):
+        """_patch_claude_mem_config merges with existing config."""
+        import json
+
+        from installer.steps.dependencies import _patch_claude_mem_config
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_dir = Path(tmpdir) / ".claude-mem"
+            config_dir.mkdir(parents=True)
+            config_path = config_dir / "settings.json"
+            config_path.write_text(
+                json.dumps(
+                    {
+                        "CLAUDE_MEM_MODEL": "sonnet",
+                        "CUSTOM_SETTING": "custom_value",
+                    }
+                )
+            )
+
+            with patch.object(Path, "home", return_value=Path(tmpdir)):
+                result = _patch_claude_mem_config()
+
+                assert result is True
+                config = json.loads(config_path.read_text())
+                assert config["CLAUDE_MEM_MODEL"] == "haiku"
+                assert config["CUSTOM_SETTING"] == "custom_value"
+                assert config["CLAUDE_MEM_VECTOR_DB"] == "none"
+
+    def test_patch_claude_mem_config_overwrites_incorrect_values(self):
+        """_patch_claude_mem_config overwrites incorrect values."""
+        import json
+
+        from installer.steps.dependencies import _patch_claude_mem_config
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_dir = Path(tmpdir) / ".claude-mem"
+            config_dir.mkdir(parents=True)
+            config_path = config_dir / "settings.json"
+            config_path.write_text(
+                json.dumps(
+                    {
+                        "CLAUDE_MEM_MODEL": "opus",
+                        "CLAUDE_MEM_CHROMA_ENABLED": True,
+                        "CLAUDE_MEM_VECTOR_DB": "chroma",
+                    }
+                )
+            )
+
+            with patch.object(Path, "home", return_value=Path(tmpdir)):
+                result = _patch_claude_mem_config()
+
+                assert result is True
+                config = json.loads(config_path.read_text())
+                assert config["CLAUDE_MEM_MODEL"] == "haiku"
+                assert config["CLAUDE_MEM_CHROMA_ENABLED"] is False
+                assert config["CLAUDE_MEM_VECTOR_DB"] == "none"
 
 
 class TestVexorInstall:
