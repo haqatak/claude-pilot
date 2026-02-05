@@ -8,9 +8,9 @@
  * - Single-pass broadcast (no two-step cleanup)
  */
 
-import type { Response } from 'express';
-import { logger } from '../../utils/logger.js';
-import type { SSEEvent, SSEClient } from '../worker-types.js';
+import type { Response } from "express";
+import { logger } from "../../utils/logger.js";
+import type { SSEEvent, SSEClient } from "../worker-types.js";
 
 export class SSEBroadcaster {
   private sseClients: Set<SSEClient> = new Set();
@@ -20,15 +20,13 @@ export class SSEBroadcaster {
    */
   addClient(res: Response): void {
     this.sseClients.add(res);
-    logger.debug('WORKER', 'Client connected', { total: this.sseClients.size });
+    logger.debug("WORKER", "Client connected", { total: this.sseClients.size });
 
-    // Setup cleanup on disconnect
-    res.on('close', () => {
+    res.on("close", () => {
       this.removeClient(res);
     });
 
-    // Send initial event
-    this.sendToClient(res, { type: 'connected', timestamp: Date.now() });
+    this.sendToClient(res, { type: "connected", timestamp: Date.now() });
   }
 
   /**
@@ -36,7 +34,7 @@ export class SSEBroadcaster {
    */
   removeClient(res: Response): void {
     this.sseClients.delete(res);
-    logger.debug('WORKER', 'Client disconnected', { total: this.sseClients.size });
+    logger.debug("WORKER", "Client disconnected", { total: this.sseClients.size });
   }
 
   /**
@@ -44,16 +42,15 @@ export class SSEBroadcaster {
    */
   broadcast(event: SSEEvent): void {
     if (this.sseClients.size === 0) {
-      logger.debug('WORKER', 'SSE broadcast skipped (no clients)', { eventType: event.type });
-      return; // Short-circuit if no clients
+      logger.debug("WORKER", "SSE broadcast skipped (no clients)", { eventType: event.type });
+      return;
     }
 
     const eventWithTimestamp = { ...event, timestamp: Date.now() };
     const data = `data: ${JSON.stringify(eventWithTimestamp)}\n\n`;
 
-    logger.debug('WORKER', 'SSE broadcast sent', { eventType: event.type, clients: this.sseClients.size });
+    logger.debug("WORKER", "SSE broadcast sent", { eventType: event.type, clients: this.sseClients.size });
 
-    // Single-pass write
     for (const client of this.sseClients) {
       client.write(data);
     }

@@ -9,8 +9,8 @@
  * - HTTP-based shutdown requests
  */
 
-import { logger } from '../../utils/logger.js';
-import { getWorkerHost } from '../../shared/worker-utils.js';
+import { logger } from "../../utils/logger.js";
+import { getWorkerHost } from "../../shared/worker-utils.js";
 
 /** Default timeout for health check fetches (ms) */
 const FETCH_TIMEOUT_MS = 5000;
@@ -21,18 +21,16 @@ const FETCH_TIMEOUT_MS = 5000;
 async function fetchWithTimeout(
   url: string,
   options: RequestInit = {},
-  timeoutMs: number = FETCH_TIMEOUT_MS
+  timeoutMs: number = FETCH_TIMEOUT_MS,
 ): Promise<Response> {
   const timeoutPromise = new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new Error(`Fetch timeout after ${timeoutMs}ms`)), timeoutMs)
+    setTimeout(() => reject(new Error(`Fetch timeout after ${timeoutMs}ms`)), timeoutMs),
   );
   return Promise.race([fetch(url, options), timeoutPromise]);
 }
 
 declare const __DEFAULT_PACKAGE_VERSION__: string;
-const BUILT_IN_VERSION = typeof __DEFAULT_PACKAGE_VERSION__ !== 'undefined'
-  ? __DEFAULT_PACKAGE_VERSION__
-  : '0.0.0-dev';
+const BUILT_IN_VERSION = typeof __DEFAULT_PACKAGE_VERSION__ !== "undefined" ? __DEFAULT_PACKAGE_VERSION__ : "0.0.0-dev";
 
 /**
  * Format worker URL with correct host (supports IPv6)
@@ -40,7 +38,7 @@ const BUILT_IN_VERSION = typeof __DEFAULT_PACKAGE_VERSION__ !== 'undefined'
  */
 function formatWorkerUrl(port: number): string {
   const host = getWorkerHost();
-  const formattedHost = host.includes(':') && !host.startsWith('[') ? `[${host}]` : host;
+  const formattedHost = host.includes(":") && !host.startsWith("[") ? `[${host}]` : host;
   return `http://${formattedHost}:${port}`;
 }
 
@@ -69,9 +67,9 @@ export async function waitForHealth(port: number, timeoutMs: number = 30000): Pr
       const response = await fetchWithTimeout(`${formatWorkerUrl(port)}/api/readiness`);
       if (response.ok) return true;
     } catch (error) {
-      logger.debug('SYSTEM', 'Service not ready yet, will retry', { port }, error as Error);
+      logger.debug("SYSTEM", "Service not ready yet, will retry", { port }, error as Error);
     }
-    await new Promise(r => setTimeout(r, 500));
+    await new Promise((r) => setTimeout(r, 500));
   }
   return false;
 }
@@ -84,7 +82,7 @@ export async function waitForPortFree(port: number, timeoutMs: number = 10000): 
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
     if (!(await isPortInUse(port))) return true;
-    await new Promise(r => setTimeout(r, 500));
+    await new Promise((r) => setTimeout(r, 500));
   }
   return false;
 }
@@ -96,23 +94,20 @@ export async function waitForPortFree(port: number, timeoutMs: number = 10000): 
  */
 export async function httpShutdown(port: number): Promise<boolean> {
   try {
-    const response = await fetchWithTimeout(
-      `${formatWorkerUrl(port)}/api/admin/shutdown`,
-      { method: 'POST' }
-    );
+    const response = await fetchWithTimeout(`${formatWorkerUrl(port)}/api/admin/shutdown`, { method: "POST" });
     if (!response.ok) {
-      logger.warn('SYSTEM', 'Shutdown request returned error', { port, status: response.status });
+      logger.warn("SYSTEM", "Shutdown request returned error", { port, status: response.status });
       return false;
     }
     return true;
   } catch (error) {
     if (error instanceof Error) {
-      if (error.message?.includes('ECONNREFUSED') || error.message?.includes('Fetch timeout')) {
-        logger.debug('SYSTEM', 'Worker already stopped or not responding', { port });
+      if (error.message?.includes("ECONNREFUSED") || error.message?.includes("Fetch timeout")) {
+        logger.debug("SYSTEM", "Worker already stopped or not responding", { port });
         return false;
       }
     }
-    logger.error('SYSTEM', 'Shutdown request failed unexpectedly', { port }, error as Error);
+    logger.error("SYSTEM", "Shutdown request failed unexpectedly", { port }, error as Error);
     return false;
   }
 }
@@ -133,10 +128,10 @@ export async function getRunningWorkerVersion(port: number): Promise<string | nu
   try {
     const response = await fetchWithTimeout(`${formatWorkerUrl(port)}/api/version`);
     if (!response.ok) return null;
-    const data = await response.json() as { version: string };
+    const data = (await response.json()) as { version: string };
     return data.version;
   } catch {
-    logger.debug('SYSTEM', 'Could not fetch worker version', { port });
+    logger.debug("SYSTEM", "Could not fetch worker version", { port });
     return null;
   }
 }

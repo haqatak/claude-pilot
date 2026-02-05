@@ -4,8 +4,8 @@
  * Provides error handling middleware and utilities for the server.
  */
 
-import { Request, Response, NextFunction, ErrorRequestHandler } from 'express';
-import { logger } from '../../utils/logger.js';
+import { Request, Response, NextFunction, ErrorRequestHandler } from "express";
+import { logger } from "../../utils/logger.js";
 
 /**
  * Standard error response format
@@ -25,22 +25,17 @@ export class AppError extends Error {
     message: string,
     public statusCode: number = 500,
     public code?: string,
-    public details?: unknown
+    public details?: unknown,
   ) {
     super(message);
-    this.name = 'AppError';
+    this.name = "AppError";
   }
 }
 
 /**
  * Create an error response object
  */
-export function createErrorResponse(
-  error: string,
-  message: string,
-  code?: string,
-  details?: unknown
-): ErrorResponse {
+export function createErrorResponse(error: string, message: string, code?: string, details?: unknown): ErrorResponse {
   const response: ErrorResponse = { error, message };
   if (code) response.code = code;
   if (details) response.details = details;
@@ -55,27 +50,28 @@ export const errorHandler: ErrorRequestHandler = (
   err: Error | AppError,
   req: Request,
   res: Response,
-  _next: NextFunction
+  _next: NextFunction,
 ): void => {
-  // Determine status code
   const statusCode = err instanceof AppError ? err.statusCode : 500;
 
-  // Log error
-  logger.error('HTTP', `Error handling ${req.method} ${req.path}`, {
-    statusCode,
-    error: err.message,
-    code: err instanceof AppError ? err.code : undefined
-  }, err);
-
-  // Build response
-  const response = createErrorResponse(
-    err.name || 'Error',
-    err.message,
-    err instanceof AppError ? err.code : undefined,
-    err instanceof AppError ? err.details : undefined
+  logger.error(
+    "HTTP",
+    `Error handling ${req.method} ${req.path}`,
+    {
+      statusCode,
+      error: err.message,
+      code: err instanceof AppError ? err.code : undefined,
+    },
+    err,
   );
 
-  // Send response (don't call next, as we've handled the error)
+  const response = createErrorResponse(
+    err.name || "Error",
+    err.message,
+    err instanceof AppError ? err.code : undefined,
+    err instanceof AppError ? err.details : undefined,
+  );
+
   res.status(statusCode).json(response);
 };
 
@@ -83,10 +79,7 @@ export const errorHandler: ErrorRequestHandler = (
  * Not found handler - for routes that don't exist
  */
 export function notFoundHandler(req: Request, res: Response): void {
-  res.status(404).json(createErrorResponse(
-    'NotFound',
-    `Cannot ${req.method} ${req.path}`
-  ));
+  res.status(404).json(createErrorResponse("NotFound", `Cannot ${req.method} ${req.path}`));
 }
 
 /**
@@ -94,7 +87,7 @@ export function notFoundHandler(req: Request, res: Response): void {
  * Automatically passes errors to Express error handler
  */
 export function asyncHandler<T>(
-  fn: (req: Request, res: Response, next: NextFunction) => Promise<T>
+  fn: (req: Request, res: Response, next: NextFunction) => Promise<T>,
 ): (req: Request, res: Response, next: NextFunction) => void {
   return (req: Request, res: Response, next: NextFunction): void => {
     Promise.resolve(fn(req, res, next)).catch(next);

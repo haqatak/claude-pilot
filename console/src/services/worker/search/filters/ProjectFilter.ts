@@ -4,8 +4,7 @@
  * Provides utilities for filtering search results by project.
  */
 
-import { basename } from 'path';
-import { logger } from '../../../../utils/logger.js';
+import { basename } from "path";
 
 /**
  * Get the current project name from cwd
@@ -22,7 +21,6 @@ export function normalizeProject(project?: string): string | undefined {
     return undefined;
   }
 
-  // Remove leading/trailing whitespace
   const trimmed = project.trim();
   if (!trimmed) {
     return undefined;
@@ -34,10 +32,7 @@ export function normalizeProject(project?: string): string | undefined {
 /**
  * Check if a result matches the project filter
  */
-export function matchesProject(
-  resultProject: string,
-  filterProject?: string
-): boolean {
+export function matchesProject(resultProject: string, filterProject?: string): boolean {
   if (!filterProject) {
     return true;
   }
@@ -48,13 +43,10 @@ export function matchesProject(
 /**
  * Filter results by project
  */
-export function filterResultsByProject<T extends { project: string }>(
-  results: T[],
-  project?: string
-): T[] {
+export function filterResultsByProject<T extends { project: string }>(results: T[], project?: string): T[] {
   if (!project) {
     return results;
   }
 
-  return results.filter(result => matchesProject(result.project, project));
+  return results.filter((result) => matchesProject(result.project, project));
 }

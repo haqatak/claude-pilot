@@ -14,19 +14,11 @@ export interface WorkerErrorMessageOptions {
  * @param options Configuration for error message generation
  * @returns Formatted error message with platform-specific paths and commands
  */
-export function getWorkerRestartInstructions(
-  options: WorkerErrorMessageOptions = {}
-): string {
-  const {
-    port,
-    includeSkillFallback = false,
-    customPrefix,
-    actualError
-  } = options;
+export function getWorkerRestartInstructions(options: WorkerErrorMessageOptions = {}): string {
+  const { port, includeSkillFallback = false, customPrefix, actualError } = options;
 
-  // Build error message
-  const prefix = customPrefix || 'Worker service connection failed.';
-  const portInfo = port ? ` (port ${port})` : '';
+  const prefix = customPrefix || "Worker service connection failed.";
+  const portInfo = port ? ` (port ${port})` : "";
 
   let message = `${prefix}${portInfo}\n\n`;
   message += `To restart the worker:\n`;
@@ -38,7 +30,6 @@ export function getWorkerRestartInstructions(
     message += `\n\nIf that doesn't work, try: /troubleshoot`;
   }
 
-  // Prepend actual error if provided
   if (actualError) {
     message = `Worker Error: ${actualError}\n\n${message}`;
   }

@@ -4,9 +4,9 @@
  * Exposes metrics in JSON and Prometheus formats.
  */
 
-import express, { Request, Response } from 'express';
-import { BaseRouteHandler } from '../BaseRouteHandler.js';
-import { MetricsService } from '../../MetricsService.js';
+import express, { Request, Response } from "express";
+import { BaseRouteHandler } from "../BaseRouteHandler.js";
+import { MetricsService } from "../../MetricsService.js";
 
 export class MetricsRoutes extends BaseRouteHandler {
   private metricsService: MetricsService;
@@ -17,11 +17,9 @@ export class MetricsRoutes extends BaseRouteHandler {
   }
 
   setupRoutes(app: express.Application): void {
-    // JSON metrics
-    app.get('/api/metrics', this.handleGetMetrics.bind(this));
+    app.get("/api/metrics", this.handleGetMetrics.bind(this));
 
-    // Prometheus format
-    app.get('/metrics', this.handleGetPrometheus.bind(this));
+    app.get("/metrics", this.handleGetPrometheus.bind(this));
   }
 
   /**
@@ -39,7 +37,7 @@ export class MetricsRoutes extends BaseRouteHandler {
    */
   private handleGetPrometheus = this.wrapHandler(async (_req: Request, res: Response): Promise<void> => {
     const prometheus = await this.metricsService.toPrometheus();
-    res.set('Content-Type', 'text/plain; version=0.0.4');
+    res.set("Content-Type", "text/plain; version=0.0.4");
     res.send(prometheus);
   });
 }

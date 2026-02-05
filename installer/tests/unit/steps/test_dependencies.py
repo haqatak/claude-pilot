@@ -283,94 +283,8 @@ class TestClaudeCodeInstall:
                 assert config["theme"] == "dark-ansi"
 
 
-class TestMigrateLegacyPlugins:
-    """Test legacy plugin migration."""
-
-    def test_migrate_legacy_plugins_exists(self):
-        """_migrate_legacy_plugins function exists."""
-        from installer.steps.dependencies import _migrate_legacy_plugins
-
-        assert callable(_migrate_legacy_plugins)
-
-    @patch("installer.steps.dependencies.subprocess.run")
-    def test_migrate_calls_plugin_uninstall(self, mock_run):
-        """_migrate_legacy_plugins calls 'claude plugin uninstall' for each legacy plugin."""
-        from installer.steps.dependencies import _migrate_legacy_plugins
-
-        mock_run.return_value.returncode = 0
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with patch.object(Path, "home", return_value=Path(tmpdir)):
-                _migrate_legacy_plugins(ui=None)
-
-                expected_plugins = [
-                    "context7",
-                    "pilot-memory",
-                    "basedpyright",
-                    "typescript-lsp",
-                    "vtsls",
-                    "gopls",
-                    "pyright-lsp",
-                    "gopls-lsp",
-                ]
-                assert mock_run.call_count == len(expected_plugins)
-
-                for call_args in mock_run.call_args_list:
-                    args = call_args[0][0]
-                    assert args[:3] == ["claude", "plugin", "uninstall"]
-                    assert args[3] in expected_plugins
-
-    @patch("installer.steps.dependencies.subprocess.run")
-    def test_migrate_removes_cache_directories(self, mock_run):
-        """_migrate_legacy_plugins removes cache directories for legacy marketplaces."""
-        from installer.steps.dependencies import _migrate_legacy_plugins
-
-        mock_run.return_value.returncode = 0
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with patch.object(Path, "home", return_value=Path(tmpdir)):
-                cache_dir = Path(tmpdir) / ".claude" / "plugins" / "cache"
-                for marketplace in ["thedotmack", "customable", "claude-code-lsps"]:
-                    (cache_dir / marketplace).mkdir(parents=True)
-
-                _migrate_legacy_plugins(ui=None)
-
-                assert not (cache_dir / "thedotmack").exists()
-                assert not (cache_dir / "customable").exists()
-                assert not (cache_dir / "claude-code-lsps").exists()
-
-    @patch("installer.steps.dependencies.subprocess.run")
-    def test_migrate_removes_marketplace_directories(self, mock_run):
-        """_migrate_legacy_plugins removes marketplace directories."""
-        from installer.steps.dependencies import _migrate_legacy_plugins
-
-        mock_run.return_value.returncode = 0
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with patch.object(Path, "home", return_value=Path(tmpdir)):
-                marketplaces_dir = Path(tmpdir) / ".claude" / "plugins" / "marketplaces"
-                for marketplace in ["thedotmack", "customable"]:
-                    (marketplaces_dir / marketplace).mkdir(parents=True)
-
-                _migrate_legacy_plugins(ui=None)
-
-                assert not (marketplaces_dir / "thedotmack").exists()
-                assert not (marketplaces_dir / "customable").exists()
-
-    @patch("installer.steps.dependencies.subprocess.run")
-    def test_migrate_skips_when_nothing_to_migrate(self, mock_run):
-        """_migrate_legacy_plugins does nothing when nothing to migrate."""
-        from installer.steps.dependencies import _migrate_legacy_plugins
-
-        mock_run.return_value.returncode = 1
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with patch.object(Path, "home", return_value=Path(tmpdir)):
-                _migrate_legacy_plugins(ui=None)
-
-
 class TestSetupPilotMemory:
-    """Test pilot-memory setup (legacy plugin migration and config patching)."""
+    """Test pilot-memory setup."""
 
     def test_setup_pilot_memory_exists(self):
         """_setup_pilot_memory function exists."""
@@ -378,15 +292,13 @@ class TestSetupPilotMemory:
 
         assert callable(_setup_pilot_memory)
 
-    @patch("installer.steps.dependencies._migrate_legacy_plugins")
-    def test_setup_pilot_memory_calls_migration(self, mock_migrate):
-        """_setup_pilot_memory calls legacy plugin migration."""
+    def test_setup_pilot_memory_returns_true(self):
+        """_setup_pilot_memory returns True."""
         from installer.steps.dependencies import _setup_pilot_memory
 
         result = _setup_pilot_memory(ui=None)
 
         assert result is True
-        mock_migrate.assert_called_once()
 
 
 class TestVexorInstall:

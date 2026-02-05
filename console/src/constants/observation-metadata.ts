@@ -10,10 +10,11 @@
  * Default observation types (comma-separated string for settings)
  * Uses code mode defaults as fallback
  */
-export const DEFAULT_OBSERVATION_TYPES_STRING = 'bugfix,feature,refactor,discovery,decision,change';
+export const DEFAULT_OBSERVATION_TYPES_STRING = "bugfix,feature,refactor,discovery,decision,change";
 
 /**
  * Default observation concepts (comma-separated string for settings)
  * Uses code mode defaults as fallback
  */
-export const DEFAULT_OBSERVATION_CONCEPTS_STRING = 'how-it-works,why-it-exists,what-changed,problem-solution,gotcha,pattern,trade-off';
+export const DEFAULT_OBSERVATION_CONCEPTS_STRING =
+  "how-it-works,why-it-exists,what-changed,problem-solution,gotcha,pattern,trade-off";

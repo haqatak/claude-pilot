@@ -3,8 +3,8 @@
  * Generates prompts for the Claude Agent SDK memory worker
  */
 
-import { logger } from '../utils/logger.js';
-import type { ModeConfig } from '../services/domain/types.js';
+import { logger } from "../utils/logger.js";
+import type { ModeConfig } from "../services/domain/types.js";
 
 export interface Observation {
   id: number;
@@ -31,7 +31,7 @@ export function buildInitPrompt(project: string, sessionId: string, userPrompt: 
 
 <observed_from_primary_session>
   <user_request>${userPrompt}</user_request>
-  <requested_at>${new Date().toISOString().split('T')[0]}</requested_at>
+  <requested_at>${new Date().toISOString().split("T")[0]}</requested_at>
 </observed_from_primary_session>
 
 ${mode.prompts.observer_role}
@@ -46,7 +46,7 @@ ${mode.prompts.output_format_header}
 
 \`\`\`xml
 <observation>
-  <type>[ ${mode.observation_types.map(t => t.id).join(' | ')} ]</type>
+  <type>[ ${mode.observation_types.map((t) => t.id).join(" | ")} ]</type>
   <!--
     ${mode.prompts.type_guidance}
   -->
@@ -89,31 +89,40 @@ ${mode.prompts.header_memory_start}`;
  * Build prompt to send tool observation to SDK agent
  */
 export function buildObservationPrompt(obs: Observation): string {
-  // Safely parse tool_input and tool_output - they're already JSON strings
   let toolInput: any;
   let toolOutput: any;
 
   try {
-    toolInput = typeof obs.tool_input === 'string' ? JSON.parse(obs.tool_input) : obs.tool_input;
+    toolInput = typeof obs.tool_input === "string" ? JSON.parse(obs.tool_input) : obs.tool_input;
   } catch (error) {
-    logger.debug('SDK', 'Tool input is plain string, using as-is', {
-      toolName: obs.tool_name
-    }, error as Error);
+    logger.debug(
+      "SDK",
+      "Tool input is plain string, using as-is",
+      {
+        toolName: obs.tool_name,
+      },
+      error as Error,
+    );
     toolInput = obs.tool_input;
   }
 
   try {
-    toolOutput = typeof obs.tool_output === 'string' ? JSON.parse(obs.tool_output) : obs.tool_output;
+    toolOutput = typeof obs.tool_output === "string" ? JSON.parse(obs.tool_output) : obs.tool_output;
   } catch (error) {
-    logger.debug('SDK', 'Tool output is plain string, using as-is', {
-      toolName: obs.tool_name
-    }, error as Error);
+    logger.debug(
+      "SDK",
+      "Tool output is plain string, using as-is",
+      {
+        toolName: obs.tool_name,
+      },
+      error as Error,
+    );
     toolOutput = obs.tool_output;
   }
 
   return `<observed_from_primary_session>
   <what_happened>${obs.tool_name}</what_happened>
-  <occurred_at>${new Date(obs.created_at_epoch).toISOString()}</occurred_at>${obs.cwd ? `\n  <working_directory>${obs.cwd}</working_directory>` : ''}
+  <occurred_at>${new Date(obs.created_at_epoch).toISOString()}</occurred_at>${obs.cwd ? `\n  <working_directory>${obs.cwd}</working_directory>` : ""}
   <parameters>${JSON.stringify(toolInput, null, 2)}</parameters>
   <outcome>${JSON.stringify(toolOutput, null, 2)}</outcome>
 </observed_from_primary_session>
@@ -130,38 +139,38 @@ IMPORTANT: Generate EXACTLY ONE <observation> block for this tool call. Do not r
  */
 export function buildBatchObservationPrompt(observations: Observation[]): string {
   if (observations.length === 0) {
-    throw new Error('buildBatchObservationPrompt requires at least one observation');
+    throw new Error("buildBatchObservationPrompt requires at least one observation");
   }
 
   if (observations.length === 1) {
-    // Fall back to single observation prompt for batch size of 1
     return buildObservationPrompt(observations[0]);
   }
 
-  const toolEventsXml = observations.map((obs, index) => {
-    // Safely parse tool_input and tool_output
-    let toolInput: any;
-    let toolOutput: any;
+  const toolEventsXml = observations
+    .map((obs, index) => {
+      let toolInput: any;
+      let toolOutput: any;
 
-    try {
-      toolInput = typeof obs.tool_input === 'string' ? JSON.parse(obs.tool_input) : obs.tool_input;
-    } catch {
-      toolInput = obs.tool_input;
-    }
+      try {
+        toolInput = typeof obs.tool_input === "string" ? JSON.parse(obs.tool_input) : obs.tool_input;
+      } catch {
+        toolInput = obs.tool_input;
+      }
 
-    try {
-      toolOutput = typeof obs.tool_output === 'string' ? JSON.parse(obs.tool_output) : obs.tool_output;
-    } catch {
-      toolOutput = obs.tool_output;
-    }
+      try {
+        toolOutput = typeof obs.tool_output === "string" ? JSON.parse(obs.tool_output) : obs.tool_output;
+      } catch {
+        toolOutput = obs.tool_output;
+      }
 
-    return `  <tool_event index="${index + 1}">
+      return `  <tool_event index="${index + 1}">
     <what_happened>${obs.tool_name}</what_happened>
-    <occurred_at>${new Date(obs.created_at_epoch).toISOString()}</occurred_at>${obs.cwd ? `\n    <working_directory>${obs.cwd}</working_directory>` : ''}
+    <occurred_at>${new Date(obs.created_at_epoch).toISOString()}</occurred_at>${obs.cwd ? `\n    <working_directory>${obs.cwd}</working_directory>` : ""}
     <parameters>${JSON.stringify(toolInput, null, 2)}</parameters>
     <outcome>${JSON.stringify(toolOutput, null, 2)}</outcome>
   </tool_event>`;
-  }).join('\n\n');
+    })
+    .join("\n\n");
 
   return `<observed_from_primary_session>
   <batch_size>${observations.length}</batch_size>
@@ -180,12 +189,7 @@ IMPORTANT: Generate EXACTLY ${observations.length} <observation> blocks - one fo
  * Build prompt to generate progress summary
  */
 export function buildSummaryPrompt(session: SDKSession, mode: ModeConfig): string {
-  const lastAssistantMessage = session.last_assistant_message || (() => {
-    logger.error('SDK', 'Missing last_assistant_message in session for summary prompt', {
-      sessionId: session.id
-    });
-    return '';
-  })();
+  const lastAssistantMessage = session.last_assistant_message || "";
 
   return `${mode.prompts.header_summary_checkpoint}
 ${mode.prompts.summary_instruction}
@@ -227,12 +231,17 @@ ${mode.prompts.summary_footer}`;
  * Called when: promptNumber > 1 (see SDKAgent.ts line 150)
  * First prompt: Uses buildInitPrompt instead (promptNumber === 1)
  */
-export function buildContinuationPrompt(userPrompt: string, promptNumber: number, contentSessionId: string, mode: ModeConfig): string {
+export function buildContinuationPrompt(
+  userPrompt: string,
+  promptNumber: number,
+  contentSessionId: string,
+  mode: ModeConfig,
+): string {
   return `${mode.prompts.continuation_greeting}
 
 <observed_from_primary_session>
   <user_request>${userPrompt}</user_request>
-  <requested_at>${new Date().toISOString().split('T')[0]}</requested_at>
+  <requested_at>${new Date().toISOString().split("T")[0]}</requested_at>
 </observed_from_primary_session>
 
 ${mode.prompts.system_identity}
@@ -251,7 +260,7 @@ ${mode.prompts.output_format_header}
 
 \`\`\`xml
 <observation>
-  <type>[ ${mode.observation_types.map(t => t.id).join(' | ')} ]</type>
+  <type>[ ${mode.observation_types.map((t) => t.id).join(" | ")} ]</type>
   <!--
     ${mode.prompts.type_guidance}
   -->
@@ -288,4 +297,4 @@ ${mode.prompts.format_examples}
 ${mode.prompts.footer}
 
 ${mode.prompts.header_memory_continued}`;
-} 
+}

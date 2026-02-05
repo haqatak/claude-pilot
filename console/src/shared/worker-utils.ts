@@ -1,15 +1,10 @@
 import path from "path";
 import { logger } from "../utils/logger.js";
-import { HOOK_TIMEOUTS, getTimeout } from "./hook-constants.js";
 import { SettingsDefaultsManager } from "./SettingsDefaultsManager.js";
 import { getWorkerRestartInstructions } from "../utils/error-messages.js";
 
 declare const __DEFAULT_PACKAGE_VERSION__: string;
-const BUILT_IN_VERSION = typeof __DEFAULT_PACKAGE_VERSION__ !== 'undefined'
-  ? __DEFAULT_PACKAGE_VERSION__
-  : '0.0.0-dev';
-
-const HEALTH_CHECK_TIMEOUT_MS = getTimeout(HOOK_TIMEOUTS.HEALTH_CHECK);
+const BUILT_IN_VERSION = typeof __DEFAULT_PACKAGE_VERSION__ !== "undefined" ? __DEFAULT_PACKAGE_VERSION__ : "0.0.0-dev";
 
 let cachedPort: number | null = null;
 let cachedHost: string | null = null;
@@ -25,7 +20,7 @@ export function getWorkerPort(): number {
     return cachedPort;
   }
 
-  const settingsPath = path.join(SettingsDefaultsManager.get('CLAUDE_PILOT_DATA_DIR'), 'settings.json');
+  const settingsPath = path.join(SettingsDefaultsManager.get("CLAUDE_PILOT_DATA_DIR"), "settings.json");
   const settings = SettingsDefaultsManager.loadFromFile(settingsPath);
   cachedPort = parseInt(settings.CLAUDE_PILOT_WORKER_PORT, 10);
   return cachedPort;
@@ -41,7 +36,7 @@ export function getWorkerHost(): string {
     return cachedHost;
   }
 
-  const settingsPath = path.join(SettingsDefaultsManager.get('CLAUDE_PILOT_DATA_DIR'), 'settings.json');
+  const settingsPath = path.join(SettingsDefaultsManager.get("CLAUDE_PILOT_DATA_DIR"), "settings.json");
   const settings = SettingsDefaultsManager.loadFromFile(settingsPath);
   cachedHost = settings.CLAUDE_PILOT_WORKER_HOST;
   return cachedHost;
@@ -58,20 +53,10 @@ export function getWorkerBind(): string {
     return cachedBind;
   }
 
-  const settingsPath = path.join(SettingsDefaultsManager.get('CLAUDE_PILOT_DATA_DIR'), 'settings.json');
+  const settingsPath = path.join(SettingsDefaultsManager.get("CLAUDE_PILOT_DATA_DIR"), "settings.json");
   const settings = SettingsDefaultsManager.loadFromFile(settingsPath);
   cachedBind = settings.CLAUDE_PILOT_WORKER_BIND;
   return cachedBind;
-}
-
-/**
- * Clear the cached port, host, and bind values
- * Call this when settings are updated to force re-reading from file
- */
-export function clearPortCache(): void {
-  cachedPort = null;
-  cachedHost = null;
-  cachedBind = null;
 }
 
 /**
@@ -79,7 +64,7 @@ export function clearPortCache(): void {
  * IPv6 addresses need to be wrapped in brackets: [::1]
  */
 function formatHostForUrl(host: string): string {
-  if (host.includes(':') && !host.startsWith('[')) {
+  if (host.includes(":") && !host.startsWith("[")) {
     return `[${host}]`;
   }
   return host;
@@ -102,7 +87,6 @@ export function getWorkerBaseUrl(): string {
  * Hooks don't need MCP, only core services for database operations
  */
 async function isWorkerHealthy(): Promise<boolean> {
-  // Note: Removed AbortSignal.timeout to avoid Windows Bun cleanup issue (libuv assertion)
   const response = await fetch(`${getWorkerBaseUrl()}/api/core-ready`);
   return response.ok;
 }
@@ -118,12 +102,11 @@ function getPluginVersion(): string {
  * Get the running worker's version from the API
  */
 async function getWorkerVersion(): Promise<string> {
-  // Note: Removed AbortSignal.timeout to avoid Windows Bun cleanup issue (libuv assertion)
   const response = await fetch(`${getWorkerBaseUrl()}/api/version`);
   if (!response.ok) {
     throw new Error(`Failed to get worker version: ${response.status}`);
   }
-  const data = await response.json() as { version: string };
+  const data = (await response.json()) as { version: string };
   return data.version;
 }
 
@@ -137,14 +120,13 @@ async function checkWorkerVersion(): Promise<void> {
   const workerVersion = await getWorkerVersion();
 
   if (pluginVersion !== workerVersion) {
-    logger.debug('SYSTEM', 'Version check', {
+    logger.debug("SYSTEM", "Version check", {
       pluginVersion,
       workerVersion,
-      note: 'Mismatch will be auto-restarted by worker-service start command'
+      note: "Mismatch will be auto-restarted by worker-service start command",
     });
   }
 }
-
 
 /**
  * Result of a non-blocking worker readiness check
@@ -173,13 +155,13 @@ export async function tryEnsureWorkerRunning(maxWaitMs: number = 3000): Promise<
       }
     } catch (e) {
       if (i === 0) {
-        logger.debug('SYSTEM', 'Worker not ready, polling...', {
+        logger.debug("SYSTEM", "Worker not ready, polling...", {
           maxWaitMs,
-          error: e instanceof Error ? e.message : String(e)
+          error: e instanceof Error ? e.message : String(e),
         });
       }
     }
-    await new Promise(r => setTimeout(r, pollInterval));
+    await new Promise((r) => setTimeout(r, pollInterval));
   }
 
   return { ready: false, waited: Date.now() - startTime };
@@ -201,17 +183,19 @@ export async function ensureWorkerRunning(): Promise<void> {
         return;
       }
     } catch (e) {
-      logger.debug('SYSTEM', 'Worker health check failed, will retry', {
+      logger.debug("SYSTEM", "Worker health check failed, will retry", {
         attempt: i + 1,
         maxRetries,
-        error: e instanceof Error ? e.message : String(e)
+        error: e instanceof Error ? e.message : String(e),
       });
     }
-    await new Promise(r => setTimeout(r, pollInterval));
+    await new Promise((r) => setTimeout(r, pollInterval));
   }
 
-  throw new Error(getWorkerRestartInstructions({
-    port: getWorkerPort(),
-    customPrefix: 'Worker did not become ready within 15 seconds.'
-  }));
+  throw new Error(
+    getWorkerRestartInstructions({
+      port: getWorkerPort(),
+      customPrefix: "Worker did not become ready within 15 seconds.",
+    }),
+  );
 }

@@ -7,9 +7,9 @@
  * - Efficient LIMIT+1 trick to avoid COUNT(*) query
  */
 
-import { DatabaseManager } from './DatabaseManager.js';
-import { logger } from '../../utils/logger.js';
-import type { PaginatedResult, Observation, Summary, UserPrompt } from '../worker-types.js';
+import { DatabaseManager } from "./DatabaseManager.js";
+import { logger } from "../../utils/logger.js";
+import type { PaginatedResult, Observation, Summary, UserPrompt } from "../worker-types.js";
 
 export class PaginationHelper {
   private dbManager: DatabaseManager;
@@ -28,11 +28,9 @@ export class PaginationHelper {
     const index = filePath.indexOf(marker);
 
     if (index !== -1) {
-      // Strip everything before and including the project name
       return filePath.substring(index + marker.length);
     }
 
-    // Fallback: return original path if project name not found
     return filePath;
   }
 
@@ -43,16 +41,13 @@ export class PaginationHelper {
     if (!filePathsStr) return filePathsStr;
 
     try {
-      // Parse JSON array
       const paths = JSON.parse(filePathsStr) as string[];
 
-      // Strip project path from each file
-      const strippedPaths = paths.map(p => this.stripProjectPath(p, projectName));
+      const strippedPaths = paths.map((p) => this.stripProjectPath(p, projectName));
 
-      // Return as JSON string
       return JSON.stringify(strippedPaths);
     } catch (err) {
-      logger.debug('WORKER', 'File paths is plain string, using as-is', {}, err as Error);
+      logger.debug("WORKER", "File paths is plain string, using as-is", {}, err as Error);
       return filePathsStr;
     }
   }
@@ -64,7 +59,7 @@ export class PaginationHelper {
     return {
       ...obs,
       files_read: this.stripProjectPaths(obs.files_read, obs.project),
-      files_modified: this.stripProjectPaths(obs.files_modified, obs.project)
+      files_modified: this.stripProjectPaths(obs.files_modified, obs.project),
     };
   }
 
@@ -73,17 +68,16 @@ export class PaginationHelper {
    */
   getObservations(offset: number, limit: number, project?: string): PaginatedResult<Observation> {
     const result = this.paginate<Observation>(
-      'observations',
-      'id, memory_session_id, project, type, title, subtitle, narrative, text, facts, concepts, files_read, files_modified, prompt_number, created_at, created_at_epoch',
+      "observations",
+      "id, memory_session_id, project, type, title, subtitle, narrative, text, facts, concepts, files_read, files_modified, prompt_number, created_at, created_at_epoch",
       offset,
       limit,
-      project
+      project,
     );
 
-    // Strip project paths from file paths before returning
     return {
       ...result,
-      items: result.items.map(obs => this.sanitizeObservation(obs))
+      items: result.items.map((obs) => this.sanitizeObservation(obs)),
     };
   }
 
@@ -111,11 +105,11 @@ export class PaginationHelper {
     const params: any[] = [];
 
     if (project) {
-      query += ' WHERE ss.project = ?';
+      query += " WHERE ss.project = ?";
       params.push(project);
     }
 
-    query += ' ORDER BY ss.created_at_epoch DESC LIMIT ? OFFSET ?';
+    query += " ORDER BY ss.created_at_epoch DESC LIMIT ? OFFSET ?";
     params.push(limit + 1, offset);
 
     const stmt = db.prepare(query);
@@ -125,7 +119,7 @@ export class PaginationHelper {
       items: results.slice(0, limit),
       hasMore: results.length > limit,
       offset,
-      limit
+      limit,
     };
   }
 
@@ -143,11 +137,11 @@ export class PaginationHelper {
     const params: any[] = [];
 
     if (project) {
-      query += ' WHERE s.project = ?';
+      query += " WHERE s.project = ?";
       params.push(project);
     }
 
-    query += ' ORDER BY up.created_at_epoch DESC LIMIT ? OFFSET ?';
+    query += " ORDER BY up.created_at_epoch DESC LIMIT ? OFFSET ?";
     params.push(limit + 1, offset);
 
     const stmt = db.prepare(query);
@@ -157,7 +151,7 @@ export class PaginationHelper {
       items: results.slice(0, limit),
       hasMore: results.length > limit,
       offset,
-      limit
+      limit,
     };
   }
 
@@ -169,7 +163,7 @@ export class PaginationHelper {
     columns: string,
     offset: number,
     limit: number,
-    project?: string
+    project?: string,
   ): PaginatedResult<T> {
     const db = this.dbManager.getSessionStore().db;
 
@@ -177,12 +171,12 @@ export class PaginationHelper {
     const params: any[] = [];
 
     if (project) {
-      query += ' WHERE project = ?';
+      query += " WHERE project = ?";
       params.push(project);
     }
 
-    query += ' ORDER BY created_at_epoch DESC LIMIT ? OFFSET ?';
-    params.push(limit + 1, offset); // Fetch one extra to check hasMore
+    query += " ORDER BY created_at_epoch DESC LIMIT ? OFFSET ?";
+    params.push(limit + 1, offset);
 
     const stmt = db.prepare(query);
     const results = stmt.all(...params) as T[];
@@ -191,7 +185,7 @@ export class PaginationHelper {
       items: results.slice(0, limit),
       hasMore: results.length > limit,
       offset,
-      limit
+      limit,
     };
   }
 }

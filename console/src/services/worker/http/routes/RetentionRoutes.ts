@@ -4,11 +4,11 @@
  * API endpoints for memory retention policy management and cleanup.
  */
 
-import express, { Request, Response } from 'express';
-import { BaseRouteHandler } from '../BaseRouteHandler.js';
-import { RetentionService, RetentionPolicy } from '../../RetentionService.js';
-import { DatabaseManager } from '../../DatabaseManager.js';
-import { logger } from '../../../../utils/logger.js';
+import express, { Request, Response } from "express";
+import { BaseRouteHandler } from "../BaseRouteHandler.js";
+import { RetentionService, RetentionPolicy } from "../../RetentionService.js";
+import { DatabaseManager } from "../../DatabaseManager.js";
+import { logger } from "../../../../utils/logger.js";
 
 export class RetentionRoutes extends BaseRouteHandler {
   private retentionService: RetentionService;
@@ -19,23 +19,17 @@ export class RetentionRoutes extends BaseRouteHandler {
   }
 
   setupRoutes(app: express.Application): void {
-    // Get current retention policy
-    app.get('/api/retention/policy', this.handleGetPolicy.bind(this));
+    app.get("/api/retention/policy", this.handleGetPolicy.bind(this));
 
-    // Preview cleanup (dry run)
-    app.get('/api/retention/preview', this.handlePreview.bind(this));
+    app.get("/api/retention/preview", this.handlePreview.bind(this));
 
-    // Run cleanup
-    app.post('/api/retention/run', this.handleRun.bind(this));
+    app.post("/api/retention/run", this.handleRun.bind(this));
 
-    // Get archive stats
-    app.get('/api/retention/archive', this.handleGetArchive.bind(this));
+    app.get("/api/retention/archive", this.handleGetArchive.bind(this));
 
-    // List archived observations
-    app.get('/api/retention/archive/list', this.handleListArchived.bind(this));
+    app.get("/api/retention/archive/list", this.handleListArchived.bind(this));
 
-    // Restore from archive
-    app.post('/api/retention/restore', this.handleRestore.bind(this));
+    app.post("/api/retention/restore", this.handleRestore.bind(this));
   }
 
   /**
@@ -53,7 +47,6 @@ export class RetentionRoutes extends BaseRouteHandler {
    * Query params: maxAgeDays, maxCount, excludeTypes (optional overrides)
    */
   private handlePreview = this.wrapHandler(async (req: Request, res: Response): Promise<void> => {
-    // Allow custom policy via query params
     const customPolicy = this.parseQueryPolicy(req.query);
     const preview = await this.retentionService.preview(customPolicy);
     res.json({ preview, policy: customPolicy || this.retentionService.getPolicy() });
@@ -67,7 +60,6 @@ export class RetentionRoutes extends BaseRouteHandler {
   private handleRun = this.wrapHandler(async (req: Request, res: Response): Promise<void> => {
     const { dryRun = false, policy: customPolicy } = req.body;
 
-    // Parse custom policy if provided
     let policy: RetentionPolicy | undefined;
     if (customPolicy) {
       policy = {
@@ -79,7 +71,7 @@ export class RetentionRoutes extends BaseRouteHandler {
       };
     }
 
-    logger.info('RETENTION', `Running cleanup (dryRun: ${dryRun})`, {
+    logger.info("RETENTION", `Running cleanup (dryRun: ${dryRun})`, {
       policy: policy || this.retentionService.getPolicy(),
     });
 
@@ -123,9 +115,11 @@ export class RetentionRoutes extends BaseRouteHandler {
   private handleRestore = this.wrapHandler(async (req: Request, res: Response): Promise<void> => {
     const { ids } = req.body;
 
-    const idsArray = Array.isArray(ids) ? ids.map((id: unknown) => parseInt(String(id), 10)).filter((id: number) => !isNaN(id)) : undefined;
+    const idsArray = Array.isArray(ids)
+      ? ids.map((id: unknown) => parseInt(String(id), 10)).filter((id: number) => !isNaN(id))
+      : undefined;
 
-    logger.info('RETENTION', `Restoring from archive`, { ids: idsArray?.length ?? 'all' });
+    logger.info("RETENTION", `Restoring from archive`, { ids: idsArray?.length ?? "all" });
 
     const result = await this.retentionService.restore(idsArray);
 
@@ -151,9 +145,9 @@ export class RetentionRoutes extends BaseRouteHandler {
       maxAgeDays: query.maxAgeDays ? parseInt(query.maxAgeDays as string, 10) : defaultPolicy.maxAgeDays,
       maxCount: query.maxCount ? parseInt(query.maxCount as string, 10) : defaultPolicy.maxCount,
       excludeTypes: query.excludeTypes
-        ? (query.excludeTypes as string).split(',').filter(Boolean)
+        ? (query.excludeTypes as string).split(",").filter(Boolean)
         : defaultPolicy.excludeTypes,
-      softDelete: query.softDelete !== 'false',
+      softDelete: query.softDelete !== "false",
     };
   }
 }

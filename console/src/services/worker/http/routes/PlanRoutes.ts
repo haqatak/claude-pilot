@@ -5,11 +5,11 @@
  * Reads from docs/plans/ directory to show plan status in the viewer.
  */
 
-import express, { Request, Response } from 'express';
-import { readdirSync, readFileSync, statSync, existsSync } from 'fs';
-import { execSync } from 'child_process';
-import path from 'path';
-import { BaseRouteHandler } from '../BaseRouteHandler.js';
+import express, { Request, Response } from "express";
+import { readdirSync, readFileSync, statSync, existsSync } from "fs";
+import { execSync } from "child_process";
+import path from "path";
+import { BaseRouteHandler } from "../BaseRouteHandler.js";
 
 export interface GitInfo {
   branch: string | null;
@@ -20,10 +20,10 @@ export interface GitInfo {
 
 export interface PlanInfo {
   name: string;
-  status: 'PENDING' | 'COMPLETE' | 'VERIFIED';
+  status: "PENDING" | "COMPLETE" | "VERIFIED";
   completed: number;
   total: number;
-  phase: 'plan' | 'implement' | 'verify';
+  phase: "plan" | "implement" | "verify";
   iterations: number;
   approved: boolean;
   filePath: string;
@@ -36,11 +36,11 @@ export class PlanRoutes extends BaseRouteHandler {
   }
 
   setupRoutes(app: express.Application): void {
-    app.get('/api/plan', this.handleGetActivePlan.bind(this));
-    app.get('/api/plans', this.handleGetAllPlans.bind(this));
-    app.get('/api/plans/active', this.handleGetActiveSpecs.bind(this));
-    app.get('/api/plan/content', this.handleGetPlanContent.bind(this));
-    app.get('/api/git', this.handleGetGitInfo.bind(this));
+    app.get("/api/plan", this.handleGetActivePlan.bind(this));
+    app.get("/api/plans", this.handleGetAllPlans.bind(this));
+    app.get("/api/plans/active", this.handleGetActiveSpecs.bind(this));
+    app.get("/api/plan/content", this.handleGetPlanContent.bind(this));
+    app.get("/api/git", this.handleGetGitInfo.bind(this));
   }
 
   /**
@@ -92,18 +92,18 @@ export class PlanRoutes extends BaseRouteHandler {
    */
   private handleGetPlanContent = this.wrapHandler((req: Request, res: Response): void => {
     const projectRoot = process.env.CLAUDE_PROJECT_ROOT || process.cwd();
-    const plansDir = path.join(projectRoot, 'docs', 'plans');
+    const plansDir = path.join(projectRoot, "docs", "plans");
     const requestedPath = req.query.path as string | undefined;
 
     if (!requestedPath) {
       const specs = this.getActiveSpecs(projectRoot);
       if (specs.length === 0) {
-        res.status(404).json({ error: 'No active specs found' });
+        res.status(404).json({ error: "No active specs found" });
         return;
       }
       const firstSpec = specs[0];
       try {
-        const content = readFileSync(firstSpec.filePath, 'utf-8');
+        const content = readFileSync(firstSpec.filePath, "utf-8");
         res.json({
           content,
           name: firstSpec.name,
@@ -111,7 +111,7 @@ export class PlanRoutes extends BaseRouteHandler {
           filePath: firstSpec.filePath,
         });
       } catch {
-        res.status(404).json({ error: 'Plan file not found' });
+        res.status(404).json({ error: "Plan file not found" });
       }
       return;
     }
@@ -119,25 +119,25 @@ export class PlanRoutes extends BaseRouteHandler {
     const resolvedPath = path.resolve(projectRoot, requestedPath);
     const normalizedPlansDir = path.resolve(plansDir);
 
-    if (!resolvedPath.startsWith(normalizedPlansDir) || !resolvedPath.endsWith('.md')) {
-      res.status(403).json({ error: 'Access denied: path must be within docs/plans/' });
+    if (!resolvedPath.startsWith(normalizedPlansDir) || !resolvedPath.endsWith(".md")) {
+      res.status(403).json({ error: "Access denied: path must be within docs/plans/" });
       return;
     }
 
     if (!existsSync(resolvedPath)) {
-      res.status(404).json({ error: 'Plan not found' });
+      res.status(404).json({ error: "Plan not found" });
       return;
     }
 
-    const content = readFileSync(resolvedPath, 'utf-8');
+    const content = readFileSync(resolvedPath, "utf-8");
     const fileName = path.basename(resolvedPath);
     const stat = statSync(resolvedPath);
     const planInfo = this.parsePlanContent(content, fileName, resolvedPath, stat.mtime);
 
     res.json({
       content,
-      name: planInfo?.name || fileName.replace('.md', ''),
-      status: planInfo?.status || 'UNKNOWN',
+      name: planInfo?.name || fileName.replace(".md", ""),
+      status: planInfo?.status || "UNKNOWN",
       filePath: resolvedPath,
     });
   });
@@ -147,7 +147,7 @@ export class PlanRoutes extends BaseRouteHandler {
    * Only considers specs modified today to avoid showing stale plans.
    */
   private getActivePlanInfo(projectRoot: string): PlanInfo | null {
-    const plansDir = path.join(projectRoot, 'docs', 'plans');
+    const plansDir = path.join(projectRoot, "docs", "plans");
     if (!existsSync(plansDir)) {
       return null;
     }
@@ -157,7 +157,7 @@ export class PlanRoutes extends BaseRouteHandler {
 
     try {
       const planFiles = readdirSync(plansDir)
-        .filter(f => f.endsWith('.md'))
+        .filter((f) => f.endsWith(".md"))
         .sort()
         .reverse();
 
@@ -171,15 +171,14 @@ export class PlanRoutes extends BaseRouteHandler {
           continue;
         }
 
-        const content = readFileSync(filePath, 'utf-8');
+        const content = readFileSync(filePath, "utf-8");
         const planInfo = this.parsePlanContent(content, planFile, filePath, stat.mtime);
 
-        if (planInfo && planInfo.status !== 'VERIFIED') {
+        if (planInfo && planInfo.status !== "VERIFIED") {
           return planInfo;
         }
       }
-    } catch (error) {
-    }
+    } catch (error) {}
 
     return null;
   }
@@ -191,10 +190,10 @@ export class PlanRoutes extends BaseRouteHandler {
   private getActiveSpecs(projectRoot: string): PlanInfo[] {
     const allPlans = this.getAllPlans(projectRoot);
 
-    const activeSpecs = allPlans.filter(p => p.status === 'PENDING' || p.status === 'COMPLETE');
+    const activeSpecs = allPlans.filter((p) => p.status === "PENDING" || p.status === "COMPLETE");
 
     const verifiedPlans = allPlans
-      .filter(p => p.status === 'VERIFIED')
+      .filter((p) => p.status === "VERIFIED")
       .sort((a, b) => new Date(b.modifiedAt).getTime() - new Date(a.modifiedAt).getTime());
 
     if (verifiedPlans.length > 0) {
@@ -208,7 +207,7 @@ export class PlanRoutes extends BaseRouteHandler {
    * Get all plans from docs/plans/ directory
    */
   private getAllPlans(projectRoot: string): PlanInfo[] {
-    const plansDir = path.join(projectRoot, 'docs', 'plans');
+    const plansDir = path.join(projectRoot, "docs", "plans");
     if (!existsSync(plansDir)) {
       return [];
     }
@@ -217,22 +216,21 @@ export class PlanRoutes extends BaseRouteHandler {
 
     try {
       const planFiles = readdirSync(plansDir)
-        .filter(f => f.endsWith('.md'))
+        .filter((f) => f.endsWith(".md"))
         .sort()
         .reverse();
 
       for (const planFile of planFiles) {
         const filePath = path.join(plansDir, planFile);
         const stat = statSync(filePath);
-        const content = readFileSync(filePath, 'utf-8');
+        const content = readFileSync(filePath, "utf-8");
         const planInfo = this.parsePlanContent(content, planFile, filePath, stat.mtime);
 
         if (planInfo) {
           plans.push(planInfo);
         }
       }
-    } catch (error) {
-    }
+    } catch (error) {}
 
     return plans.slice(0, 10);
   }
@@ -240,41 +238,36 @@ export class PlanRoutes extends BaseRouteHandler {
   /**
    * Parse plan file content to extract status information
    */
-  private parsePlanContent(
-    content: string,
-    fileName: string,
-    filePath: string,
-    modifiedAt: Date
-  ): PlanInfo | null {
+  private parsePlanContent(content: string, fileName: string, filePath: string, modifiedAt: Date): PlanInfo | null {
     const statusMatch = content.match(/^Status:\s*(\w+)/m);
     if (!statusMatch) {
       return null;
     }
 
-    const status = statusMatch[1] as 'PENDING' | 'COMPLETE' | 'VERIFIED';
+    const status = statusMatch[1] as "PENDING" | "COMPLETE" | "VERIFIED";
 
     const completedTasks = (content.match(/^- \[x\] Task \d+:/gm) || []).length;
     const remainingTasks = (content.match(/^- \[ \] Task \d+:/gm) || []).length;
     const total = completedTasks + remainingTasks;
 
     const approvedMatch = content.match(/^Approved:\s*(\w+)/m);
-    const approved = approvedMatch ? approvedMatch[1].toLowerCase() === 'yes' : false;
+    const approved = approvedMatch ? approvedMatch[1].toLowerCase() === "yes" : false;
 
     const iterMatch = content.match(/^Iterations:\s*(\d+)/m);
     const iterations = iterMatch ? parseInt(iterMatch[1], 10) : 0;
 
-    let phase: 'plan' | 'implement' | 'verify';
-    if (status === 'PENDING' && !approved) {
-      phase = 'plan';
-    } else if (status === 'PENDING' && approved) {
-      phase = 'implement';
+    let phase: "plan" | "implement" | "verify";
+    if (status === "PENDING" && !approved) {
+      phase = "plan";
+    } else if (status === "PENDING" && approved) {
+      phase = "implement";
     } else {
-      phase = 'verify';
+      phase = "verify";
     }
 
-    let name = fileName.replace('.md', '');
+    let name = fileName.replace(".md", "");
     if (name.match(/^\d{4}-\d{2}-\d{2}-/)) {
-      name = name.split('-').slice(3).join('-');
+      name = name.split("-").slice(3).join("-");
     }
 
     return {
@@ -295,15 +288,15 @@ export class PlanRoutes extends BaseRouteHandler {
    */
   private getGitInfo(projectRoot: string): GitInfo {
     try {
-      const branch = execSync('git rev-parse --abbrev-ref HEAD', {
+      const branch = execSync("git rev-parse --abbrev-ref HEAD", {
         cwd: projectRoot,
-        encoding: 'utf-8',
+        encoding: "utf-8",
         timeout: 2000,
       }).trim();
 
-      const status = execSync('git status --porcelain', {
+      const status = execSync("git status --porcelain", {
         cwd: projectRoot,
-        encoding: 'utf-8',
+        encoding: "utf-8",
         timeout: 2000,
       });
 
@@ -311,16 +304,16 @@ export class PlanRoutes extends BaseRouteHandler {
       let unstaged = 0;
       let untracked = 0;
 
-      for (const line of status.split('\n')) {
+      for (const line of status.split("\n")) {
         if (!line) continue;
-        const idx = line[0] || ' ';
-        const wt = line[1] || ' ';
+        const idx = line[0] || " ";
+        const wt = line[1] || " ";
 
-        if (idx === '?' && wt === '?') {
+        if (idx === "?" && wt === "?") {
           untracked++;
         } else {
-          if (idx !== ' ' && idx !== '?') staged++;
-          if (wt !== ' ') unstaged++;
+          if (idx !== " " && idx !== "?") staged++;
+          if (wt !== " ") unstaged++;
         }
       }
 

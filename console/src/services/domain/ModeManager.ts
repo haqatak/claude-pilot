@@ -6,12 +6,12 @@
  * can be selected via CLAUDE_PILOT_MODE setting.
  */
 
-import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
-import { homedir } from 'os';
-import type { ModeConfig, ObservationType, ObservationConcept } from './types.js';
-import { logger } from '../../utils/logger.js';
-import { getPackageRoot } from '../../shared/paths.js';
+import { readFileSync, existsSync } from "fs";
+import { join } from "path";
+import { homedir } from "os";
+import type { ModeConfig, ObservationType, ObservationConcept } from "./types.js";
+import { logger } from "../../utils/logger.js";
+import { getPackageRoot } from "../../shared/paths.js";
 
 export class ModeManager {
   private static instance: ModeManager | null = null;
@@ -22,17 +22,17 @@ export class ModeManager {
     const packageRoot = getPackageRoot();
 
     const possiblePaths = [
-      join(packageRoot, 'modes'),
-      join(packageRoot, '..', 'pilot', 'modes'),
-      join(packageRoot, '..', '..', 'pilot', 'modes'),
-      join(homedir(), '.claude', 'pilot', 'modes'),
+      join(packageRoot, "modes"),
+      join(packageRoot, "..", "pilot", "modes"),
+      join(packageRoot, "..", "..", "pilot", "modes"),
+      join(homedir(), ".claude", "pilot", "modes"),
     ];
 
-    const foundPath = possiblePaths.find(p => existsSync(p));
+    const foundPath = possiblePaths.find((p) => existsSync(p));
     this.modesDir = foundPath || possiblePaths[0];
 
     if (!foundPath) {
-      logger.warn('SYSTEM', 'No modes directory found', { searched: possiblePaths });
+      logger.warn("SYSTEM", "No modes directory found", { searched: possiblePaths });
     }
   }
 
@@ -54,22 +54,22 @@ export class ModeManager {
     parentId: string;
     overrideId: string;
   } {
-    const parts = modeId.split('--');
+    const parts = modeId.split("--");
 
     if (parts.length === 1) {
-      return { hasParent: false, parentId: '', overrideId: '' };
+      return { hasParent: false, parentId: "", overrideId: "" };
     }
 
     if (parts.length > 2) {
       throw new Error(
-        `Invalid mode inheritance: ${modeId}. Only one level of inheritance supported (parent--override)`
+        `Invalid mode inheritance: ${modeId}. Only one level of inheritance supported (parent--override)`,
       );
     }
 
     return {
       hasParent: true,
       parentId: parts[0],
-      overrideId: modeId
+      overrideId: modeId,
     };
   }
 
@@ -77,11 +77,7 @@ export class ModeManager {
    * Check if value is a plain object (not array, not null)
    */
   private isPlainObject(value: unknown): boolean {
-    return (
-      value !== null &&
-      typeof value === 'object' &&
-      !Array.isArray(value)
-    );
+    return value !== null && typeof value === "object" && !Array.isArray(value);
   }
 
   /**
@@ -117,7 +113,7 @@ export class ModeManager {
       throw new Error(`Mode file not found: ${modePath}`);
     }
 
-    const jsonContent = readFileSync(modePath, 'utf-8');
+    const jsonContent = readFileSync(modePath, "utf-8");
     return JSON.parse(jsonContent) as ModeConfig;
   }
 
@@ -137,17 +133,17 @@ export class ModeManager {
       try {
         const mode = this.loadModeFile(modeId);
         this.activeMode = mode;
-        logger.debug('SYSTEM', `Loaded mode: ${mode.name} (${modeId})`, undefined, {
-          types: mode.observation_types.map(t => t.id),
-          concepts: mode.observation_concepts.map(c => c.id)
+        logger.debug("SYSTEM", `Loaded mode: ${mode.name} (${modeId})`, undefined, {
+          types: mode.observation_types.map((t) => t.id),
+          concepts: mode.observation_concepts.map((c) => c.id),
         });
         return mode;
       } catch (error) {
-        logger.warn('SYSTEM', `Mode file not found: ${modeId}, falling back to 'code'`);
-        if (modeId === 'code') {
-          throw new Error('Critical: code.json mode file missing');
+        logger.warn("SYSTEM", `Mode file not found: ${modeId}, falling back to 'code'`);
+        if (modeId === "code") {
+          throw new Error("Critical: code.json mode file missing");
         }
-        return this.loadMode('code');
+        return this.loadMode("code");
       }
     }
 
@@ -157,22 +153,22 @@ export class ModeManager {
     try {
       parentMode = this.loadMode(parentId);
     } catch (error) {
-      logger.warn('SYSTEM', `Parent mode '${parentId}' not found for ${modeId}, falling back to 'code'`);
-      parentMode = this.loadMode('code');
+      logger.warn("SYSTEM", `Parent mode '${parentId}' not found for ${modeId}, falling back to 'code'`);
+      parentMode = this.loadMode("code");
     }
 
     let overrideConfig: Partial<ModeConfig>;
     try {
       overrideConfig = this.loadModeFile(overrideId);
-      logger.debug('SYSTEM', `Loaded override file: ${overrideId} for parent ${parentId}`);
+      logger.debug("SYSTEM", `Loaded override file: ${overrideId} for parent ${parentId}`);
     } catch (error) {
-      logger.warn('SYSTEM', `Override file '${overrideId}' not found, using parent mode '${parentId}' only`);
+      logger.warn("SYSTEM", `Override file '${overrideId}' not found, using parent mode '${parentId}' only`);
       this.activeMode = parentMode;
       return parentMode;
     }
 
     if (!overrideConfig) {
-      logger.warn('SYSTEM', `Invalid override file: ${overrideId}, using parent mode '${parentId}' only`);
+      logger.warn("SYSTEM", `Invalid override file: ${overrideId}, using parent mode '${parentId}' only`);
       this.activeMode = parentMode;
       return parentMode;
     }
@@ -180,12 +176,17 @@ export class ModeManager {
     const mergedMode = this.deepMerge(parentMode, overrideConfig);
     this.activeMode = mergedMode;
 
-    logger.debug('SYSTEM', `Loaded mode with inheritance: ${mergedMode.name} (${modeId} = ${parentId} + ${overrideId})`, undefined, {
-      parent: parentId,
-      override: overrideId,
-      types: mergedMode.observation_types.map(t => t.id),
-      concepts: mergedMode.observation_concepts.map(c => c.id)
-    });
+    logger.debug(
+      "SYSTEM",
+      `Loaded mode with inheritance: ${mergedMode.name} (${modeId} = ${parentId} + ${overrideId})`,
+      undefined,
+      {
+        parent: parentId,
+        override: overrideId,
+        types: mergedMode.observation_types.map((t) => t.id),
+        concepts: mergedMode.observation_concepts.map((c) => c.id),
+      },
+    );
 
     return mergedMode;
   }
@@ -195,7 +196,7 @@ export class ModeManager {
    */
   getActiveMode(): ModeConfig {
     if (!this.activeMode) {
-      throw new Error('No mode loaded. Call loadMode() first.');
+      throw new Error("No mode loaded. Call loadMode() first.");
     }
     return this.activeMode;
   }
@@ -218,30 +219,30 @@ export class ModeManager {
    * Get icon for a specific observation type
    */
   getTypeIcon(typeId: string): string {
-    const type = this.getObservationTypes().find(t => t.id === typeId);
-    return type?.emoji || '📝';
+    const type = this.getObservationTypes().find((t) => t.id === typeId);
+    return type?.emoji || "📝";
   }
 
   /**
    * Get work emoji for a specific observation type
    */
   getWorkEmoji(typeId: string): string {
-    const type = this.getObservationTypes().find(t => t.id === typeId);
-    return type?.work_emoji || '📝';
+    const type = this.getObservationTypes().find((t) => t.id === typeId);
+    return type?.work_emoji || "📝";
   }
 
   /**
    * Validate that a type ID exists in the active mode
    */
   validateType(typeId: string): boolean {
-    return this.getObservationTypes().some(t => t.id === typeId);
+    return this.getObservationTypes().some((t) => t.id === typeId);
   }
 
   /**
    * Get label for a specific observation type
    */
   getTypeLabel(typeId: string): string {
-    const type = this.getObservationTypes().find(t => t.id === typeId);
+    const type = this.getObservationTypes().find((t) => t.id === typeId);
     return type?.label || typeId;
   }
 }

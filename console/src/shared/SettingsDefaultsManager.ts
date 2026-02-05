@@ -5,11 +5,13 @@
  * Provides methods to get defaults with optional environment variable overrides.
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
-import { join, dirname } from 'path';
-import { homedir } from 'os';
-import { DEFAULT_OBSERVATION_TYPES_STRING, DEFAULT_OBSERVATION_CONCEPTS_STRING } from '../constants/observation-metadata.js';
-// NOTE: Do NOT import logger here - it creates a circular dependency
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
+import { join, dirname } from "path";
+import { homedir } from "os";
+import {
+  DEFAULT_OBSERVATION_TYPES_STRING,
+  DEFAULT_OBSERVATION_CONCEPTS_STRING,
+} from "../constants/observation-metadata.js";
 
 export interface SettingsDefaults {
   CLAUDE_PILOT_MODEL: string;
@@ -41,7 +43,7 @@ export interface SettingsDefaults {
   CLAUDE_PILOT_EMBEDDING_MODEL: string;
   CLAUDE_PILOT_EXCLUDE_PROJECTS: string;
   CLAUDE_PILOT_REMOTE_MODE: boolean;
-  CLAUDE_PILOT_REMOTE_URL: string;         // Remote worker URL (e.g., "https://pilot-memory.example.com")
+  CLAUDE_PILOT_REMOTE_URL: string;
   CLAUDE_PILOT_REMOTE_TOKEN: string;
   CLAUDE_PILOT_REMOTE_VERIFY_SSL: boolean;
   CLAUDE_PILOT_REMOTE_TIMEOUT_MS: string;
@@ -58,45 +60,45 @@ export class SettingsDefaultsManager {
    * Default values for all settings
    */
   private static readonly DEFAULTS: SettingsDefaults = {
-    CLAUDE_PILOT_MODEL: 'haiku',
-    CLAUDE_PILOT_CONTEXT_OBSERVATIONS: '50',
-    CLAUDE_PILOT_WORKER_PORT: '41777',
-    CLAUDE_PILOT_WORKER_HOST: '127.0.0.1',
-    CLAUDE_PILOT_WORKER_BIND: '127.0.0.1',
-    CLAUDE_PILOT_SKIP_TOOLS: 'ListMcpResourcesTool,SlashCommand,Skill,TodoWrite,AskUserQuestion',
-    CLAUDE_PILOT_DATA_DIR: join(homedir(), '.pilot/memory'),
-    CLAUDE_PILOT_LOG_LEVEL: 'INFO',
-    CLAUDE_PILOT_PYTHON_VERSION: '3.12',
-    CLAUDE_CODE_PATH: '',
-    CLAUDE_PILOT_MODE: 'code',
+    CLAUDE_PILOT_MODEL: "haiku",
+    CLAUDE_PILOT_CONTEXT_OBSERVATIONS: "50",
+    CLAUDE_PILOT_WORKER_PORT: "41777",
+    CLAUDE_PILOT_WORKER_HOST: "127.0.0.1",
+    CLAUDE_PILOT_WORKER_BIND: "127.0.0.1",
+    CLAUDE_PILOT_SKIP_TOOLS: "ListMcpResourcesTool,SlashCommand,Skill,TodoWrite,AskUserQuestion",
+    CLAUDE_PILOT_DATA_DIR: join(homedir(), ".pilot/memory"),
+    CLAUDE_PILOT_LOG_LEVEL: "INFO",
+    CLAUDE_PILOT_PYTHON_VERSION: "3.12",
+    CLAUDE_CODE_PATH: "",
+    CLAUDE_PILOT_MODE: "code",
     CLAUDE_PILOT_CONTEXT_SHOW_READ_TOKENS: false,
     CLAUDE_PILOT_CONTEXT_SHOW_WORK_TOKENS: false,
     CLAUDE_PILOT_CONTEXT_SHOW_SAVINGS_AMOUNT: false,
     CLAUDE_PILOT_CONTEXT_SHOW_SAVINGS_PERCENT: false,
     CLAUDE_PILOT_CONTEXT_OBSERVATION_TYPES: DEFAULT_OBSERVATION_TYPES_STRING,
     CLAUDE_PILOT_CONTEXT_OBSERVATION_CONCEPTS: DEFAULT_OBSERVATION_CONCEPTS_STRING,
-    CLAUDE_PILOT_CONTEXT_FULL_COUNT: '10',
-    CLAUDE_PILOT_CONTEXT_FULL_FIELD: 'facts',
-    CLAUDE_PILOT_CONTEXT_SESSION_COUNT: '10',
+    CLAUDE_PILOT_CONTEXT_FULL_COUNT: "10",
+    CLAUDE_PILOT_CONTEXT_FULL_FIELD: "facts",
+    CLAUDE_PILOT_CONTEXT_SESSION_COUNT: "10",
     CLAUDE_PILOT_CONTEXT_SHOW_LAST_SUMMARY: true,
     CLAUDE_PILOT_CONTEXT_SHOW_LAST_MESSAGE: true,
     CLAUDE_PILOT_FOLDER_CLAUDEMD_ENABLED: false,
-    CLAUDE_PILOT_FOLDER_MD_EXCLUDE: '[]',
+    CLAUDE_PILOT_FOLDER_MD_EXCLUDE: "[]",
     CLAUDE_PILOT_CHROMA_ENABLED: true,
-    CLAUDE_PILOT_VECTOR_DB: 'chroma',
-    CLAUDE_PILOT_EMBEDDING_MODEL: 'Xenova/all-MiniLM-L6-v2',
-    CLAUDE_PILOT_EXCLUDE_PROJECTS: '[]',
+    CLAUDE_PILOT_VECTOR_DB: "chroma",
+    CLAUDE_PILOT_EMBEDDING_MODEL: "Xenova/all-MiniLM-L6-v2",
+    CLAUDE_PILOT_EXCLUDE_PROJECTS: "[]",
     CLAUDE_PILOT_REMOTE_MODE: false,
-    CLAUDE_PILOT_REMOTE_URL: '',
-    CLAUDE_PILOT_REMOTE_TOKEN: '',
+    CLAUDE_PILOT_REMOTE_URL: "",
+    CLAUDE_PILOT_REMOTE_TOKEN: "",
     CLAUDE_PILOT_REMOTE_VERIFY_SSL: true,
-    CLAUDE_PILOT_REMOTE_TIMEOUT_MS: '30000',
+    CLAUDE_PILOT_REMOTE_TIMEOUT_MS: "30000",
     CLAUDE_PILOT_RETENTION_ENABLED: true,
-    CLAUDE_PILOT_RETENTION_MAX_AGE_DAYS: '31',
-    CLAUDE_PILOT_RETENTION_MAX_COUNT: '1000',
+    CLAUDE_PILOT_RETENTION_MAX_AGE_DAYS: "31",
+    CLAUDE_PILOT_RETENTION_MAX_COUNT: "1000",
     CLAUDE_PILOT_RETENTION_EXCLUDE_TYPES: '["summary"]',
     CLAUDE_PILOT_RETENTION_SOFT_DELETE: false,
-    CLAUDE_PILOT_BATCH_SIZE: '5',
+    CLAUDE_PILOT_BATCH_SIZE: "5",
   };
 
   /**
@@ -127,7 +129,7 @@ export class SettingsDefaultsManager {
    */
   static getBool(key: keyof SettingsDefaults): boolean {
     const value = this.get(key);
-    return value === 'true';
+    return value === "true";
   }
 
   /**
@@ -144,42 +146,42 @@ export class SettingsDefaultsManager {
           if (!existsSync(dir)) {
             mkdirSync(dir, { recursive: true });
           }
-          writeFileSync(settingsPath, JSON.stringify(defaults, null, 2), 'utf-8');
-          console.log('[SETTINGS] Created settings file with defaults:', settingsPath);
+          writeFileSync(settingsPath, JSON.stringify(defaults, null, 2), "utf-8");
+          console.log("[SETTINGS] Created settings file with defaults:", settingsPath);
         } catch (error) {
-          console.warn('[SETTINGS] Failed to create settings file, using in-memory defaults:', settingsPath, error);
+          console.warn("[SETTINGS] Failed to create settings file, using in-memory defaults:", settingsPath, error);
         }
         return defaults;
       }
 
-      const settingsData = readFileSync(settingsPath, 'utf-8');
+      const settingsData = readFileSync(settingsPath, "utf-8");
       const settings = JSON.parse(settingsData);
 
       let flatSettings = settings;
-      if (settings.env && typeof settings.env === 'object') {
+      if (settings.env && typeof settings.env === "object") {
         flatSettings = settings.env;
 
         try {
-          writeFileSync(settingsPath, JSON.stringify(flatSettings, null, 2), 'utf-8');
-          console.log('[SETTINGS] Migrated settings file from nested to flat schema:', settingsPath);
+          writeFileSync(settingsPath, JSON.stringify(flatSettings, null, 2), "utf-8");
+          console.log("[SETTINGS] Migrated settings file from nested to flat schema:", settingsPath);
         } catch (error) {
-          console.warn('[SETTINGS] Failed to auto-migrate settings file:', settingsPath, error);
+          console.warn("[SETTINGS] Failed to auto-migrate settings file:", settingsPath, error);
         }
       }
 
       const BOOLEAN_SETTINGS: Array<keyof SettingsDefaults> = [
-        'CLAUDE_PILOT_CONTEXT_SHOW_READ_TOKENS',
-        'CLAUDE_PILOT_CONTEXT_SHOW_WORK_TOKENS',
-        'CLAUDE_PILOT_CONTEXT_SHOW_SAVINGS_AMOUNT',
-        'CLAUDE_PILOT_CONTEXT_SHOW_SAVINGS_PERCENT',
-        'CLAUDE_PILOT_CONTEXT_SHOW_LAST_SUMMARY',
-        'CLAUDE_PILOT_CONTEXT_SHOW_LAST_MESSAGE',
-        'CLAUDE_PILOT_FOLDER_CLAUDEMD_ENABLED',
-        'CLAUDE_PILOT_CHROMA_ENABLED',
-        'CLAUDE_PILOT_REMOTE_MODE',
-        'CLAUDE_PILOT_REMOTE_VERIFY_SSL',
-        'CLAUDE_PILOT_RETENTION_ENABLED',
-        'CLAUDE_PILOT_RETENTION_SOFT_DELETE',
+        "CLAUDE_PILOT_CONTEXT_SHOW_READ_TOKENS",
+        "CLAUDE_PILOT_CONTEXT_SHOW_WORK_TOKENS",
+        "CLAUDE_PILOT_CONTEXT_SHOW_SAVINGS_AMOUNT",
+        "CLAUDE_PILOT_CONTEXT_SHOW_SAVINGS_PERCENT",
+        "CLAUDE_PILOT_CONTEXT_SHOW_LAST_SUMMARY",
+        "CLAUDE_PILOT_CONTEXT_SHOW_LAST_MESSAGE",
+        "CLAUDE_PILOT_FOLDER_CLAUDEMD_ENABLED",
+        "CLAUDE_PILOT_CHROMA_ENABLED",
+        "CLAUDE_PILOT_REMOTE_MODE",
+        "CLAUDE_PILOT_REMOTE_VERIFY_SSL",
+        "CLAUDE_PILOT_RETENTION_ENABLED",
+        "CLAUDE_PILOT_RETENTION_SOFT_DELETE",
       ];
 
       const result: SettingsDefaults = { ...this.DEFAULTS };
@@ -189,8 +191,8 @@ export class SettingsDefaultsManager {
         if (flatSettings[key] !== undefined) {
           if (BOOLEAN_SETTINGS.includes(key)) {
             const value = flatSettings[key];
-            if (typeof value === 'string') {
-              (result as unknown as Record<string, unknown>)[key] = value === 'true';
+            if (typeof value === "string") {
+              (result as unknown as Record<string, unknown>)[key] = value === "true";
               needsMigration = true;
             } else {
               (result as unknown as Record<string, unknown>)[key] = value;
@@ -203,16 +205,16 @@ export class SettingsDefaultsManager {
 
       if (needsMigration) {
         try {
-          writeFileSync(settingsPath, JSON.stringify(result, null, 2), 'utf-8');
-          console.log('[SETTINGS] Migrated boolean settings from strings to actual booleans:', settingsPath);
+          writeFileSync(settingsPath, JSON.stringify(result, null, 2), "utf-8");
+          console.log("[SETTINGS] Migrated boolean settings from strings to actual booleans:", settingsPath);
         } catch (error) {
-          console.warn('[SETTINGS] Failed to auto-migrate boolean settings:', settingsPath, error);
+          console.warn("[SETTINGS] Failed to auto-migrate boolean settings:", settingsPath, error);
         }
       }
 
       return result;
     } catch (error) {
-      console.warn('[SETTINGS] Failed to load settings, using defaults:', settingsPath, error);
+      console.warn("[SETTINGS] Failed to load settings, using defaults:", settingsPath, error);
       return this.getAllDefaults();
     }
   }

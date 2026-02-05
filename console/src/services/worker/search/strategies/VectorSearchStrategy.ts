@@ -10,7 +10,7 @@
  * Used when: Query text is provided and vector database is available
  */
 
-import { BaseSearchStrategy, SearchStrategy } from './SearchStrategy.js';
+import { BaseSearchStrategy, SearchStrategy } from "./SearchStrategy.js";
 import {
   StrategySearchOptions,
   StrategySearchResult,
@@ -18,91 +18,80 @@ import {
   ChromaMetadata,
   ObservationSearchResult,
   SessionSummarySearchResult,
-  UserPromptSearchResult
-} from '../types.js';
-import { IVectorSync } from '../../../sync/IVectorSync.js';
-import { SessionStore } from '../../../sqlite/SessionStore.js';
-import { logger } from '../../../../utils/logger.js';
+  UserPromptSearchResult,
+} from "../types.js";
+import { IVectorSync } from "../../../sync/IVectorSync.js";
+import { SessionStore } from "../../../sqlite/SessionStore.js";
+import { logger } from "../../../../utils/logger.js";
 
 export class VectorSearchStrategy extends BaseSearchStrategy implements SearchStrategy {
-  readonly name = 'vector';
+  readonly name = "vector";
 
   constructor(
     private vectorSync: IVectorSync,
-    private sessionStore: SessionStore
+    private sessionStore: SessionStore,
   ) {
     super();
   }
 
   canHandle(options: StrategySearchOptions): boolean {
-    // Can handle when query text is provided and vector DB is available
     return !!options.query && !!this.vectorSync;
   }
 
   async search(options: StrategySearchOptions): Promise<StrategySearchResult> {
     const {
       query,
-      searchType = 'all',
+      searchType = "all",
       obsType,
       concepts,
       files,
       limit = SEARCH_CONSTANTS.DEFAULT_LIMIT,
       project,
-      orderBy = 'date_desc'
+      orderBy = "date_desc",
     } = options;
 
     if (!query) {
-      return this.emptyResult('vector');
+      return this.emptyResult("vector");
     }
 
-    const searchObservations = searchType === 'all' || searchType === 'observations';
-    const searchSessions = searchType === 'all' || searchType === 'sessions';
-    const searchPrompts = searchType === 'all' || searchType === 'prompts';
+    const searchObservations = searchType === "all" || searchType === "observations";
+    const searchSessions = searchType === "all" || searchType === "sessions";
+    const searchPrompts = searchType === "all" || searchType === "prompts";
 
     let observations: ObservationSearchResult[] = [];
     let sessions: SessionSummarySearchResult[] = [];
     let prompts: UserPromptSearchResult[] = [];
 
     try {
-      // Build where filter for doc_type
       const whereFilter = this.buildWhereFilter(searchType);
 
-      // Step 1: Vector semantic search
-      logger.debug('SEARCH', 'VectorSearchStrategy: Querying vector DB', { query, searchType });
-      const vectorResults = await this.vectorSync.query(
-        query,
-        SEARCH_CONSTANTS.CHROMA_BATCH_SIZE,
-        whereFilter
-      );
+      logger.debug("SEARCH", "VectorSearchStrategy: Querying vector DB", { query, searchType });
+      const vectorResults = await this.vectorSync.query(query, SEARCH_CONSTANTS.CHROMA_BATCH_SIZE, whereFilter);
 
-      logger.debug('SEARCH', 'VectorSearchStrategy: Vector DB returned matches', {
-        matchCount: vectorResults.ids.length
+      logger.debug("SEARCH", "VectorSearchStrategy: Vector DB returned matches", {
+        matchCount: vectorResults.ids.length,
       });
 
       if (vectorResults.ids.length === 0) {
-        // No matches - this is the correct answer
         return {
           results: { observations: [], sessions: [], prompts: [] },
           usedChroma: true,
           fellBack: false,
-          strategy: 'vector'
+          strategy: "vector",
         };
       }
 
-      // Step 2: Filter by recency (90 days)
       const recentItems = this.filterByRecency(vectorResults);
-      logger.debug('SEARCH', 'VectorSearchStrategy: Filtered by recency', {
-        count: recentItems.length
+      logger.debug("SEARCH", "VectorSearchStrategy: Filtered by recency", {
+        count: recentItems.length,
       });
 
-      // Step 3: Categorize by document type
       const categorized = this.categorizeByDocType(recentItems, {
         searchObservations,
         searchSessions,
-        searchPrompts
+        searchPrompts,
       });
 
-      // Step 4: Hydrate from SQLite with additional filters
       if (categorized.obsIds.length > 0) {
         const obsOptions = { type: obsType, concepts, files, orderBy, limit, project };
         observations = this.sessionStore.getObservationsByIds(categorized.obsIds, obsOptions);
@@ -112,7 +101,7 @@ export class VectorSearchStrategy extends BaseSearchStrategy implements SearchSt
         sessions = this.sessionStore.getSessionSummariesByIds(categorized.sessionIds, {
           orderBy,
           limit,
-          project
+          project,
         });
       }
 
@@ -120,31 +109,29 @@ export class VectorSearchStrategy extends BaseSearchStrategy implements SearchSt
         prompts = this.sessionStore.getUserPromptsByIds(categorized.promptIds, {
           orderBy,
           limit,
-          project
+          project,
         });
       }
 
-      logger.debug('SEARCH', 'VectorSearchStrategy: Hydrated results', {
+      logger.debug("SEARCH", "VectorSearchStrategy: Hydrated results", {
         observations: observations.length,
         sessions: sessions.length,
-        prompts: prompts.length
+        prompts: prompts.length,
       });
 
       return {
         results: { observations, sessions, prompts },
         usedChroma: true,
         fellBack: false,
-        strategy: 'vector'
+        strategy: "vector",
       };
-
     } catch (error) {
-      logger.error('SEARCH', 'VectorSearchStrategy: Search failed', {}, error as Error);
-      // Return empty result - caller may try fallback strategy
+      logger.error("SEARCH", "VectorSearchStrategy: Search failed", {}, error as Error);
       return {
         results: { observations: [], sessions: [], prompts: [] },
         usedChroma: false,
         fellBack: false,
-        strategy: 'vector'
+        strategy: "vector",
       };
     }
   }
@@ -154,12 +141,12 @@ export class VectorSearchStrategy extends BaseSearchStrategy implements SearchSt
    */
   private buildWhereFilter(searchType: string): Record<string, any> | undefined {
     switch (searchType) {
-      case 'observations':
-        return { doc_type: 'observation' };
-      case 'sessions':
-        return { doc_type: 'session_summary' };
-      case 'prompts':
-        return { doc_type: 'user_prompt' };
+      case "observations":
+        return { doc_type: "observation" };
+      case "sessions":
+        return { doc_type: "session_summary" };
+      case "prompts":
+        return { doc_type: "user_prompt" };
       default:
         return undefined;
     }
@@ -177,9 +164,9 @@ export class VectorSearchStrategy extends BaseSearchStrategy implements SearchSt
     return vectorResults.metadatas
       .map((meta, idx) => ({
         id: vectorResults.ids[idx],
-        meta
+        meta,
       }))
-      .filter(item => item.meta && item.meta.created_at_epoch > cutoff);
+      .filter((item) => item.meta && item.meta.created_at_epoch > cutoff);
   }
 
   /**
@@ -191,7 +178,7 @@ export class VectorSearchStrategy extends BaseSearchStrategy implements SearchSt
       searchObservations: boolean;
       searchSessions: boolean;
       searchPrompts: boolean;
-    }
+    },
   ): { obsIds: number[]; sessionIds: number[]; promptIds: number[] } {
     const obsIds: number[] = [];
     const sessionIds: number[] = [];
@@ -199,11 +186,11 @@ export class VectorSearchStrategy extends BaseSearchStrategy implements SearchSt
 
     for (const item of items) {
       const docType = item.meta?.doc_type;
-      if (docType === 'observation' && options.searchObservations) {
+      if (docType === "observation" && options.searchObservations) {
         obsIds.push(item.id);
-      } else if (docType === 'session_summary' && options.searchSessions) {
+      } else if (docType === "session_summary" && options.searchSessions) {
         sessionIds.push(item.id);
-      } else if (docType === 'user_prompt' && options.searchPrompts) {
+      } else if (docType === "user_prompt" && options.searchPrompts) {
         promptIds.push(item.id);
       }
     }
@@ -212,5 +199,4 @@ export class VectorSearchStrategy extends BaseSearchStrategy implements SearchSt
   }
 }
 
-// Re-export with old name for backward compatibility
 export { VectorSearchStrategy as ChromaSearchStrategy };

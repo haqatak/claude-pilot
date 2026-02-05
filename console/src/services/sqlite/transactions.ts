@@ -6,10 +6,9 @@
  * data consistency across domain boundaries.
  */
 
-import { Database } from 'bun:sqlite';
-import { logger } from '../../utils/logger.js';
-import type { ObservationInput } from './observations/types.js';
-import type { SummaryInput } from './summaries/types.js';
+import { Database } from "bun:sqlite";
+import type { ObservationInput } from "./observations/types.js";
+import type { SummaryInput } from "./summaries/types.js";
 
 /**
  * Result from storeObservations / storeObservationsAndMarkComplete transaction
@@ -20,7 +19,6 @@ export interface StoreObservationsResult {
   createdAtEpoch: number;
 }
 
-// Legacy alias for backwards compatibility
 export type StoreAndMarkCompleteResult = StoreObservationsResult;
 
 /**
@@ -53,17 +51,14 @@ export function storeObservationsAndMarkComplete(
   messageId: number,
   promptNumber?: number,
   discoveryTokens: number = 0,
-  overrideTimestampEpoch?: number
+  overrideTimestampEpoch?: number,
 ): StoreAndMarkCompleteResult {
-  // Use override timestamp if provided
   const timestampEpoch = overrideTimestampEpoch ?? Date.now();
   const timestampIso = new Date(timestampEpoch).toISOString();
 
-  // Create transaction that wraps all operations
   const storeAndMarkTx = db.transaction(() => {
     const observationIds: number[] = [];
 
-    // 1. Store all observations
     const obsStmt = db.prepare(`
       INSERT INTO observations
       (memory_session_id, project, type, title, subtitle, facts, narrative, concepts,
@@ -86,12 +81,11 @@ export function storeObservationsAndMarkComplete(
         promptNumber || null,
         discoveryTokens,
         timestampIso,
-        timestampEpoch
+        timestampEpoch,
       );
       observationIds.push(Number(result.lastInsertRowid));
     }
 
-    // 2. Store summary if provided
     let summaryId: number | null = null;
     if (summary) {
       const summaryStmt = db.prepare(`
@@ -113,14 +107,11 @@ export function storeObservationsAndMarkComplete(
         promptNumber || null,
         discoveryTokens,
         timestampIso,
-        timestampEpoch
+        timestampEpoch,
       );
       summaryId = Number(result.lastInsertRowid);
     }
 
-    // 3. Mark pending message as processed
-    // This UPDATE is part of the same transaction, so if it fails,
-    // observations and summary will be rolled back
     const updateStmt = db.prepare(`
       UPDATE pending_messages
       SET
@@ -135,7 +126,6 @@ export function storeObservationsAndMarkComplete(
     return { observationIds, summaryId, createdAtEpoch: timestampEpoch };
   });
 
-  // Execute the transaction and return results
   return storeAndMarkTx();
 }
 
@@ -164,17 +154,14 @@ export function storeObservations(
   summary: SummaryInput | null,
   promptNumber?: number,
   discoveryTokens: number = 0,
-  overrideTimestampEpoch?: number
+  overrideTimestampEpoch?: number,
 ): StoreObservationsResult {
-  // Use override timestamp if provided
   const timestampEpoch = overrideTimestampEpoch ?? Date.now();
   const timestampIso = new Date(timestampEpoch).toISOString();
 
-  // Create transaction that wraps all operations
   const storeTx = db.transaction(() => {
     const observationIds: number[] = [];
 
-    // 1. Store all observations
     const obsStmt = db.prepare(`
       INSERT INTO observations
       (memory_session_id, project, type, title, subtitle, facts, narrative, concepts,
@@ -197,12 +184,11 @@ export function storeObservations(
         promptNumber || null,
         discoveryTokens,
         timestampIso,
-        timestampEpoch
+        timestampEpoch,
       );
       observationIds.push(Number(result.lastInsertRowid));
     }
 
-    // 2. Store summary if provided
     let summaryId: number | null = null;
     if (summary) {
       const summaryStmt = db.prepare(`
@@ -224,7 +210,7 @@ export function storeObservations(
         promptNumber || null,
         discoveryTokens,
         timestampIso,
-        timestampEpoch
+        timestampEpoch,
       );
       summaryId = Number(result.lastInsertRowid);
     }
@@ -232,6 +218,5 @@ export function storeObservations(
     return { observationIds, summaryId, createdAtEpoch: timestampEpoch };
   });
 
-  // Execute the transaction and return results
   return storeTx();
 }

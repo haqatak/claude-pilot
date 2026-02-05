@@ -9,9 +9,8 @@
  * so there's no pendingProcessingIds tracking or processed message cleanup.
  */
 
-import type { ActiveSession } from '../../worker-types.js';
-import { logger } from '../../../utils/logger.js';
-import type { WorkerRef } from './types.js';
+import type { ActiveSession } from "../../worker-types.js";
+import type { WorkerRef } from "./types.js";
 
 /**
  * Clean up session state after response processing
@@ -23,15 +22,10 @@ import type { WorkerRef } from './types.js';
  * @param session - Active session to clean up
  * @param worker - Worker reference for status broadcasting (optional)
  */
-export function cleanupProcessedMessages(
-  session: ActiveSession,
-  worker: WorkerRef | undefined
-): void {
-  // Reset earliest pending timestamp for next batch
+export function cleanupProcessedMessages(session: ActiveSession, worker: WorkerRef | undefined): void {
   session.earliestPendingTimestamp = null;
 
-  // Broadcast activity status after processing (queue may have changed)
-  if (worker && typeof worker.broadcastProcessingStatus === 'function') {
+  if (worker && typeof worker.broadcastProcessingStatus === "function") {
     worker.broadcastProcessingStatus();
   }
 }

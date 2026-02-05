@@ -8,24 +8,28 @@
  * - Sync to database and Chroma
  */
 
-import { execSync } from 'child_process';
-import { homedir } from 'os';
-import path from 'path';
-import { DatabaseManager } from './DatabaseManager.js';
-import { SessionManager } from './SessionManager.js';
-import { logger } from '../../utils/logger.js';
-import { buildInitPrompt, buildObservationPrompt, buildSummaryPrompt, buildContinuationPrompt } from '../../sdk/prompts.js';
-import { SettingsDefaultsManager } from '../../shared/SettingsDefaultsManager.js';
-import { USER_SETTINGS_PATH } from '../../shared/paths.js';
-import type { ActiveSession } from '../worker-types.js';
-import { ModeManager } from '../domain/ModeManager.js';
-import { processAgentResponse, type WorkerRef } from './agents/index.js';
-import { stripApiKeyForSubscriber } from '../../shared/claude-subscription.js';
+import { execSync } from "child_process";
+import { homedir } from "os";
+import path from "path";
+import { DatabaseManager } from "./DatabaseManager.js";
+import { SessionManager } from "./SessionManager.js";
+import { logger } from "../../utils/logger.js";
+import {
+  buildInitPrompt,
+  buildObservationPrompt,
+  buildSummaryPrompt,
+  buildContinuationPrompt,
+} from "../../sdk/prompts.js";
+import { SettingsDefaultsManager } from "../../shared/SettingsDefaultsManager.js";
+import { USER_SETTINGS_PATH } from "../../shared/paths.js";
+import type { ActiveSession } from "../worker-types.js";
+import { ModeManager } from "../domain/ModeManager.js";
+import { processAgentResponse, type WorkerRef } from "./agents/index.js";
+import { stripApiKeyForSubscriber } from "../../shared/claude-subscription.js";
 
-// @ts-ignore - Agent SDK types may not be available
-import { unstable_v2_createSession, type SDKSession } from '@anthropic-ai/claude-agent-sdk';
+import { unstable_v2_createSession, type SDKSession } from "@anthropic-ai/claude-agent-sdk";
 
-import type { ModeConfig } from '../domain/types.js';
+import type { ModeConfig } from "../domain/types.js";
 
 const MAX_SESSION_TOKENS = 100_000;
 
@@ -49,32 +53,31 @@ export class SDKAgent {
 
     const modelId = this.getModelId();
     const disallowedTools = [
-      'Bash',
-      'Read',
-      'Write',
-      'Edit',
-      'Grep',
-      'Glob',
-      'WebFetch',
-      'WebSearch',
-      'Task',
-      'NotebookEdit',
-      'AskUserQuestion',
-      'TodoWrite'
+      "Bash",
+      "Read",
+      "Write",
+      "Edit",
+      "Grep",
+      "Glob",
+      "WebFetch",
+      "WebSearch",
+      "Task",
+      "NotebookEdit",
+      "AskUserQuestion",
+      "TodoWrite",
     ];
 
     if (!session.memorySessionId) {
       throw new Error(`Session ${session.sessionDbId} has no memory_session_id - this should not happen`);
     }
 
-    logger.info('SDK', 'Starting SDK V2 session', {
+    logger.info("SDK", "Starting SDK V2 session", {
       sessionDbId: session.sessionDbId,
       contentSessionId: session.contentSessionId,
       memorySessionId: session.memorySessionId,
-      lastPromptNumber: session.lastPromptNumber
+      lastPromptNumber: session.lastPromptNumber,
     });
 
-    // Note: We don't use Claude's --resume because our memory_session_id is a provider-agnostic UUID,
     const restoreApiKey = stripApiKeyForSubscriber();
 
     let sdkSession: SDKSession = this.createSDKSession(modelId, claudePath, disallowedTools);
@@ -87,7 +90,7 @@ export class SDKAgent {
         ? buildInitPrompt(session.project, session.contentSessionId, session.userPrompt, mode)
         : buildContinuationPrompt(session.userPrompt, session.lastPromptNumber, session.contentSessionId, mode);
 
-      session.conversationHistory.push({ role: 'user', content: initPrompt });
+      session.conversationHistory.push({ role: "user", content: initPrompt });
 
       await sdkSession.send(initPrompt);
 
@@ -95,7 +98,7 @@ export class SDKAgent {
 
       for await (const message of this.sessionManager.getMessageIterator(session.sessionDbId)) {
         if (session.abortController.signal.aborted) {
-          logger.warn('SDK', 'Session aborted', { sessionId: session.sessionDbId });
+          logger.warn("SDK", "Session aborted", { sessionId: session.sessionDbId });
           break;
         }
 
@@ -103,7 +106,7 @@ export class SDKAgent {
           lastCwd = message.cwd;
         }
 
-        if (message.type === 'observation') {
+        if (message.type === "observation") {
           if (message.prompt_number !== undefined) {
             session.lastPromptNumber = message.prompt_number;
           }
@@ -114,10 +117,10 @@ export class SDKAgent {
             tool_input: JSON.stringify(message.tool_input),
             tool_output: JSON.stringify(message.tool_response),
             created_at_epoch: message._originalTimestamp ?? Date.now(),
-            cwd: message.cwd
+            cwd: message.cwd,
           });
 
-          session.conversationHistory.push({ role: 'user', content: obsPrompt });
+          session.conversationHistory.push({ role: "user", content: obsPrompt });
 
           if (session.conversationHistory.length > 12) {
             const first = session.conversationHistory.slice(0, 2);
@@ -130,35 +133,50 @@ export class SDKAgent {
           await this.processStreamResponse(sdkSession, session, worker, lastCwd);
 
           sdkSession = await this.maybeRotateSession(
-            sdkSession, session, modelId, claudePath, disallowedTools, mode, worker, lastCwd
+            sdkSession,
+            session,
+            modelId,
+            claudePath,
+            disallowedTools,
+            mode,
+            worker,
+            lastCwd,
+          );
+        } else if (message.type === "summarize") {
+          const summaryPrompt = buildSummaryPrompt(
+            {
+              id: session.sessionDbId,
+              memory_session_id: session.memorySessionId,
+              project: session.project,
+              user_prompt: session.userPrompt,
+              last_assistant_message: message.last_assistant_message || "",
+            },
+            mode,
           );
 
-        } else if (message.type === 'summarize') {
-          const summaryPrompt = buildSummaryPrompt({
-            id: session.sessionDbId,
-            memory_session_id: session.memorySessionId,
-            project: session.project,
-            user_prompt: session.userPrompt,
-            last_assistant_message: message.last_assistant_message || ''
-          }, mode);
-
-          session.conversationHistory.push({ role: 'user', content: summaryPrompt });
+          session.conversationHistory.push({ role: "user", content: summaryPrompt });
 
           await sdkSession.send(summaryPrompt);
           await this.processStreamResponse(sdkSession, session, worker, lastCwd);
 
           sdkSession = await this.maybeRotateSession(
-            sdkSession, session, modelId, claudePath, disallowedTools, mode, worker, lastCwd
+            sdkSession,
+            session,
+            modelId,
+            claudePath,
+            disallowedTools,
+            mode,
+            worker,
+            lastCwd,
           );
         }
       }
 
       const sessionDuration = Date.now() - session.startTime;
-      logger.success('SDK', 'V2 Agent completed', {
+      logger.success("SDK", "V2 Agent completed", {
         sessionId: session.sessionDbId,
-        duration: `${(sessionDuration / 1000).toFixed(1)}s`
+        duration: `${(sessionDuration / 1000).toFixed(1)}s`,
       });
-
     } finally {
       sdkSession.close();
 
@@ -176,18 +194,21 @@ export class SDKAgent {
     sdkSession: SDKSession,
     session: ActiveSession,
     worker: WorkerRef | undefined,
-    lastCwd: string | undefined
+    lastCwd: string | undefined,
   ): Promise<void> {
     const originalTimestamp = session.earliestPendingTimestamp;
 
     for await (const message of sdkSession.stream()) {
-      // Note: memory_session_id is now generated at session creation time (provider-agnostic UUID)
-
-      if (message.type === 'assistant') {
+      if (message.type === "assistant") {
         const content = message.message.content;
         const textContent = Array.isArray(content)
-          ? content.filter((c: any) => c.type === 'text').map((c: any) => c.text).join('\n')
-          : typeof content === 'string' ? content : '';
+          ? content
+              .filter((c: any) => c.type === "text")
+              .map((c: any) => c.text)
+              .join("\n")
+          : typeof content === "string"
+            ? content
+            : "";
 
         const responseSize = textContent.length;
 
@@ -202,25 +223,28 @@ export class SDKAgent {
             session.cumulativeInputTokens += usage.cache_creation_input_tokens;
           }
 
-          logger.debug('SDK', 'Token usage captured', {
+          logger.debug("SDK", "Token usage captured", {
             sessionId: session.sessionDbId,
             inputTokens: usage.input_tokens,
             outputTokens: usage.output_tokens,
             cumulativeInput: session.cumulativeInputTokens,
-            cumulativeOutput: session.cumulativeOutputTokens
+            cumulativeOutput: session.cumulativeOutputTokens,
           });
         }
 
-        const discoveryTokens = (session.cumulativeInputTokens + session.cumulativeOutputTokens) - tokensBeforeResponse;
+        const discoveryTokens = session.cumulativeInputTokens + session.cumulativeOutputTokens - tokensBeforeResponse;
 
         if (responseSize > 0) {
-          const truncatedResponse = responseSize > 100
-            ? textContent.substring(0, 100) + '...'
-            : textContent;
-          logger.dataOut('SDK', `V2 Response received (${responseSize} chars)`, {
-            sessionId: session.sessionDbId,
-            promptNumber: session.lastPromptNumber
-          }, truncatedResponse);
+          const truncatedResponse = responseSize > 100 ? textContent.substring(0, 100) + "..." : textContent;
+          logger.dataOut(
+            "SDK",
+            `V2 Response received (${responseSize} chars)`,
+            {
+              sessionId: session.sessionDbId,
+              promptNumber: session.lastPromptNumber,
+            },
+            truncatedResponse,
+          );
         }
 
         await processAgentResponse(
@@ -231,13 +255,12 @@ export class SDKAgent {
           worker,
           discoveryTokens,
           originalTimestamp,
-          'SDK',
-          lastCwd
+          "SDK",
+          lastCwd,
         );
       }
     }
   }
-
 
   /**
    * Create a new SDK session with the given configuration.
@@ -246,7 +269,7 @@ export class SDKAgent {
     return unstable_v2_createSession({
       model: modelId,
       disallowedTools,
-      pathToClaudeCodeExecutable: claudePath
+      pathToClaudeCodeExecutable: claudePath,
     });
   }
 
@@ -262,7 +285,7 @@ export class SDKAgent {
     disallowedTools: string[],
     mode: ModeConfig,
     worker: WorkerRef | undefined,
-    lastCwd: string | undefined
+    lastCwd: string | undefined,
   ): Promise<SDKSession> {
     const totalTokens = session.cumulativeInputTokens + session.cumulativeOutputTokens;
 
@@ -270,15 +293,15 @@ export class SDKAgent {
       return currentSession;
     }
 
-    logger.info('SDK', 'Rotating SDK session due to token limit', {
+    logger.info("SDK", "Rotating SDK session due to token limit", {
       totalTokens,
-      threshold: MAX_SESSION_TOKENS
+      threshold: MAX_SESSION_TOKENS,
     });
 
     try {
       currentSession.close();
     } catch (closeError) {
-      logger.warn('SDK', 'Error closing session during rotation', {}, closeError as Error);
+      logger.warn("SDK", "Error closing session during rotation", {}, closeError as Error);
     }
 
     const newSession = this.createSDKSession(modelId, claudePath, disallowedTools);
@@ -287,7 +310,7 @@ export class SDKAgent {
       session.userPrompt,
       session.lastPromptNumber,
       session.contentSessionId,
-      mode
+      mode,
     );
     await newSession.send(freshInitPrompt);
     await this.processStreamResponse(newSession, session, worker, lastCwd);
@@ -305,7 +328,7 @@ export class SDKAgent {
     const settings = SettingsDefaultsManager.loadFromFile(USER_SETTINGS_PATH);
 
     if (settings.CLAUDE_CODE_PATH) {
-      const { existsSync } = require('fs');
+      const { existsSync } = require("fs");
       if (!existsSync(settings.CLAUDE_CODE_PATH)) {
         throw new Error(`CLAUDE_CODE_PATH is set to "${settings.CLAUDE_CODE_PATH}" but the file does not exist.`);
       }
@@ -313,24 +336,30 @@ export class SDKAgent {
     }
 
     try {
-      const claudePath = execSync(
-        process.platform === 'win32' ? 'where claude' : 'which claude',
-        { encoding: 'utf8', windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'] }
-      ).trim().split('\n')[0].trim();
+      const claudePath = execSync(process.platform === "win32" ? "where claude" : "which claude", {
+        encoding: "utf8",
+        windowsHide: true,
+        stdio: ["ignore", "pipe", "ignore"],
+      })
+        .trim()
+        .split("\n")[0]
+        .trim();
 
       if (claudePath) return claudePath;
     } catch (error) {
-      logger.debug('SDK', 'Claude executable auto-detection failed', {}, error as Error);
+      logger.debug("SDK", "Claude executable auto-detection failed", {}, error as Error);
     }
 
-    throw new Error('Claude executable not found. Please either:\n1. Add "claude" to your system PATH, or\n2. Set CLAUDE_CODE_PATH in ~/.pilot/memory/settings.json');
+    throw new Error(
+      'Claude executable not found. Please either:\n1. Add "claude" to your system PATH, or\n2. Set CLAUDE_CODE_PATH in ~/.pilot/memory/settings.json',
+    );
   }
 
   /**
    * Get model ID from settings or environment
    */
   private getModelId(): string {
-    const settingsPath = path.join(homedir(), '.pilot/memory', 'settings.json');
+    const settingsPath = path.join(homedir(), ".pilot/memory", "settings.json");
     const settings = SettingsDefaultsManager.loadFromFile(settingsPath);
     return settings.CLAUDE_PILOT_MODEL;
   }

@@ -8,13 +8,13 @@
  * Authorization scopes for remote worker access
  */
 export type RemoteAuthScope =
-  | 'read:context'
-  | 'write:observations'
-  | 'write:sessions'
-  | 'read:search'
-  | 'admin:restart'
-  | 'admin:shutdown'
-  | '*';
+  | "read:context"
+  | "write:observations"
+  | "write:sessions"
+  | "read:search"
+  | "admin:restart"
+  | "admin:shutdown"
+  | "*";
 
 /**
  * Authentication token payload
@@ -39,5 +39,5 @@ export interface RateLimitConfig {
   /** Window duration in milliseconds */
   windowMs: number;
   /** Key extraction strategy */
-  keyBy: 'token' | 'ip' | 'both';
+  keyBy: "token" | "ip" | "both";
 }

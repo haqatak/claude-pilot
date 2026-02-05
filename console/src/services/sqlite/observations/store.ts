@@ -3,9 +3,8 @@
  * Extracted from SessionStore.ts for modular organization
  */
 
-import { Database } from 'bun:sqlite';
-import { logger } from '../../../utils/logger.js';
-import type { ObservationInput, StoreObservationResult } from './types.js';
+import { Database } from "bun:sqlite";
+import type { ObservationInput, StoreObservationResult } from "./types.js";
 
 /**
  * Store an observation (from SDK parsing)
@@ -19,7 +18,7 @@ export function storeObservation(
   promptNumber?: number,
   discoveryTokens: number = 0,
   overrideTimestampEpoch?: number,
-  gitBranch?: string | null
+  gitBranch?: string | null,
 ): StoreObservationResult {
   const timestampEpoch = overrideTimestampEpoch ?? Date.now();
   const timestampIso = new Date(timestampEpoch).toISOString();
@@ -46,11 +45,11 @@ export function storeObservation(
     discoveryTokens,
     timestampIso,
     timestampEpoch,
-    gitBranch || null
+    gitBranch || null,
   );
 
   return {
     id: Number(result.lastInsertRowid),
-    createdAtEpoch: timestampEpoch
+    createdAtEpoch: timestampEpoch,
   };
 }

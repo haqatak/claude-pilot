@@ -9,21 +9,19 @@
  * - Core system endpoints (health, readiness, version, admin)
  */
 
-import express, { Request, Response, Application } from 'express';
-import http from 'http';
-import * as fs from 'fs';
-import path from 'path';
-import { logger } from '../../utils/logger.js';
-import { createMiddleware, summarizeRequestBody, requireLocalhost } from './Middleware.js';
-import { errorHandler, notFoundHandler } from './ErrorHandler.js';
-import { authMiddleware, rateLimitMiddleware, isRemoteAuthConfigured } from './middleware/index.js';
-import { getWorkerBind } from '../../shared/worker-utils.js';
+import express, { Request, Response, Application } from "express";
+import http from "http";
+import * as fs from "fs";
+import path from "path";
+import { logger } from "../../utils/logger.js";
+import { createMiddleware, summarizeRequestBody, requireLocalhost } from "./Middleware.js";
+import { errorHandler, notFoundHandler } from "./ErrorHandler.js";
+import { authMiddleware, rateLimitMiddleware, isRemoteAuthConfigured } from "./middleware/index.js";
+import { getWorkerBind } from "../../shared/worker-utils.js";
 
-// Build-time injected version constant (set by esbuild define)
 declare const __DEFAULT_PACKAGE_VERSION__: string;
-const BUILT_IN_VERSION = typeof __DEFAULT_PACKAGE_VERSION__ !== 'undefined'
-  ? __DEFAULT_PACKAGE_VERSION__
-  : 'development';
+const BUILT_IN_VERSION =
+  typeof __DEFAULT_PACKAGE_VERSION__ !== "undefined" ? __DEFAULT_PACKAGE_VERSION__ : "development";
 
 /**
  * Interface for route handlers that can be registered with the server
@@ -78,10 +76,10 @@ export class Server {
   async listen(port: number, host: string): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       this.server = this.app.listen(port, host, () => {
-        logger.info('SYSTEM', 'HTTP server started', { host, port, pid: process.pid });
+        logger.info("SYSTEM", "HTTP server started", { host, port, pid: process.pid });
         resolve();
       });
-      this.server.on('error', reject);
+      this.server.on("error", reject);
     });
   }
 
@@ -91,26 +89,22 @@ export class Server {
   async close(): Promise<void> {
     if (!this.server) return;
 
-    // Close all active connections
     this.server.closeAllConnections();
 
-    // Give Windows time to close connections before closing server
-    if (process.platform === 'win32') {
-      await new Promise(r => setTimeout(r, 500));
+    if (process.platform === "win32") {
+      await new Promise((r) => setTimeout(r, 500));
     }
 
-    // Close the server
     await new Promise<void>((resolve, reject) => {
-      this.server!.close(err => err ? reject(err) : resolve());
+      this.server!.close((err) => (err ? reject(err) : resolve()));
     });
 
-    // Extra delay on Windows to ensure port is fully released
-    if (process.platform === 'win32') {
-      await new Promise(r => setTimeout(r, 500));
+    if (process.platform === "win32") {
+      await new Promise((r) => setTimeout(r, 500));
     }
 
     this.server = null;
-    logger.info('SYSTEM', 'HTTP server closed');
+    logger.info("SYSTEM", "HTTP server closed");
   }
 
   /**
@@ -125,10 +119,8 @@ export class Server {
    * Call this after all routes have been registered
    */
   finalizeRoutes(): void {
-    // 404 handler for unmatched routes
     this.app.use(notFoundHandler);
 
-    // Global error handler (must be last)
     this.app.use(errorHandler);
   }
 
@@ -137,21 +129,21 @@ export class Server {
    */
   private setupMiddleware(): void {
     const middlewares = createMiddleware(summarizeRequestBody);
-    middlewares.forEach(mw => this.app.use(mw));
+    middlewares.forEach((mw) => this.app.use(mw));
 
-    // Add rate limiting for remote requests (localhost bypassed)
     this.app.use(rateLimitMiddleware(1000, 60000));
 
-    // Add authentication middleware only when:
-    // 1. Binding to non-localhost (network access)
-    // 2. AND a remote token is configured
     const bind = getWorkerBind();
     const authConfigured = isRemoteAuthConfigured();
-    if (bind !== '127.0.0.1' && bind !== 'localhost' && authConfigured) {
-      logger.info('SYSTEM', 'Enabling authentication middleware for network access', { bind });
+    if (bind !== "127.0.0.1" && bind !== "localhost" && authConfigured) {
+      logger.info("SYSTEM", "Enabling authentication middleware for network access", { bind });
       this.app.use(authMiddleware);
-    } else if (bind !== '127.0.0.1' && bind !== 'localhost' && !authConfigured) {
-      logger.warn('SYSTEM', 'Network access enabled WITHOUT authentication - set CLAUDE_PILOT_REMOTE_TOKEN for security', { bind });
+    } else if (bind !== "127.0.0.1" && bind !== "localhost" && !authConfigured) {
+      logger.warn(
+        "SYSTEM",
+        "Network access enabled WITHOUT authentication - set CLAUDE_PILOT_REMOTE_TOKEN for security",
+        { bind },
+      );
     }
   }
 
@@ -159,16 +151,14 @@ export class Server {
    * Setup core system routes (health, readiness, version, admin)
    */
   private setupCoreRoutes(): void {
-    // Test build ID for debugging which build is running
-    const TEST_BUILD_ID = 'TEST-008-wrapper-ipc';
+    const TEST_BUILD_ID = "TEST-008-wrapper-ipc";
 
-    // Health check endpoint - always responds, even during initialization
-    this.app.get('/api/health', (_req: Request, res: Response) => {
+    this.app.get("/api/health", (_req: Request, res: Response) => {
       res.status(200).json({
-        status: 'ok',
+        status: "ok",
         build: TEST_BUILD_ID,
-        managed: process.env.CLAUDE_PILOT_MANAGED === 'true',
-        hasIpc: typeof process.send === 'function',
+        managed: process.env.CLAUDE_PILOT_MANAGED === "true",
+        hasIpc: typeof process.send === "function",
         platform: process.platform,
         pid: process.pid,
         initialized: this.options.getInitializationComplete(),
@@ -177,47 +167,41 @@ export class Server {
       });
     });
 
-    // Core readiness check - returns 200 when DB + SearchManager ready (hooks can proceed)
-    // Faster than /api/readiness as it doesn't wait for MCP initialization
-    this.app.get('/api/core-ready', (_req: Request, res: Response) => {
+    this.app.get("/api/core-ready", (_req: Request, res: Response) => {
       if (this.options.getCoreReady()) {
         res.status(200).json({
-          status: 'ready',
-          message: 'Core services ready (Database + SearchManager)',
+          status: "ready",
+          message: "Core services ready (Database + SearchManager)",
         });
       } else {
         res.status(503).json({
-          status: 'initializing',
-          message: 'Core services still initializing, please retry',
+          status: "initializing",
+          message: "Core services still initializing, please retry",
         });
       }
     });
 
-    // Readiness check endpoint - returns 503 until full initialization completes
-    this.app.get('/api/readiness', (_req: Request, res: Response) => {
+    this.app.get("/api/readiness", (_req: Request, res: Response) => {
       if (this.options.getInitializationComplete()) {
         res.status(200).json({
-          status: 'ready',
+          status: "ready",
           mcpReady: this.options.getMcpReady(),
         });
       } else {
         res.status(503).json({
-          status: 'initializing',
-          message: 'Worker is still initializing, please retry',
+          status: "initializing",
+          message: "Worker is still initializing, please retry",
         });
       }
     });
 
-    // Version endpoint - returns the worker's built-in version
-    this.app.get('/api/version', (_req: Request, res: Response) => {
+    this.app.get("/api/version", (_req: Request, res: Response) => {
       res.status(200).json({ version: BUILT_IN_VERSION });
     });
 
-    // Process stats endpoint - returns counts of pilot-memory related processes
-    // Useful for debugging zombie process accumulation
-    this.app.get('/api/process-stats', async (_req: Request, res: Response) => {
+    this.app.get("/api/process-stats", async (_req: Request, res: Response) => {
       try {
-        const { getProcessStats } = await import('../infrastructure/ProcessManager.js');
+        const { getProcessStats } = await import("../infrastructure/ProcessManager.js");
         const stats = await getProcessStats();
         res.status(200).json({
           ...stats,
@@ -226,69 +210,61 @@ export class Server {
           pid: process.pid,
         });
       } catch (error) {
-        logger.error('SYSTEM', 'Failed to get process stats', {}, error as Error);
-        res.status(500).json({ error: 'Failed to get process stats' });
+        logger.error("SYSTEM", "Failed to get process stats", {}, error as Error);
+        res.status(500).json({ error: "Failed to get process stats" });
       }
     });
 
-    // Instructions endpoint - loads SKILL.md sections on-demand
-    this.app.get('/api/instructions', async (req: Request, res: Response) => {
-      const topic = (req.query.topic as string) || 'all';
+    this.app.get("/api/instructions", async (req: Request, res: Response) => {
+      const topic = (req.query.topic as string) || "all";
       const operation = req.query.operation as string | undefined;
 
       try {
         let content: string;
 
         if (operation) {
-          const operationPath = path.join(__dirname, '../skills/mem-search/operations', `${operation}.md`);
-          content = await fs.promises.readFile(operationPath, 'utf-8');
+          const operationPath = path.join(__dirname, "../skills/mem-search/operations", `${operation}.md`);
+          content = await fs.promises.readFile(operationPath, "utf-8");
         } else {
-          const skillPath = path.join(__dirname, '../skills/mem-search/SKILL.md');
-          const fullContent = await fs.promises.readFile(skillPath, 'utf-8');
+          const skillPath = path.join(__dirname, "../skills/mem-search/SKILL.md");
+          const fullContent = await fs.promises.readFile(skillPath, "utf-8");
           content = this.extractInstructionSection(fullContent, topic);
         }
 
         res.json({
-          content: [{ type: 'text', text: content }]
+          content: [{ type: "text", text: content }],
         });
       } catch (error) {
-        res.status(404).json({ error: 'Instruction not found' });
+        res.status(404).json({ error: "Instruction not found" });
       }
     });
 
-    // Admin endpoints for process management (localhost-only)
-    this.app.post('/api/admin/restart', requireLocalhost, async (_req: Request, res: Response) => {
-      res.json({ status: 'restarting' });
+    this.app.post("/api/admin/restart", requireLocalhost, async (_req: Request, res: Response) => {
+      res.json({ status: "restarting" });
 
-      // Handle Windows managed mode via IPC
-      const isWindowsManaged = process.platform === 'win32' &&
-        process.env.CLAUDE_PILOT_MANAGED === 'true' &&
-        process.send;
+      const isWindowsManaged =
+        process.platform === "win32" && process.env.CLAUDE_PILOT_MANAGED === "true" && process.send;
 
       if (isWindowsManaged) {
-        logger.info('SYSTEM', 'Sending restart request to wrapper');
-        process.send!({ type: 'restart' });
+        logger.info("SYSTEM", "Sending restart request to wrapper");
+        process.send!({ type: "restart" });
       } else {
-        // Unix or standalone Windows - handle restart ourselves
         setTimeout(async () => {
           await this.options.onRestart();
         }, 100);
       }
     });
 
-    this.app.post('/api/admin/shutdown', requireLocalhost, async (_req: Request, res: Response) => {
-      res.json({ status: 'shutting_down' });
+    this.app.post("/api/admin/shutdown", requireLocalhost, async (_req: Request, res: Response) => {
+      res.json({ status: "shutting_down" });
 
-      // Handle Windows managed mode via IPC
-      const isWindowsManaged = process.platform === 'win32' &&
-        process.env.CLAUDE_PILOT_MANAGED === 'true' &&
-        process.send;
+      const isWindowsManaged =
+        process.platform === "win32" && process.env.CLAUDE_PILOT_MANAGED === "true" && process.send;
 
       if (isWindowsManaged) {
-        logger.info('SYSTEM', 'Sending shutdown request to wrapper');
-        process.send!({ type: 'shutdown' });
+        logger.info("SYSTEM", "Sending shutdown request to wrapper");
+        process.send!({ type: "shutdown" });
       } else {
-        // Unix or standalone Windows - handle shutdown ourselves
         setTimeout(async () => {
           await this.options.onShutdown();
         }, 100);
@@ -301,13 +277,13 @@ export class Server {
    */
   private extractInstructionSection(content: string, topic: string): string {
     const sections: Record<string, string> = {
-      'workflow': this.extractBetween(content, '## The Workflow', '## Search Parameters'),
-      'search_params': this.extractBetween(content, '## Search Parameters', '## Examples'),
-      'examples': this.extractBetween(content, '## Examples', '## Why This Workflow'),
-      'all': content
+      workflow: this.extractBetween(content, "## The Workflow", "## Search Parameters"),
+      search_params: this.extractBetween(content, "## Search Parameters", "## Examples"),
+      examples: this.extractBetween(content, "## Examples", "## Why This Workflow"),
+      all: content,
     };
 
-    return sections[topic] || sections['all'];
+    return sections[topic] || sections["all"];
   }
 
   /**

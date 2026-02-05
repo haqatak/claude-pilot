@@ -9,19 +9,18 @@
  * - Clean up processed messages
  */
 
-import { logger } from '../../../utils/logger.js';
-import { parseObservations, parseSummary, type ParsedObservation, type ParsedSummary } from '../../../sdk/parser.js';
-import { updateCursorContextForProject } from '../../integrations/CursorHooksInstaller.js';
-import { updateFolderClaudeMdFiles } from '../../../utils/claude-md-utils.js';
-import { getWorkerPort } from '../../../shared/worker-utils.js';
-import { getProjectFromFiles } from '../../../utils/project-name.js';
-import { getCurrentGitBranch } from '../../../utils/git-branch.js';
-import type { ActiveSession } from '../../worker-types.js';
-import type { DatabaseManager } from '../DatabaseManager.js';
-import type { SessionManager } from '../SessionManager.js';
-import type { WorkerRef, StorageResult } from './types.js';
-import { broadcastObservation, broadcastSummary } from './ObservationBroadcaster.js';
-import { cleanupProcessedMessages } from './SessionCleanupHelper.js';
+import { logger } from "../../../utils/logger.js";
+import { parseObservations, parseSummary, type ParsedObservation, type ParsedSummary } from "../../../sdk/parser.js";
+import { updateFolderClaudeMdFiles } from "../../../utils/claude-md-utils.js";
+import { getWorkerPort } from "../../../shared/worker-utils.js";
+import { getProjectFromFiles } from "../../../utils/project-name.js";
+import { getCurrentGitBranch } from "../../../utils/git-branch.js";
+import type { ActiveSession } from "../../worker-types.js";
+import type { DatabaseManager } from "../DatabaseManager.js";
+import type { SessionManager } from "../SessionManager.js";
+import type { WorkerRef, StorageResult } from "./types.js";
+import { broadcastObservation, broadcastSummary } from "./ObservationBroadcaster.js";
+import { cleanupProcessedMessages } from "./SessionCleanupHelper.js";
 
 /**
  * Process agent response text (parse XML, save to database, sync to Chroma, broadcast SSE)
@@ -52,10 +51,10 @@ export async function processAgentResponse(
   discoveryTokens: number,
   originalTimestamp: number | null,
   agentName: string,
-  projectRoot?: string
+  projectRoot?: string,
 ): Promise<void> {
   if (text) {
-    session.conversationHistory.push({ role: 'assistant', content: text });
+    session.conversationHistory.push({ role: "assistant", content: text });
   }
 
   const observations = parseObservations(text, session.contentSessionId);
@@ -66,28 +65,32 @@ export async function processAgentResponse(
   const sessionStore = dbManager.getSessionStore();
 
   if (!session.memorySessionId) {
-    throw new Error('Cannot store observations: memorySessionId not yet captured');
+    throw new Error("Cannot store observations: memorySessionId not yet captured");
   }
 
   const allFilePaths = collectAllFilePaths(observations);
   const detectedProject = getProjectFromFiles(allFilePaths, session.project, projectRoot);
 
   if (detectedProject !== session.project) {
-    logger.info('PROJECT', `Detected project from files: ${detectedProject} (session: ${session.project})`, {
+    logger.info("PROJECT", `Detected project from files: ${detectedProject} (session: ${session.project})`, {
       detectedProject,
       sessionProject: session.project,
-      fileCount: allFilePaths.length
+      fileCount: allFilePaths.length,
     });
   }
 
   const gitBranch = getCurrentGitBranch(projectRoot);
 
-  logger.info('DB', `STORING | sessionDbId=${session.sessionDbId} | memorySessionId=${session.memorySessionId} | project=${detectedProject} | obsCount=${observations.length} | hasSummary=${!!summaryForStore}`, {
-    sessionId: session.sessionDbId,
-    memorySessionId: session.memorySessionId,
-    project: detectedProject,
-    gitBranch
-  });
+  logger.info(
+    "DB",
+    `STORING | sessionDbId=${session.sessionDbId} | memorySessionId=${session.memorySessionId} | project=${detectedProject} | obsCount=${observations.length} | hasSummary=${!!summaryForStore}`,
+    {
+      sessionId: session.sessionDbId,
+      memorySessionId: session.memorySessionId,
+      project: detectedProject,
+      gitBranch,
+    },
+  );
 
   const result = sessionStore.storeObservations(
     session.memorySessionId,
@@ -96,13 +99,17 @@ export async function processAgentResponse(
     summaryForStore,
     session.lastPromptNumber,
     discoveryTokens,
-    originalTimestamp ?? undefined
+    originalTimestamp ?? undefined,
   );
 
-  logger.info('DB', `STORED | sessionDbId=${session.sessionDbId} | memorySessionId=${session.memorySessionId} | obsCount=${result.observationIds.length} | obsIds=[${result.observationIds.join(',')}] | summaryId=${result.summaryId || 'none'}`, {
-    sessionId: session.sessionDbId,
-    memorySessionId: session.memorySessionId
-  });
+  logger.info(
+    "DB",
+    `STORED | sessionDbId=${session.sessionDbId} | memorySessionId=${session.memorySessionId} | obsCount=${result.observationIds.length} | obsIds=[${result.observationIds.join(",")}] | summaryId=${result.summaryId || "none"}`,
+    {
+      sessionId: session.sessionDbId,
+      memorySessionId: session.memorySessionId,
+    },
+  );
 
   await syncAndBroadcastObservations(
     observations,
@@ -113,7 +120,7 @@ export async function processAgentResponse(
     worker,
     discoveryTokens,
     agentName,
-    projectRoot
+    projectRoot,
   );
 
   await syncAndBroadcastSummary(
@@ -125,10 +132,8 @@ export async function processAgentResponse(
     dbManager,
     worker,
     discoveryTokens,
-    agentName
+    agentName,
   );
-
-  // Note: Session completion is handled by stale cleanup, not here (summaries are generated during handoffs)
 
   cleanupProcessedMessages(session, worker);
 }
@@ -147,12 +152,12 @@ function normalizeSummaryForStorage(summary: ParsedSummary | null): {
   if (!summary) return null;
 
   return {
-    request: summary.request || '',
-    investigated: summary.investigated || '',
-    learned: summary.learned || '',
-    completed: summary.completed || '',
-    next_steps: summary.next_steps || '',
-    notes: summary.notes
+    request: summary.request || "",
+    investigated: summary.investigated || "",
+    learned: summary.learned || "",
+    completed: summary.completed || "",
+    next_steps: summary.next_steps || "",
+    notes: summary.notes,
   };
 }
 
@@ -180,36 +185,45 @@ async function syncAndBroadcastObservations(
   worker: WorkerRef | undefined,
   discoveryTokens: number,
   agentName: string,
-  projectRoot?: string
+  projectRoot?: string,
 ): Promise<void> {
   for (let i = 0; i < observations.length; i++) {
     const obsId = result.observationIds[i];
     const obs = observations[i];
     const syncStart = Date.now();
 
-    dbManager.getVectorSync().syncObservation(
-      obsId,
-      session.contentSessionId,
-      project,
-      obs,
-      session.lastPromptNumber,
-      result.createdAtEpoch,
-      discoveryTokens
-    ).then(() => {
-      const syncDuration = Date.now() - syncStart;
-      logger.debug('VECTOR', 'Observation synced', {
+    dbManager
+      .getVectorSync()
+      .syncObservation(
         obsId,
-        duration: `${syncDuration}ms`,
-        type: obs.type,
-        title: obs.title || '(untitled)'
+        session.contentSessionId,
+        project,
+        obs,
+        session.lastPromptNumber,
+        result.createdAtEpoch,
+        discoveryTokens,
+      )
+      .then(() => {
+        const syncDuration = Date.now() - syncStart;
+        logger.debug("VECTOR", "Observation synced", {
+          obsId,
+          duration: `${syncDuration}ms`,
+          type: obs.type,
+          title: obs.title || "(untitled)",
+        });
+      })
+      .catch((error) => {
+        logger.error(
+          "VECTOR",
+          `${agentName} vector sync failed, continuing without vector search`,
+          {
+            obsId,
+            type: obs.type,
+            title: obs.title || "(untitled)",
+          },
+          error,
+        );
       });
-    }).catch((error) => {
-      logger.error('VECTOR', `${agentName} vector sync failed, continuing without vector search`, {
-        obsId,
-        type: obs.type,
-        title: obs.title || '(untitled)'
-      }, error);
-    });
 
     broadcastObservation(worker, {
       id: obsId,
@@ -226,20 +240,15 @@ async function syncAndBroadcastObservations(
       files_modified: JSON.stringify(obs.files_modified || []),
       project,
       prompt_number: session.lastPromptNumber,
-      created_at_epoch: result.createdAtEpoch
+      created_at_epoch: result.createdAtEpoch,
     });
   }
 
   const allFilePaths = collectAllFilePaths(observations);
 
   if (allFilePaths.length > 0) {
-    updateFolderClaudeMdFiles(
-      allFilePaths,
-      project,
-      getWorkerPort(),
-      projectRoot
-    ).catch(error => {
-      logger.warn('FOLDER_INDEX', 'CLAUDE.md update failed (non-critical)', { project }, error as Error);
+    updateFolderClaudeMdFiles(allFilePaths, project, getWorkerPort(), projectRoot).catch((error) => {
+      logger.warn("FOLDER_INDEX", "CLAUDE.md update failed (non-critical)", { project }, error as Error);
     });
   }
 }
@@ -249,14 +258,21 @@ async function syncAndBroadcastObservations(
  */
 async function syncAndBroadcastSummary(
   summary: ParsedSummary | null,
-  summaryForStore: { request: string; investigated: string; learned: string; completed: string; next_steps: string; notes: string | null } | null,
+  summaryForStore: {
+    request: string;
+    investigated: string;
+    learned: string;
+    completed: string;
+    next_steps: string;
+    notes: string | null;
+  } | null,
   result: StorageResult,
   session: ActiveSession,
   project: string,
   dbManager: DatabaseManager,
   worker: WorkerRef | undefined,
   discoveryTokens: number,
-  agentName: string
+  agentName: string,
 ): Promise<void> {
   if (!summaryForStore || !result.summaryId) {
     return;
@@ -264,27 +280,36 @@ async function syncAndBroadcastSummary(
 
   const syncStart = Date.now();
 
-  dbManager.getVectorSync().syncSummary(
-    result.summaryId,
-    session.contentSessionId,
-    project,
-    summaryForStore,
-    session.lastPromptNumber,
-    result.createdAtEpoch,
-    discoveryTokens
-  ).then(() => {
-    const syncDuration = Date.now() - syncStart;
-    logger.debug('VECTOR', 'Summary synced', {
-      summaryId: result.summaryId,
-      duration: `${syncDuration}ms`,
-      request: summaryForStore.request || '(no request)'
+  dbManager
+    .getVectorSync()
+    .syncSummary(
+      result.summaryId,
+      session.contentSessionId,
+      project,
+      summaryForStore,
+      session.lastPromptNumber,
+      result.createdAtEpoch,
+      discoveryTokens,
+    )
+    .then(() => {
+      const syncDuration = Date.now() - syncStart;
+      logger.debug("VECTOR", "Summary synced", {
+        summaryId: result.summaryId,
+        duration: `${syncDuration}ms`,
+        request: summaryForStore.request || "(no request)",
+      });
+    })
+    .catch((error) => {
+      logger.error(
+        "VECTOR",
+        `${agentName} vector sync failed, continuing without vector search`,
+        {
+          summaryId: result.summaryId,
+          request: summaryForStore.request || "(no request)",
+        },
+        error,
+      );
     });
-  }).catch((error) => {
-    logger.error('VECTOR', `${agentName} vector sync failed, continuing without vector search`, {
-      summaryId: result.summaryId,
-      request: summaryForStore.request || '(no request)'
-    }, error);
-  });
 
   broadcastSummary(worker, {
     id: result.summaryId,
@@ -297,10 +322,6 @@ async function syncAndBroadcastSummary(
     notes: summary!.notes,
     project,
     prompt_number: session.lastPromptNumber,
-    created_at_epoch: result.createdAtEpoch
-  });
-
-  updateCursorContextForProject(project, getWorkerPort()).catch(error => {
-    logger.warn('CURSOR', 'Context update failed (non-critical)', { project }, error as Error);
+    created_at_epoch: result.createdAtEpoch,
   });
 }

@@ -11,17 +11,15 @@
  * - Model caching in ~/.pilot/memory/models/
  */
 
-import { logger } from '../../utils/logger.js';
-import path from 'path';
-import os from 'os';
+import { logger } from "../../utils/logger.js";
+import path from "path";
+import os from "os";
 
-// Model configuration
-const MODEL_NAME = 'Xenova/all-MiniLM-L6-v2';
+const MODEL_NAME = "Xenova/all-MiniLM-L6-v2";
 const EMBEDDING_DIMENSION = 384;
-const MAX_TEXT_LENGTH = 2000; // ~500 tokens approximation
+const MAX_TEXT_LENGTH = 2000;
 const BATCH_SIZE = 32;
 
-// Lazy-loaded pipeline and types
 let pipeline: any = null;
 let env: any = null;
 let embeddingPipeline: any = null;
@@ -54,29 +52,26 @@ export class EmbeddingService {
     }
 
     initPromise = (async () => {
-      logger.info('EMBEDDING', 'Loading embedding model...', { model: MODEL_NAME });
+      logger.info("EMBEDDING", "Loading embedding model...", { model: MODEL_NAME });
       const start = Date.now();
 
-      // Dynamic import to avoid loading at startup
-      const transformers = await import('@xenova/transformers');
+      const transformers = await import("@xenova/transformers");
       pipeline = transformers.pipeline;
       env = transformers.env;
 
-      // Configure cache directory for model weights
-      env.cacheDir = path.join(os.homedir(), '.pilot/memory', 'models');
+      env.cacheDir = path.join(os.homedir(), ".pilot/memory", "models");
 
-      // Disable local model check to use remote models
       env.allowLocalModels = false;
 
-      embeddingPipeline = await pipeline('feature-extraction', MODEL_NAME, {
-        quantized: true // Use quantized model for speed
+      embeddingPipeline = await pipeline("feature-extraction", MODEL_NAME, {
+        quantized: true,
       });
 
       const duration = Date.now() - start;
-      logger.info('EMBEDDING', 'Embedding model loaded', {
+      logger.info("EMBEDDING", "Embedding model loaded", {
         model: MODEL_NAME,
         duration: `${duration}ms`,
-        cacheDir: env.cacheDir
+        cacheDir: env.cacheDir,
       });
     })();
 
@@ -91,12 +86,11 @@ export class EmbeddingService {
   async embed(text: string): Promise<number[]> {
     await this.ensureInitialized();
 
-    // Truncate to avoid token limit
     const truncated = text.slice(0, MAX_TEXT_LENGTH);
 
     const output = await embeddingPipeline(truncated, {
-      pooling: 'mean',
-      normalize: true
+      pooling: "mean",
+      normalize: true,
     });
 
     return Array.from(output.data);
@@ -112,22 +106,20 @@ export class EmbeddingService {
 
     const embeddings: number[][] = [];
 
-    // Process in batches for memory efficiency
     for (let i = 0; i < texts.length; i += BATCH_SIZE) {
-      const batch = texts.slice(i, i + BATCH_SIZE).map(t => t.slice(0, MAX_TEXT_LENGTH));
+      const batch = texts.slice(i, i + BATCH_SIZE).map((t) => t.slice(0, MAX_TEXT_LENGTH));
 
-      // Process sequentially within batch (transformers.js doesn't support true batching)
       for (const text of batch) {
         const output = await embeddingPipeline(text, {
-          pooling: 'mean',
-          normalize: true
+          pooling: "mean",
+          normalize: true,
         });
         embeddings.push(Array.from(output.data));
       }
 
       if (texts.length > BATCH_SIZE) {
-        logger.debug('EMBEDDING', 'Batch progress', {
-          progress: `${Math.min(i + BATCH_SIZE, texts.length)}/${texts.length}`
+        logger.debug("EMBEDDING", "Batch progress", {
+          progress: `${Math.min(i + BATCH_SIZE, texts.length)}/${texts.length}`,
         });
       }
     }
@@ -153,9 +145,7 @@ export class EmbeddingService {
    * Cleanup (model stays in memory for reuse)
    */
   async close(): Promise<void> {
-    // Model is kept in memory for reuse across queries
-    // Only reset if explicitly needed
-    logger.debug('EMBEDDING', 'Close called (model remains cached)');
+    logger.debug("EMBEDDING", "Close called (model remains cached)");
   }
 
   /**
@@ -164,6 +154,6 @@ export class EmbeddingService {
   async forceUnload(): Promise<void> {
     embeddingPipeline = null;
     initPromise = null;
-    logger.info('EMBEDDING', 'Model unloaded');
+    logger.info("EMBEDDING", "Model unloaded");
   }
 }

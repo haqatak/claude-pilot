@@ -5,21 +5,21 @@
  * These routes manage the flow of work through the Claude Agent SDK.
  */
 
-import express, { Request, Response } from 'express';
-import { getWorkerPort } from '../../../../shared/worker-utils.js';
-import { logger } from '../../../../utils/logger.js';
-import { stripMemoryTagsFromJson, stripMemoryTagsFromPrompt } from '../../../../utils/tag-stripping.js';
-import { SessionManager } from '../../SessionManager.js';
-import { DatabaseManager } from '../../DatabaseManager.js';
-import { SDKAgent } from '../../SDKAgent.js';
-import type { WorkerService } from '../../../worker-service.js';
-import type { WorkerRef } from '../../agents/types.js';
-import { BaseRouteHandler } from '../BaseRouteHandler.js';
-import { SessionEventBroadcaster } from '../../events/SessionEventBroadcaster.js';
-import { SessionCompletionHandler } from '../../session/SessionCompletionHandler.js';
-import { PrivacyCheckValidator } from '../../validation/PrivacyCheckValidator.js';
-import { SettingsDefaultsManager } from '../../../../shared/SettingsDefaultsManager.js';
-import { USER_SETTINGS_PATH } from '../../../../shared/paths.js';
+import express, { Request, Response } from "express";
+import { getWorkerPort } from "../../../../shared/worker-utils.js";
+import { logger } from "../../../../utils/logger.js";
+import { stripMemoryTagsFromJson, stripMemoryTagsFromPrompt } from "../../../../utils/tag-stripping.js";
+import { SessionManager } from "../../SessionManager.js";
+import { DatabaseManager } from "../../DatabaseManager.js";
+import { SDKAgent } from "../../SDKAgent.js";
+import type { WorkerService } from "../../../worker-service.js";
+import type { WorkerRef } from "../../agents/types.js";
+import { BaseRouteHandler } from "../BaseRouteHandler.js";
+import { SessionEventBroadcaster } from "../../events/SessionEventBroadcaster.js";
+import { SessionCompletionHandler } from "../../session/SessionCompletionHandler.js";
+import { PrivacyCheckValidator } from "../../validation/PrivacyCheckValidator.js";
+import { SettingsDefaultsManager } from "../../../../shared/SettingsDefaultsManager.js";
+import { USER_SETTINGS_PATH } from "../../../../shared/paths.js";
 
 export class SessionRoutes extends BaseRouteHandler {
   private completionHandler: SessionCompletionHandler;
@@ -29,13 +29,10 @@ export class SessionRoutes extends BaseRouteHandler {
     private dbManager: DatabaseManager,
     private sdkAgent: SDKAgent,
     private eventBroadcaster: SessionEventBroadcaster,
-    private workerService: WorkerService
+    private workerService: WorkerService,
   ) {
     super();
-    this.completionHandler = new SessionCompletionHandler(
-      sessionManager,
-      eventBroadcaster
-    );
+    this.completionHandler = new SessionCompletionHandler(sessionManager, eventBroadcaster);
   }
 
   /**
@@ -48,8 +45,8 @@ export class SessionRoutes extends BaseRouteHandler {
   /**
    * Get the currently selected provider name (always Claude)
    */
-  private getSelectedProvider(): 'claude' {
-    return 'claude';
+  private getSelectedProvider(): "claude" {
+    return "claude";
   }
 
   /**
@@ -68,51 +65,59 @@ export class SessionRoutes extends BaseRouteHandler {
   /**
    * Start a generator using the Claude SDK agent
    */
-  private startGenerator(
-    session: ReturnType<typeof this.sessionManager.getSession>,
-    source: string
-  ): void {
+  private startGenerator(session: ReturnType<typeof this.sessionManager.getSession>, source: string): void {
     if (!session) return;
 
     if (session.abortController.signal.aborted) {
-      logger.info('SESSION', `Replacing aborted AbortController before generator start`, {
+      logger.info("SESSION", `Replacing aborted AbortController before generator start`, {
         sessionId: session.sessionDbId,
-        source
+        source,
       });
       session.abortController = new AbortController();
     }
 
-    logger.info('SESSION', `Generator auto-starting (${source}) using Claude SDK`, {
+    logger.info("SESSION", `Generator auto-starting (${source}) using Claude SDK`, {
       sessionId: session.sessionDbId,
       queueDepth: session.pendingMessages.length,
-      historyLength: session.conversationHistory.length
+      historyLength: session.conversationHistory.length,
     });
 
-    session.currentProvider = 'claude';
+    session.currentProvider = "claude";
 
-    session.generatorPromise = this.sdkAgent.startSession(session, this.workerService as unknown as WorkerRef)
+    session.generatorPromise = this.sdkAgent
+      .startSession(session, this.workerService as unknown as WorkerRef)
       .catch((error: Error) => {
         if (session.abortController.signal.aborted) return;
 
-        logger.error('SESSION', `Generator failed`, {
-          sessionId: session.sessionDbId,
-          provider: 'claude',
-          error: error.message
-        }, error);
+        logger.error(
+          "SESSION",
+          `Generator failed`,
+          {
+            sessionId: session.sessionDbId,
+            provider: "claude",
+            error: error.message,
+          },
+          error,
+        );
 
         const pendingStore = this.sessionManager.getPendingMessageStore();
         try {
           const failedCount = pendingStore.markSessionMessagesFailed(session.sessionDbId);
           if (failedCount > 0) {
-            logger.error('SESSION', `Marked messages as failed after generator error`, {
+            logger.error("SESSION", `Marked messages as failed after generator error`, {
               sessionId: session.sessionDbId,
-              failedCount
+              failedCount,
             });
           }
         } catch (dbError) {
-          logger.error('SESSION', 'Failed to mark messages as failed', {
-            sessionId: session.sessionDbId
-          }, dbError as Error);
+          logger.error(
+            "SESSION",
+            "Failed to mark messages as failed",
+            {
+              sessionId: session.sessionDbId,
+            },
+            dbError as Error,
+          );
         }
       })
       .finally(() => {
@@ -120,9 +125,9 @@ export class SessionRoutes extends BaseRouteHandler {
         const wasAborted = session.abortController.signal.aborted;
 
         if (wasAborted) {
-          logger.info('SESSION', `Generator aborted`, { sessionId: sessionDbId });
+          logger.info("SESSION", `Generator aborted`, { sessionId: sessionDbId });
         } else {
-          logger.error('SESSION', `Generator exited unexpectedly`, { sessionId: sessionDbId });
+          logger.error("SESSION", `Generator exited unexpectedly`, { sessionId: sessionDbId });
         }
 
         session.generatorPromise = null;
@@ -140,22 +145,26 @@ export class SessionRoutes extends BaseRouteHandler {
               session.consecutiveRestarts = (session.consecutiveRestarts || 0) + 1;
 
               if (session.consecutiveRestarts > MAX_CONSECUTIVE_RESTARTS) {
-                logger.error('SESSION', `CRITICAL: Generator restart limit exceeded - stopping to prevent runaway costs`, {
-                  sessionId: sessionDbId,
-                  pendingCount,
-                  consecutiveRestarts: session.consecutiveRestarts,
-                  maxRestarts: MAX_CONSECUTIVE_RESTARTS,
-                  action: 'Generator will NOT restart. Check logs for root cause. Messages remain in pending state.'
-                });
+                logger.error(
+                  "SESSION",
+                  `CRITICAL: Generator restart limit exceeded - stopping to prevent runaway costs`,
+                  {
+                    sessionId: sessionDbId,
+                    pendingCount,
+                    consecutiveRestarts: session.consecutiveRestarts,
+                    maxRestarts: MAX_CONSECUTIVE_RESTARTS,
+                    action: "Generator will NOT restart. Check logs for root cause. Messages remain in pending state.",
+                  },
+                );
                 session.abortController.abort();
                 return;
               }
 
-              logger.info('SESSION', `Restarting generator after crash/exit with pending work`, {
+              logger.info("SESSION", `Restarting generator after crash/exit with pending work`, {
                 sessionId: sessionDbId,
                 pendingCount,
                 consecutiveRestarts: session.consecutiveRestarts,
-                maxRestarts: MAX_CONSECUTIVE_RESTARTS
+                maxRestarts: MAX_CONSECUTIVE_RESTARTS,
               });
 
               const oldController = session.abortController;
@@ -167,50 +176,52 @@ export class SessionRoutes extends BaseRouteHandler {
               setTimeout(() => {
                 const stillExists = this.sessionManager.getSession(sessionDbId);
                 if (stillExists && !stillExists.generatorPromise) {
-                  this.startGenerator(stillExists, 'crash-recovery');
+                  this.startGenerator(stillExists, "crash-recovery");
                 }
               }, backoffMs);
             } else {
               session.abortController.abort();
               session.consecutiveRestarts = 0;
-              logger.debug('SESSION', 'Aborted controller after natural completion', {
-                sessionId: sessionDbId
+              logger.debug("SESSION", "Aborted controller after natural completion", {
+                sessionId: sessionDbId,
               });
             }
           } catch (e) {
-            logger.debug('SESSION', 'Error during recovery check, aborting to prevent leaks', { sessionId: sessionDbId, error: e instanceof Error ? e.message : String(e) });
+            logger.debug("SESSION", "Error during recovery check, aborting to prevent leaks", {
+              sessionId: sessionDbId,
+              error: e instanceof Error ? e.message : String(e),
+            });
             session.abortController.abort();
           }
         }
-        // NOTE: We do NOT delete the session here anymore.
       });
   }
 
   setupRoutes(app: express.Application): void {
-    app.post('/sessions/:sessionDbId/init', this.handleSessionInit.bind(this));
-    app.post('/sessions/:sessionDbId/observations', this.handleObservations.bind(this));
-    app.post('/sessions/:sessionDbId/summarize', this.handleSummarize.bind(this));
-    app.get('/sessions/:sessionDbId/status', this.handleSessionStatus.bind(this));
-    app.delete('/sessions/:sessionDbId', this.handleSessionDelete.bind(this));
-    app.post('/sessions/:sessionDbId/complete', this.handleSessionComplete.bind(this));
+    app.post("/sessions/:sessionDbId/init", this.handleSessionInit.bind(this));
+    app.post("/sessions/:sessionDbId/observations", this.handleObservations.bind(this));
+    app.post("/sessions/:sessionDbId/summarize", this.handleSummarize.bind(this));
+    app.get("/sessions/:sessionDbId/status", this.handleSessionStatus.bind(this));
+    app.delete("/sessions/:sessionDbId", this.handleSessionDelete.bind(this));
+    app.post("/sessions/:sessionDbId/complete", this.handleSessionComplete.bind(this));
 
-    app.post('/api/sessions/init', this.handleSessionInitByClaudeId.bind(this));
-    app.post('/api/sessions/observations', this.handleObservationsByClaudeId.bind(this));
-    app.post('/api/sessions/summarize', this.handleSummarizeByClaudeId.bind(this));
+    app.post("/api/sessions/init", this.handleSessionInitByClaudeId.bind(this));
+    app.post("/api/sessions/observations", this.handleObservationsByClaudeId.bind(this));
+    app.post("/api/sessions/summarize", this.handleSummarizeByClaudeId.bind(this));
   }
 
   /**
    * Initialize a new session
    */
   private handleSessionInit = this.wrapHandler((req: Request, res: Response): void => {
-    const sessionDbId = this.parseIntParam(req, res, 'sessionDbId');
+    const sessionDbId = this.parseIntParam(req, res, "sessionDbId");
     if (sessionDbId === null) return;
 
     const { userPrompt, promptNumber } = req.body;
-    logger.info('HTTP', 'SessionRoutes: handleSessionInit called', {
+    logger.info("HTTP", "SessionRoutes: handleSessionInit called", {
       sessionDbId,
       promptNumber,
-      has_userPrompt: !!userPrompt
+      has_userPrompt: !!userPrompt,
     });
 
     const session = this.sessionManager.initializeSession(sessionDbId, userPrompt, promptNumber);
@@ -224,42 +235,48 @@ export class SessionRoutes extends BaseRouteHandler {
         project: latestPrompt.project,
         prompt_number: latestPrompt.prompt_number,
         prompt_text: latestPrompt.prompt_text,
-        created_at_epoch: latestPrompt.created_at_epoch
+        created_at_epoch: latestPrompt.created_at_epoch,
       });
 
       const chromaStart = Date.now();
       const promptText = latestPrompt.prompt_text;
-      this.dbManager.getChromaSync().syncUserPrompt(
-        latestPrompt.id,
-        latestPrompt.memory_session_id,
-        latestPrompt.project,
-        promptText,
-        latestPrompt.prompt_number,
-        latestPrompt.created_at_epoch
-      ).then(() => {
-        const chromaDuration = Date.now() - chromaStart;
-        const truncatedPrompt = promptText.length > 60
-          ? promptText.substring(0, 60) + '...'
-          : promptText;
-        logger.debug('CHROMA', 'User prompt synced', {
-          promptId: latestPrompt.id,
-          duration: `${chromaDuration}ms`,
-          prompt: truncatedPrompt
+      this.dbManager
+        .getChromaSync()
+        .syncUserPrompt(
+          latestPrompt.id,
+          latestPrompt.memory_session_id,
+          latestPrompt.project,
+          promptText,
+          latestPrompt.prompt_number,
+          latestPrompt.created_at_epoch,
+        )
+        .then(() => {
+          const chromaDuration = Date.now() - chromaStart;
+          const truncatedPrompt = promptText.length > 60 ? promptText.substring(0, 60) + "..." : promptText;
+          logger.debug("CHROMA", "User prompt synced", {
+            promptId: latestPrompt.id,
+            duration: `${chromaDuration}ms`,
+            prompt: truncatedPrompt,
+          });
+        })
+        .catch((error) => {
+          logger.error(
+            "CHROMA",
+            "User prompt sync failed, continuing without vector search",
+            {
+              promptId: latestPrompt.id,
+              prompt: promptText.length > 60 ? promptText.substring(0, 60) + "..." : promptText,
+            },
+            error,
+          );
         });
-      }).catch((error) => {
-        logger.error('CHROMA', 'User prompt sync failed, continuing without vector search', {
-          promptId: latestPrompt.id,
-          prompt: promptText.length > 60 ? promptText.substring(0, 60) + '...' : promptText
-        }, error);
-      });
     }
 
-    // Fixes: https://github.com/maxritter/claude-pilot/issues/43
-    this.ensureGeneratorRunning(sessionDbId, 'init');
+    this.ensureGeneratorRunning(sessionDbId, "init");
 
     this.eventBroadcaster.broadcastSessionStarted(sessionDbId, session.project);
 
-    res.json({ status: 'initialized', sessionDbId, port: getWorkerPort() });
+    res.json({ status: "initialized", sessionDbId, port: getWorkerPort() });
   });
 
   /**
@@ -267,7 +284,7 @@ export class SessionRoutes extends BaseRouteHandler {
    * CRITICAL: Ensures SDK agent is running to process the queue (ALWAYS SAVE EVERYTHING)
    */
   private handleObservations = this.wrapHandler((req: Request, res: Response): void => {
-    const sessionDbId = this.parseIntParam(req, res, 'sessionDbId');
+    const sessionDbId = this.parseIntParam(req, res, "sessionDbId");
     if (sessionDbId === null) return;
 
     const { tool_name, tool_input, tool_response, prompt_number, cwd } = req.body;
@@ -277,14 +294,14 @@ export class SessionRoutes extends BaseRouteHandler {
       tool_input,
       tool_response,
       prompt_number,
-      cwd
+      cwd,
     });
 
-    this.ensureGeneratorRunning(sessionDbId, 'observation');
+    this.ensureGeneratorRunning(sessionDbId, "observation");
 
     this.eventBroadcaster.broadcastObservationQueued(sessionDbId);
 
-    res.json({ status: 'queued' });
+    res.json({ status: "queued" });
   });
 
   /**
@@ -292,40 +309,40 @@ export class SessionRoutes extends BaseRouteHandler {
    * CRITICAL: Ensures SDK agent is running to process the queue (ALWAYS SAVE EVERYTHING)
    */
   private handleSummarize = this.wrapHandler((req: Request, res: Response): void => {
-    const sessionDbId = this.parseIntParam(req, res, 'sessionDbId');
+    const sessionDbId = this.parseIntParam(req, res, "sessionDbId");
     if (sessionDbId === null) return;
 
     const { last_assistant_message } = req.body;
 
     this.sessionManager.queueSummarize(sessionDbId, last_assistant_message);
 
-    this.ensureGeneratorRunning(sessionDbId, 'summarize');
+    this.ensureGeneratorRunning(sessionDbId, "summarize");
 
     this.eventBroadcaster.broadcastSummarizeQueued();
 
-    res.json({ status: 'queued' });
+    res.json({ status: "queued" });
   });
 
   /**
    * Get session status
    */
   private handleSessionStatus = this.wrapHandler((req: Request, res: Response): void => {
-    const sessionDbId = this.parseIntParam(req, res, 'sessionDbId');
+    const sessionDbId = this.parseIntParam(req, res, "sessionDbId");
     if (sessionDbId === null) return;
 
     const session = this.sessionManager.getSession(sessionDbId);
 
     if (!session) {
-      res.json({ status: 'not_found' });
+      res.json({ status: "not_found" });
       return;
     }
 
     res.json({
-      status: 'active',
+      status: "active",
       sessionDbId,
       project: session.project,
       queueLength: session.pendingMessages.length,
-      uptime: Date.now() - session.startTime
+      uptime: Date.now() - session.startTime,
     });
   });
 
@@ -333,12 +350,12 @@ export class SessionRoutes extends BaseRouteHandler {
    * Delete a session
    */
   private handleSessionDelete = this.wrapHandler(async (req: Request, res: Response): Promise<void> => {
-    const sessionDbId = this.parseIntParam(req, res, 'sessionDbId');
+    const sessionDbId = this.parseIntParam(req, res, "sessionDbId");
     if (sessionDbId === null) return;
 
     await this.completionHandler.completeByDbId(sessionDbId);
 
-    res.json({ status: 'deleted' });
+    res.json({ status: "deleted" });
   });
 
   /**
@@ -346,7 +363,7 @@ export class SessionRoutes extends BaseRouteHandler {
    * cleanup-hook expects POST /sessions/:sessionDbId/complete instead of DELETE
    */
   private handleSessionComplete = this.wrapHandler(async (req: Request, res: Response): Promise<void> => {
-    const sessionDbId = this.parseIntParam(req, res, 'sessionDbId');
+    const sessionDbId = this.parseIntParam(req, res, "sessionDbId");
     if (sessionDbId === null) return;
 
     await this.completionHandler.completeByDbId(sessionDbId);
@@ -363,76 +380,79 @@ export class SessionRoutes extends BaseRouteHandler {
     const { contentSessionId, tool_name, tool_input, tool_response, cwd } = req.body;
 
     if (!contentSessionId) {
-      return this.badRequest(res, 'Missing contentSessionId');
+      return this.badRequest(res, "Missing contentSessionId");
     }
 
     const settings = SettingsDefaultsManager.loadFromFile(USER_SETTINGS_PATH);
-    const skipTools = new Set(settings.CLAUDE_PILOT_SKIP_TOOLS.split(',').map(t => t.trim()).filter(Boolean));
+    const skipTools = new Set(
+      settings.CLAUDE_PILOT_SKIP_TOOLS.split(",")
+        .map((t) => t.trim())
+        .filter(Boolean),
+    );
 
     if (skipTools.has(tool_name)) {
-      logger.debug('SESSION', 'Skipping observation for tool', { tool_name });
-      res.json({ status: 'skipped', reason: 'tool_excluded' });
+      logger.debug("SESSION", "Skipping observation for tool", { tool_name });
+      res.json({ status: "skipped", reason: "tool_excluded" });
       return;
     }
 
-    const fileOperationTools = new Set(['Edit', 'Write', 'Read', 'NotebookEdit']);
+    const fileOperationTools = new Set(["Edit", "Write", "Read", "NotebookEdit"]);
     if (fileOperationTools.has(tool_name) && tool_input) {
       const filePath = tool_input.file_path || tool_input.notebook_path;
-      if (filePath && filePath.includes('session-memory')) {
-        logger.debug('SESSION', 'Skipping meta-observation for session-memory file', {
+      if (filePath && filePath.includes("session-memory")) {
+        logger.debug("SESSION", "Skipping meta-observation for session-memory file", {
           tool_name,
-          file_path: filePath
+          file_path: filePath,
         });
-        res.json({ status: 'skipped', reason: 'session_memory_meta' });
+        res.json({ status: "skipped", reason: "session_memory_meta" });
         return;
       }
     }
 
     const store = this.dbManager.getSessionStore();
 
-    const sessionDbId = store.createSDKSession(contentSessionId, '', '');
+    const sessionDbId = store.createSDKSession(contentSessionId, "", "");
     const promptNumber = store.getPromptNumberFromUserPrompts(contentSessionId);
 
     const userPrompt = PrivacyCheckValidator.checkUserPromptPrivacy(
       store,
       contentSessionId,
       promptNumber,
-      'observation',
+      "observation",
       sessionDbId,
-      { tool_name }
+      { tool_name },
     );
     if (!userPrompt) {
-      res.json({ status: 'skipped', reason: 'private' });
+      res.json({ status: "skipped", reason: "private" });
       return;
     }
 
-    const cleanedToolInput = tool_input !== undefined
-      ? stripMemoryTagsFromJson(JSON.stringify(tool_input))
-      : '{}';
+    const cleanedToolInput = tool_input !== undefined ? stripMemoryTagsFromJson(JSON.stringify(tool_input)) : "{}";
 
-    const cleanedToolResponse = tool_response !== undefined
-      ? stripMemoryTagsFromJson(JSON.stringify(tool_response))
-      : '{}';
+    const cleanedToolResponse =
+      tool_response !== undefined ? stripMemoryTagsFromJson(JSON.stringify(tool_response)) : "{}";
 
     this.sessionManager.queueObservation(sessionDbId, {
       tool_name,
       tool_input: cleanedToolInput,
       tool_response: cleanedToolResponse,
       prompt_number: promptNumber,
-      cwd: cwd || (() => {
-        logger.error('SESSION', 'Missing cwd when queueing observation in SessionRoutes', {
-          sessionId: sessionDbId,
-          tool_name
-        });
-        return '';
-      })()
+      cwd:
+        cwd ||
+        (() => {
+          logger.error("SESSION", "Missing cwd when queueing observation in SessionRoutes", {
+            sessionId: sessionDbId,
+            tool_name,
+          });
+          return "";
+        })(),
     });
 
-    this.ensureGeneratorRunning(sessionDbId, 'observation');
+    this.ensureGeneratorRunning(sessionDbId, "observation");
 
     this.eventBroadcaster.broadcastObservationQueued(sessionDbId);
 
-    res.json({ status: 'queued' });
+    res.json({ status: "queued" });
   });
 
   /**
@@ -446,33 +466,33 @@ export class SessionRoutes extends BaseRouteHandler {
     const { contentSessionId, last_assistant_message } = req.body;
 
     if (!contentSessionId) {
-      return this.badRequest(res, 'Missing contentSessionId');
+      return this.badRequest(res, "Missing contentSessionId");
     }
 
     const store = this.dbManager.getSessionStore();
 
-    const sessionDbId = store.createSDKSession(contentSessionId, '', '');
+    const sessionDbId = store.createSDKSession(contentSessionId, "", "");
     const promptNumber = store.getPromptNumberFromUserPrompts(contentSessionId);
 
     const userPrompt = PrivacyCheckValidator.checkUserPromptPrivacy(
       store,
       contentSessionId,
       promptNumber,
-      'summarize',
-      sessionDbId
+      "summarize",
+      sessionDbId,
     );
     if (!userPrompt) {
-      res.json({ status: 'skipped', reason: 'private' });
+      res.json({ status: "skipped", reason: "private" });
       return;
     }
 
     this.sessionManager.queueSummarize(sessionDbId, last_assistant_message);
 
-    this.ensureGeneratorRunning(sessionDbId, 'summarize');
+    this.ensureGeneratorRunning(sessionDbId, "summarize");
 
     this.eventBroadcaster.broadcastSummarizeQueued();
 
-    res.json({ status: 'queued' });
+    res.json({ status: "queued" });
   });
 
   /**
@@ -490,13 +510,13 @@ export class SessionRoutes extends BaseRouteHandler {
   private handleSessionInitByClaudeId = this.wrapHandler((req: Request, res: Response): void => {
     const { contentSessionId, project, prompt } = req.body;
 
-    logger.info('HTTP', 'SessionRoutes: handleSessionInitByClaudeId called', {
+    logger.info("HTTP", "SessionRoutes: handleSessionInitByClaudeId called", {
       contentSessionId,
       project,
-      prompt_length: prompt?.length
+      prompt_length: prompt?.length,
     });
 
-    if (!this.validateRequired(req, res, ['contentSessionId', 'project', 'prompt'])) {
+    if (!this.validateRequired(req, res, ["contentSessionId", "project", "prompt"])) {
       return;
     }
 
@@ -506,49 +526,59 @@ export class SessionRoutes extends BaseRouteHandler {
 
     const dbSession = store.getSessionById(sessionDbId);
     const isNewSession = !dbSession?.memory_session_id;
-    logger.info('SESSION', `CREATED | contentSessionId=${contentSessionId} → sessionDbId=${sessionDbId} | isNew=${isNewSession} | project=${project}`, {
-      sessionId: sessionDbId
-    });
+    logger.info(
+      "SESSION",
+      `CREATED | contentSessionId=${contentSessionId} → sessionDbId=${sessionDbId} | isNew=${isNewSession} | project=${project}`,
+      {
+        sessionId: sessionDbId,
+      },
+    );
 
     const currentCount = store.getPromptNumberFromUserPrompts(contentSessionId);
     const promptNumber = currentCount + 1;
 
     const memorySessionId = dbSession?.memory_session_id || null;
     if (promptNumber > 1) {
-      logger.debug('HTTP', `[ALIGNMENT] DB Lookup Proof | contentSessionId=${contentSessionId} → memorySessionId=${memorySessionId || '(not yet captured)'} | prompt#=${promptNumber}`);
+      logger.debug(
+        "HTTP",
+        `[ALIGNMENT] DB Lookup Proof | contentSessionId=${contentSessionId} → memorySessionId=${memorySessionId || "(not yet captured)"} | prompt#=${promptNumber}`,
+      );
     } else {
-      logger.debug('HTTP', `[ALIGNMENT] New Session | contentSessionId=${contentSessionId} | prompt#=${promptNumber} | memorySessionId will be captured on first SDK response`);
+      logger.debug(
+        "HTTP",
+        `[ALIGNMENT] New Session | contentSessionId=${contentSessionId} | prompt#=${promptNumber} | memorySessionId will be captured on first SDK response`,
+      );
     }
 
     const cleanedPrompt = stripMemoryTagsFromPrompt(prompt);
 
-    if (!cleanedPrompt || cleanedPrompt.trim() === '') {
-      logger.debug('HOOK', 'Session init - prompt entirely private', {
+    if (!cleanedPrompt || cleanedPrompt.trim() === "") {
+      logger.debug("HOOK", "Session init - prompt entirely private", {
         sessionId: sessionDbId,
         promptNumber,
-        originalLength: prompt.length
+        originalLength: prompt.length,
       });
 
       res.json({
         sessionDbId,
         promptNumber,
         skipped: true,
-        reason: 'private'
+        reason: "private",
       });
       return;
     }
 
     store.saveUserPrompt(contentSessionId, promptNumber, cleanedPrompt);
 
-    logger.debug('SESSION', 'User prompt saved', {
+    logger.debug("SESSION", "User prompt saved", {
       sessionId: sessionDbId,
-      promptNumber
+      promptNumber,
     });
 
     res.json({
       sessionDbId,
       promptNumber,
-      skipped: false
+      skipped: false,
     });
   });
 }

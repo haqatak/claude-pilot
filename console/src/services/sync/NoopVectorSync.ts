@@ -6,9 +6,9 @@
  * This allows the rest of the system to work without code changes.
  */
 
-import { IVectorSync, VectorQueryResult } from './IVectorSync.js';
-import { ParsedObservation, ParsedSummary } from '../../sdk/parser.js';
-import { logger } from '../../utils/logger.js';
+import { IVectorSync, VectorQueryResult } from "./IVectorSync.js";
+import { ParsedObservation, ParsedSummary } from "../../sdk/parser.js";
+import { logger } from "../../utils/logger.js";
 
 export class NoopVectorSync implements IVectorSync {
   private project: string;
@@ -20,8 +20,8 @@ export class NoopVectorSync implements IVectorSync {
 
   private logDisabled(): void {
     if (!this.loggedOnce) {
-      logger.info('VECTOR_SYNC', 'Vector database disabled - using SQLite-only mode', {
-        project: this.project
+      logger.info("VECTOR_SYNC", "Vector database disabled - using SQLite-only mode", {
+        project: this.project,
       });
       this.loggedOnce = true;
     }
@@ -29,40 +29,32 @@ export class NoopVectorSync implements IVectorSync {
 
   async syncObservation(): Promise<void> {
     this.logDisabled();
-    // No-op
   }
 
   async syncSummary(): Promise<void> {
     this.logDisabled();
-    // No-op
   }
 
   async syncUserPrompt(): Promise<void> {
     this.logDisabled();
-    // No-op
   }
 
   async ensureBackfilled(): Promise<void> {
     this.logDisabled();
-    // No-op
   }
 
   async query(): Promise<VectorQueryResult> {
     this.logDisabled();
-    // Return empty results
     return {
       ids: [],
       distances: [],
-      metadatas: []
+      metadatas: [],
     };
   }
 
-  async close(): Promise<void> {
-    // No-op - nothing to close
-  }
+  async close(): Promise<void> {}
 
   async isHealthy(): Promise<boolean> {
-    // Always "healthy" since there's nothing to break
     return true;
   }
 }

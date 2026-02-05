@@ -2,7 +2,6 @@
  * Type definitions for observation operations
  * Extracted from SessionStore.ts for modular organization
  */
-import { logger } from '../../../utils/logger.js';
 
 /**
  * Input type for storeObservation function
@@ -30,7 +29,7 @@ export interface StoreObservationResult {
  * Options for getObservationsByIds
  */
 export interface GetObservationsByIdsOptions {
-  orderBy?: 'date_desc' | 'date_asc';
+  orderBy?: "date_desc" | "date_asc";
   limit?: number;
   project?: string;
   type?: string | string[];

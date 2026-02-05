@@ -5,12 +5,12 @@
  * Handles request/response logging, CORS, JSON parsing, and static file serving.
  */
 
-import express, { Request, Response, NextFunction, RequestHandler } from 'express';
-import cors from 'cors';
-import cookieParser from 'cookie-parser';
-import path from 'path';
-import { getPackageRoot } from '../../../shared/paths.js';
-import { logger } from '../../../utils/logger.js';
+import express, { Request, Response, NextFunction, RequestHandler } from "express";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import path from "path";
+import { getPackageRoot } from "../../../shared/paths.js";
+import { logger } from "../../../utils/logger.js";
 
 /**
  * Create all middleware for the worker service
@@ -18,50 +18,55 @@ import { logger } from '../../../utils/logger.js';
  * @returns Array of middleware functions
  */
 export function createMiddleware(
-  summarizeRequestBody: (method: string, path: string, body: any) => string
+  summarizeRequestBody: (method: string, path: string, body: any) => string,
 ): RequestHandler[] {
   const middlewares: RequestHandler[] = [];
 
-  // JSON parsing with 50mb limit
-  middlewares.push(express.json({ limit: '50mb' }));
+  middlewares.push(express.json({ limit: "50mb" }));
 
-  // CORS
   middlewares.push(cors());
 
-  // Cookie parsing for session management
   middlewares.push(cookieParser());
 
-  // HTTP request/response logging
   middlewares.push((req: Request, res: Response, next: NextFunction) => {
-    // Skip logging for static assets, health checks, and polling endpoints
-    const staticExtensions = ['.html', '.js', '.css', '.svg', '.png', '.jpg', '.jpeg', '.webp', '.woff', '.woff2', '.ttf', '.eot'];
-    const isStaticAsset = staticExtensions.some(ext => req.path.endsWith(ext));
-    const isPollingEndpoint = req.path === '/api/logs'; // Skip logs endpoint to avoid noise from auto-refresh
-    if (req.path.startsWith('/health') || req.path === '/' || isStaticAsset || isPollingEndpoint) {
+    const staticExtensions = [
+      ".html",
+      ".js",
+      ".css",
+      ".svg",
+      ".png",
+      ".jpg",
+      ".jpeg",
+      ".webp",
+      ".woff",
+      ".woff2",
+      ".ttf",
+      ".eot",
+    ];
+    const isStaticAsset = staticExtensions.some((ext) => req.path.endsWith(ext));
+    const isPollingEndpoint = req.path === "/api/logs";
+    if (req.path.startsWith("/health") || req.path === "/" || isStaticAsset || isPollingEndpoint) {
       return next();
     }
 
     const start = Date.now();
     const requestId = `${req.method}-${Date.now()}`;
 
-    // Log incoming request with body summary
     const bodySummary = summarizeRequestBody(req.method, req.path, req.body);
-    logger.info('HTTP', `→ ${req.method} ${req.path}`, { requestId }, bodySummary);
+    logger.info("HTTP", `→ ${req.method} ${req.path}`, { requestId }, bodySummary);
 
-    // Capture response
     const originalSend = res.send.bind(res);
-    res.send = function(body: any) {
+    res.send = function (body: any) {
       const duration = Date.now() - start;
-      logger.info('HTTP', `← ${res.statusCode} ${req.path}`, { requestId, duration: `${duration}ms` });
+      logger.info("HTTP", `← ${res.statusCode} ${req.path}`, { requestId, duration: `${duration}ms` });
       return originalSend(body);
     };
 
     next();
   });
 
-  // Serve static files for web UI (viewer-bundle.js, logos, fonts, etc.)
   const packageRoot = getPackageRoot();
-  const uiDir = path.join(packageRoot, 'plugin', 'ui');
+  const uiDir = path.join(packageRoot, "plugin", "ui");
   middlewares.push(express.static(uiDir));
 
   return middlewares;
@@ -72,22 +77,19 @@ export function createMiddleware(
  * Used for admin endpoints that should not be exposed when binding to 0.0.0.0
  */
 export function requireLocalhost(req: Request, res: Response, next: NextFunction): void {
-  const clientIp = req.ip || req.connection.remoteAddress || '';
+  const clientIp = req.ip || req.connection.remoteAddress || "";
   const isLocalhost =
-    clientIp === '127.0.0.1' ||
-    clientIp === '::1' ||
-    clientIp === '::ffff:127.0.0.1' ||
-    clientIp === 'localhost';
+    clientIp === "127.0.0.1" || clientIp === "::1" || clientIp === "::ffff:127.0.0.1" || clientIp === "localhost";
 
   if (!isLocalhost) {
-    logger.warn('SECURITY', 'Admin endpoint access denied - not localhost', {
+    logger.warn("SECURITY", "Admin endpoint access denied - not localhost", {
       endpoint: req.path,
       clientIp,
-      method: req.method
+      method: req.method,
     });
     res.status(403).json({
-      error: 'Forbidden',
-      message: 'Admin endpoints are only accessible from localhost'
+      error: "Forbidden",
+      message: "Admin endpoints are only accessible from localhost",
     });
     return;
   }
@@ -100,25 +102,22 @@ export function requireLocalhost(req: Request, res: Response, next: NextFunction
  * Used to avoid logging sensitive data or large payloads
  */
 export function summarizeRequestBody(method: string, path: string, body: any): string {
-  if (!body || Object.keys(body).length === 0) return '';
+  if (!body || Object.keys(body).length === 0) return "";
 
-  // Session init
-  if (path.includes('/init')) {
-    return '';
+  if (path.includes("/init")) {
+    return "";
   }
 
-  // Observations
-  if (path.includes('/observations')) {
-    const toolName = body.tool_name || '?';
+  if (path.includes("/observations")) {
+    const toolName = body.tool_name || "?";
     const toolInput = body.tool_input;
     const toolSummary = logger.formatTool(toolName, toolInput);
     return `tool=${toolSummary}`;
   }
 
-  // Summarize request
-  if (path.includes('/summarize')) {
-    return 'requesting summary';
+  if (path.includes("/summarize")) {
+    return "requesting summary";
   }
 
-  return '';
+  return "";
 }

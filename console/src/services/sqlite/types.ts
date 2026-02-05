@@ -8,7 +8,7 @@ export interface SessionRow {
   project: string;
   created_at: string;
   created_at_epoch: number;
-  source: 'compress' | 'save' | 'legacy-jsonl';
+  source: "compress" | "save" | "legacy-jsonl";
   archive_path?: string;
   archive_bytes?: number;
   archive_checksum?: string;
@@ -48,7 +48,7 @@ export interface DiagnosticRow {
   id: number;
   session_id?: string;
   message: string;
-  severity: 'info' | 'warn' | 'error';
+  severity: "info" | "warn" | "error";
   created_at: string;
   created_at_epoch: number;
   project: string;
@@ -73,7 +73,7 @@ export interface ArchiveRow {
   bytes?: number;
   checksum?: string;
   stored_at: string;
-  storage_status: 'active' | 'archived' | 'deleted';
+  storage_status: "active" | "archived" | "deleted";
 }
 
 export interface TitleRow {
@@ -91,7 +91,7 @@ export interface SessionInput {
   session_id: string;
   project: string;
   created_at: string;
-  source?: 'compress' | 'save' | 'legacy-jsonl';
+  source?: "compress" | "save" | "legacy-jsonl";
   archive_path?: string;
   archive_bytes?: number;
   archive_checksum?: string;
@@ -126,7 +126,7 @@ export interface MemoryInput {
 export interface DiagnosticInput {
   session_id?: string;
   message: string;
-  severity?: 'info' | 'warn' | 'error';
+  severity?: "info" | "warn" | "error";
   created_at: string;
   project: string;
   origin?: string;
@@ -144,24 +144,27 @@ export interface TranscriptEventInput {
 /**
  * Helper function to normalize timestamps from various formats
  */
-export function normalizeTimestamp(timestamp: string | Date | number | undefined): { isoString: string; epoch: number } {
+export function normalizeTimestamp(timestamp: string | Date | number | undefined): {
+  isoString: string;
+  epoch: number;
+} {
   let date: Date;
-  
+
   if (!timestamp) {
     date = new Date();
   } else if (timestamp instanceof Date) {
     date = timestamp;
-  } else if (typeof timestamp === 'number') {
+  } else if (typeof timestamp === "number") {
     date = new Date(timestamp);
-  } else if (typeof timestamp === 'string') {
+  } else if (typeof timestamp === "string") {
     if (!timestamp.trim()) {
       date = new Date();
     } else {
       date = new Date(timestamp);
       if (isNaN(date.getTime())) {
-        const cleaned = timestamp.replace(/\s+/g, 'T').replace(/T+/g, 'T');
+        const cleaned = timestamp.replace(/\s+/g, "T").replace(/T+/g, "T");
         date = new Date(cleaned);
-        
+
         if (isNaN(date.getTime())) {
           date = new Date();
         }
@@ -170,10 +173,10 @@ export function normalizeTimestamp(timestamp: string | Date | number | undefined
   } else {
     date = new Date();
   }
-  
+
   return {
     isoString: date.toISOString(),
-    epoch: date.getTime()
+    epoch: date.getTime(),
   };
 }
 
@@ -190,7 +193,7 @@ export interface SDKSessionRow {
   started_at_epoch: number;
   completed_at: string | null;
   completed_at_epoch: number | null;
-  status: 'active' | 'completed' | 'failed';
+  status: "active" | "completed" | "failed";
   worker_port?: number;
   prompt_counter?: number;
 }
@@ -200,7 +203,7 @@ export interface ObservationRow {
   memory_session_id: string;
   project: string;
   text?: string | null;
-  type: 'decision' | 'bugfix' | 'feature' | 'refactor' | 'discovery' | 'change';
+  type: "decision" | "bugfix" | "feature" | "refactor" | "discovery" | "change";
   title?: string | null;
   subtitle?: string | null;
   facts?: string | null;
@@ -252,7 +255,7 @@ export interface DateRange {
 
 export interface SearchFilters {
   project?: string;
-  type?: ObservationRow['type'] | ObservationRow['type'][];
+  type?: ObservationRow["type"] | ObservationRow["type"][];
   concepts?: string | string[];
   files?: string | string[];
   dateRange?: DateRange;
@@ -261,7 +264,7 @@ export interface SearchFilters {
 export interface SearchOptions extends SearchFilters {
   limit?: number;
   offset?: number;
-  orderBy?: 'relevance' | 'date_desc' | 'date_asc';
+  orderBy?: "relevance" | "date_desc" | "date_asc";
   /** When true, treats filePath as a folder and only matches direct children (not descendants) */
   isFolder?: boolean;
 }

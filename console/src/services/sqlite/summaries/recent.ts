@@ -1,9 +1,8 @@
 /**
  * Get recent session summaries from the database
  */
-import type { Database } from 'bun:sqlite';
-import { logger } from '../../../utils/logger.js';
-import type { RecentSummary, SummaryWithSessionInfo, FullSummary } from './types.js';
+import type { Database } from "bun:sqlite";
+import type { RecentSummary, SummaryWithSessionInfo, FullSummary } from "./types.js";
 
 /**
  * Get recent session summaries for a project
@@ -12,11 +11,7 @@ import type { RecentSummary, SummaryWithSessionInfo, FullSummary } from './types
  * @param project - Project name to filter by
  * @param limit - Maximum number of summaries to return (default 10)
  */
-export function getRecentSummaries(
-  db: Database,
-  project: string,
-  limit: number = 10
-): RecentSummary[] {
+export function getRecentSummaries(db: Database, project: string, limit: number = 10): RecentSummary[] {
   const stmt = db.prepare(`
     SELECT
       request, investigated, learned, completed, next_steps,
@@ -40,7 +35,7 @@ export function getRecentSummaries(
 export function getRecentSummariesWithSessionInfo(
   db: Database,
   project: string,
-  limit: number = 3
+  limit: number = 3,
 ): SummaryWithSessionInfo[] {
   const stmt = db.prepare(`
     SELECT
@@ -61,10 +56,7 @@ export function getRecentSummariesWithSessionInfo(
  * @param db - Database instance
  * @param limit - Maximum number of summaries to return (default 50)
  */
-export function getAllRecentSummaries(
-  db: Database,
-  limit: number = 50
-): FullSummary[] {
+export function getAllRecentSummaries(db: Database, limit: number = 50): FullSummary[] {
   const stmt = db.prepare(`
     SELECT id, request, investigated, learned, completed, next_steps,
            files_read, files_edited, notes, project, prompt_number,

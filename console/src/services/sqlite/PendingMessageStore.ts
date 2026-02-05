@@ -1,6 +1,6 @@
-import { Database } from 'bun:sqlite';
-import type { PendingMessage } from '../worker-types.js';
-import { logger } from '../../utils/logger.js';
+import { Database } from "bun:sqlite";
+import type { PendingMessage } from "../worker-types.js";
+import { logger } from "../../utils/logger.js";
 
 /**
  * Persistent pending message record from database
@@ -9,14 +9,14 @@ export interface PersistentPendingMessage {
   id: number;
   session_db_id: number;
   content_session_id: string;
-  message_type: 'observation' | 'summarize';
+  message_type: "observation" | "summarize";
   tool_name: string | null;
   tool_input: string | null;
   tool_response: string | null;
   cwd: string | null;
   last_assistant_message: string | null;
   prompt_number: number | null;
-  status: 'pending' | 'processing' | 'processed' | 'failed';
+  status: "pending" | "processing" | "processed" | "failed";
   retry_count: number;
   created_at_epoch: number;
   started_processing_at_epoch: number | null;
@@ -70,7 +70,7 @@ export class PendingMessageStore {
       message.cwd || null,
       message.last_assistant_message || null,
       message.prompt_number || null,
-      now
+      now,
     );
 
     return result.lastInsertRowid as number;
@@ -93,11 +93,11 @@ export class PendingMessageStore {
       const msg = peekStmt.get(sessionId) as PersistentPendingMessage | null;
 
       if (msg) {
-        const deleteStmt = this.db.prepare('DELETE FROM pending_messages WHERE id = ?');
+        const deleteStmt = this.db.prepare("DELETE FROM pending_messages WHERE id = ?");
         deleteStmt.run(msg.id);
 
-        logger.info('QUEUE', `CLAIMED | sessionDbId=${sessionId} | messageId=${msg.id} | type=${msg.message_type}`, {
-          sessionId: sessionId
+        logger.info("QUEUE", `CLAIMED | sessionDbId=${sessionId} | messageId=${msg.id} | type=${msg.message_type}`, {
+          sessionId: sessionId,
         });
       }
       return msg;
@@ -194,7 +194,6 @@ export class PendingMessageStore {
   markSessionMessagesFailed(sessionDbId: number): number {
     const now = Date.now();
 
-    // Note: This bypasses retry logic since generator failures are session-level,
     const stmt = this.db.prepare(`
       UPDATE pending_messages
       SET status = 'failed', failed_at_epoch = ?
@@ -209,7 +208,7 @@ export class PendingMessageStore {
    * Abort a specific message (delete from queue)
    */
   abortMessage(messageId: number): boolean {
-    const stmt = this.db.prepare('DELETE FROM pending_messages WHERE id = ?');
+    const stmt = this.db.prepare("DELETE FROM pending_messages WHERE id = ?");
     const result = stmt.run(messageId);
     return result.changes > 0;
   }
@@ -232,8 +231,11 @@ export class PendingMessageStore {
    * Get recently processed messages (for UI feedback)
    * Shows messages completed in the last N minutes so users can see their stuck items were processed
    */
-  getRecentlyProcessed(limit: number = 10, withinMinutes: number = 30): (PersistentPendingMessage & { project: string | null })[] {
-    const cutoff = Date.now() - (withinMinutes * 60 * 1000);
+  getRecentlyProcessed(
+    limit: number = 10,
+    withinMinutes: number = 30,
+  ): (PersistentPendingMessage & { project: string | null })[] {
+    const cutoff = Date.now() - withinMinutes * 60 * 1000;
     const stmt = this.db.prepare(`
       SELECT pm.*, ss.project
       FROM pending_messages pm
@@ -253,7 +255,9 @@ export class PendingMessageStore {
   markFailed(messageId: number): void {
     const now = Date.now();
 
-    const msg = this.db.prepare('SELECT retry_count FROM pending_messages WHERE id = ?').get(messageId) as { retry_count: number } | undefined;
+    const msg = this.db.prepare("SELECT retry_count FROM pending_messages WHERE id = ?").get(messageId) as
+      | { retry_count: number }
+      | undefined;
 
     if (!msg) return;
 
@@ -325,7 +329,7 @@ export class PendingMessageStore {
       WHERE status IN ('pending', 'processing')
     `);
     const results = stmt.all() as { session_db_id: number }[];
-    return results.map(r => r.session_db_id);
+    return results.map((r) => r.session_db_id);
   }
 
   /**
@@ -377,7 +381,7 @@ export class PendingMessageStore {
       tool_response: persistent.tool_response ? JSON.parse(persistent.tool_response) : undefined,
       prompt_number: persistent.prompt_number || undefined,
       cwd: persistent.cwd || undefined,
-      last_assistant_message: persistent.last_assistant_message || undefined
+      last_assistant_message: persistent.last_assistant_message || undefined,
     };
   }
 }

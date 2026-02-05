@@ -5,8 +5,8 @@
  * Supports both JSON and Prometheus formats.
  */
 
-import { DatabaseManager } from './DatabaseManager.js';
-import { SessionManager } from './SessionManager.js';
+import { DatabaseManager } from "./DatabaseManager.js";
+import { SessionManager } from "./SessionManager.js";
 
 export interface Metrics {
   uptime: number;
@@ -62,7 +62,7 @@ export class MetricsService {
   private providerRequests: number = 0;
   private providerTokens: number = 0;
   private providerErrors: number = 0;
-  private providerName: string = 'unknown';
+  private providerName: string = "unknown";
 
   private readonly METRICS_WINDOW_MS = 5 * 60 * 1000;
 
@@ -101,7 +101,7 @@ export class MetricsService {
    */
   private cleanupOldMetrics(): void {
     const cutoff = Date.now() - this.METRICS_WINDOW_MS;
-    this.requestMetrics = this.requestMetrics.filter(m => m.timestamp > cutoff);
+    this.requestMetrics = this.requestMetrics.filter((m) => m.timestamp > cutoff);
   }
 
   /**
@@ -119,30 +119,28 @@ export class MetricsService {
       }
     };
 
-    const obsCount = safeCount('observations');
-    const sessCount = safeCount('sdk_sessions');
-    const sumCount = safeCount('session_summaries');
-    const promptCount = safeCount('prompts');
+    const obsCount = safeCount("observations");
+    const sessCount = safeCount("sdk_sessions");
+    const sumCount = safeCount("session_summaries");
+    const promptCount = safeCount("prompts");
 
-    const { DATA_DIR } = await import('../../shared/paths.js');
-    const fs = await import('fs');
-    const path = await import('path');
-    const dbPath = path.join(DATA_DIR, 'pilot-memory.db');
+    const { DATA_DIR } = await import("../../shared/paths.js");
+    const fs = await import("fs");
+    const path = await import("path");
+    const dbPath = path.join(DATA_DIR, "pilot-memory.db");
     let dbSize = 0;
     try {
       const stat = fs.statSync(dbPath);
       dbSize = stat.size;
-    } catch {
-    }
+    } catch {}
 
     const memUsage = process.memoryUsage();
 
-    const recentRequests = this.requestMetrics.filter(m => m.timestamp > Date.now() - this.METRICS_WINDOW_MS);
+    const recentRequests = this.requestMetrics.filter((m) => m.timestamp > Date.now() - this.METRICS_WINDOW_MS);
     const totalRequests = recentRequests.length;
-    const errorRequests = recentRequests.filter(m => m.error).length;
-    const avgResponseTime = totalRequests > 0
-      ? recentRequests.reduce((sum, m) => sum + m.responseTimeMs, 0) / totalRequests
-      : 0;
+    const errorRequests = recentRequests.filter((m) => m.error).length;
+    const avgResponseTime =
+      totalRequests > 0 ? recentRequests.reduce((sum, m) => sum + m.responseTimeMs, 0) / totalRequests : 0;
 
     const byEndpoint: Record<string, number> = {};
     for (const m of recentRequests) {
@@ -152,10 +150,13 @@ export class MetricsService {
     const oneMinuteAgo = Date.now() - 60000;
     let recentObs = 0;
     try {
-      recentObs = (db.prepare('SELECT COUNT(*) as count FROM observations WHERE created_at_epoch > ?').get(oneMinuteAgo) as { count: number }).count;
-    } catch {
-    }
-    const recentReqs = recentRequests.filter(m => m.timestamp > oneMinuteAgo).length;
+      recentObs = (
+        db.prepare("SELECT COUNT(*) as count FROM observations WHERE created_at_epoch > ?").get(oneMinuteAgo) as {
+          count: number;
+        }
+      ).count;
+    } catch {}
+    const recentReqs = recentRequests.filter((m) => m.timestamp > oneMinuteAgo).length;
 
     const isProcessing = this.sessionManager.isAnySessionProcessing();
     const queueDepth = this.sessionManager.getTotalActiveWork();
@@ -207,40 +208,54 @@ export class MetricsService {
     const metrics = await this.getMetrics();
     const lines: string[] = [];
 
-    const addMetric = (name: string, value: number, help: string, type: string = 'gauge', labels: Record<string, string> = {}) => {
+    const addMetric = (
+      name: string,
+      value: number,
+      help: string,
+      type: string = "gauge",
+      labels: Record<string, string> = {},
+    ) => {
       lines.push(`# HELP claude_pilot_${name} ${help}`);
       lines.push(`# TYPE claude_pilot_${name} ${type}`);
-      const labelStr = Object.entries(labels).map(([k, v]) => `${k}="${v}"`).join(',');
-      const labelPart = labelStr ? `{${labelStr}}` : '';
+      const labelStr = Object.entries(labels)
+        .map(([k, v]) => `${k}="${v}"`)
+        .join(",");
+      const labelPart = labelStr ? `{${labelStr}}` : "";
       lines.push(`claude_pilot_${name}${labelPart} ${value}`);
     };
 
-    addMetric('uptime_seconds', metrics.uptime, 'Worker uptime in seconds');
-    addMetric('memory_heap_used_bytes', metrics.memoryUsage.heapUsed, 'Heap memory used');
-    addMetric('memory_heap_total_bytes', metrics.memoryUsage.heapTotal, 'Total heap memory');
-    addMetric('memory_rss_bytes', metrics.memoryUsage.rss, 'Resident set size');
+    addMetric("uptime_seconds", metrics.uptime, "Worker uptime in seconds");
+    addMetric("memory_heap_used_bytes", metrics.memoryUsage.heapUsed, "Heap memory used");
+    addMetric("memory_heap_total_bytes", metrics.memoryUsage.heapTotal, "Total heap memory");
+    addMetric("memory_rss_bytes", metrics.memoryUsage.rss, "Resident set size");
 
-    addMetric('database_observations_total', metrics.database.observations, 'Total observations');
-    addMetric('database_sessions_total', metrics.database.sessions, 'Total sessions');
-    addMetric('database_summaries_total', metrics.database.summaries, 'Total summaries');
-    addMetric('database_prompts_total', metrics.database.prompts, 'Total prompts');
-    addMetric('database_size_bytes', metrics.database.sizeBytes, 'Database file size');
+    addMetric("database_observations_total", metrics.database.observations, "Total observations");
+    addMetric("database_sessions_total", metrics.database.sessions, "Total sessions");
+    addMetric("database_summaries_total", metrics.database.summaries, "Total summaries");
+    addMetric("database_prompts_total", metrics.database.prompts, "Total prompts");
+    addMetric("database_size_bytes", metrics.database.sizeBytes, "Database file size");
 
-    addMetric('processing_active_sessions', metrics.processing.activeSessions, 'Active processing sessions');
-    addMetric('processing_queue_depth', metrics.processing.queueDepth, 'Queue depth');
-    addMetric('processing_is_active', metrics.processing.isProcessing ? 1 : 0, 'Is processing active');
+    addMetric("processing_active_sessions", metrics.processing.activeSessions, "Active processing sessions");
+    addMetric("processing_queue_depth", metrics.processing.queueDepth, "Queue depth");
+    addMetric("processing_is_active", metrics.processing.isProcessing ? 1 : 0, "Is processing active");
 
-    addMetric('requests_total', metrics.requests.total, 'Total requests in window', 'counter');
-    addMetric('requests_errors_total', metrics.requests.errors, 'Total request errors', 'counter');
-    addMetric('requests_response_time_avg_ms', metrics.requests.avgResponseTimeMs, 'Average response time');
+    addMetric("requests_total", metrics.requests.total, "Total requests in window", "counter");
+    addMetric("requests_errors_total", metrics.requests.errors, "Total request errors", "counter");
+    addMetric("requests_response_time_avg_ms", metrics.requests.avgResponseTimeMs, "Average response time");
 
-    addMetric('provider_requests_total', metrics.provider.requestsTotal, 'Provider requests', 'counter', { provider: metrics.provider.name });
-    addMetric('provider_tokens_total', metrics.provider.tokensTotal, 'Provider tokens used', 'counter', { provider: metrics.provider.name });
-    addMetric('provider_errors_total', metrics.provider.errorsTotal, 'Provider errors', 'counter', { provider: metrics.provider.name });
+    addMetric("provider_requests_total", metrics.provider.requestsTotal, "Provider requests", "counter", {
+      provider: metrics.provider.name,
+    });
+    addMetric("provider_tokens_total", metrics.provider.tokensTotal, "Provider tokens used", "counter", {
+      provider: metrics.provider.name,
+    });
+    addMetric("provider_errors_total", metrics.provider.errorsTotal, "Provider errors", "counter", {
+      provider: metrics.provider.name,
+    });
 
-    addMetric('observations_per_minute', metrics.rates.observationsPerMinute, 'Observations created per minute');
-    addMetric('requests_per_minute', metrics.rates.requestsPerMinute, 'Requests per minute');
+    addMetric("observations_per_minute", metrics.rates.observationsPerMinute, "Observations created per minute");
+    addMetric("requests_per_minute", metrics.rates.requestsPerMinute, "Requests per minute");
 
-    return lines.join('\n');
+    return lines.join("\n");
   }
 }

@@ -5,14 +5,14 @@
  * Allows switching between implementations via settings.
  */
 
-import { ParsedObservation, ParsedSummary } from '../../sdk/parser.js';
+import { ParsedObservation, ParsedSummary } from "../../sdk/parser.js";
 
 /**
  * Metadata structure stored with each vector document
  */
 export interface VectorMetadata {
   sqlite_id: number;
-  doc_type: 'observation' | 'session_summary' | 'user_prompt';
+  doc_type: "observation" | "session_summary" | "user_prompt";
   memory_session_id: string;
   project: string;
   created_at_epoch: number;
@@ -56,7 +56,7 @@ export interface IVectorSync {
     obs: ParsedObservation,
     promptNumber: number,
     createdAtEpoch: number,
-    discoveryTokens?: number
+    discoveryTokens?: number,
   ): Promise<void>;
 
   /**
@@ -70,7 +70,7 @@ export interface IVectorSync {
     summary: ParsedSummary,
     promptNumber: number,
     createdAtEpoch: number,
-    discoveryTokens?: number
+    discoveryTokens?: number,
   ): Promise<void>;
 
   /**
@@ -83,7 +83,7 @@ export interface IVectorSync {
     project: string,
     promptText: string,
     promptNumber: number,
-    createdAtEpoch: number
+    createdAtEpoch: number,
   ): Promise<void>;
 
   /**
@@ -100,11 +100,7 @@ export interface IVectorSync {
    * @param limit - Maximum number of results
    * @param whereFilter - Optional metadata filter (e.g., { doc_type: 'observation' })
    */
-  query(
-    queryText: string,
-    limit: number,
-    whereFilter?: Record<string, any>
-  ): Promise<VectorQueryResult>;
+  query(queryText: string, limit: number, whereFilter?: Record<string, any>): Promise<VectorQueryResult>;
 
   /**
    * Close connection and cleanup resources

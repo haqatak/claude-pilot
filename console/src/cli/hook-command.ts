@@ -1,7 +1,7 @@
-import { readJsonFromStdin } from './stdin-reader.js';
-import { getPlatformAdapter } from './adapters/index.js';
-import { getEventHandler, type EventType } from './handlers/index.js';
-import { HOOK_EXIT_CODES } from '../shared/hook-constants.js';
+import { readJsonFromStdin } from "./stdin-reader.js";
+import { getPlatformAdapter } from "./adapters/index.js";
+import { getEventHandler, type EventType } from "./handlers/index.js";
+import { HOOK_EXIT_CODES } from "../shared/hook-constants.js";
 
 export async function hookCommand(platform: string, event: string): Promise<void> {
   try {
@@ -10,7 +10,7 @@ export async function hookCommand(platform: string, event: string): Promise<void
 
     const rawInput = await readJsonFromStdin();
     const input = adapter.normalizeInput(rawInput);
-    input.platform = platform;  // Inject platform for handler-level decisions
+    input.platform = platform;
     const result = await handler.execute(input);
     const output = adapter.formatOutput(result);
 
@@ -18,8 +18,6 @@ export async function hookCommand(platform: string, event: string): Promise<void
     process.exit(result.exitCode ?? HOOK_EXIT_CODES.SUCCESS);
   } catch (error) {
     console.error(`Hook error: ${error}`);
-    // Use exit code 2 (blocking error) so users see the error message
-    // Exit code 1 only shows in verbose mode per Claude Code docs
-    process.exit(HOOK_EXIT_CODES.BLOCKING_ERROR);  // = 2
+    process.exit(HOOK_EXIT_CODES.BLOCKING_ERROR);
   }
 }

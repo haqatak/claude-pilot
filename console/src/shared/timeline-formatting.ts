@@ -5,8 +5,8 @@
  * to be reused by SearchManager and other services.
  */
 
-import path from 'path';
-import { logger } from '../utils/logger.js';
+import path from "path";
+import { logger } from "../utils/logger.js";
 
 /**
  * Parse JSON array string, returning empty array on failure
@@ -17,9 +17,14 @@ export function parseJsonArray(json: string | null | undefined): string[] {
     const parsed = JSON.parse(json);
     return Array.isArray(parsed) ? parsed : [];
   } catch (err) {
-    logger.debug('PARSER', 'Failed to parse JSON array, using empty fallback', {
-      preview: json?.substring(0, 50)
-    }, err as Error);
+    logger.debug(
+      "PARSER",
+      "Failed to parse JSON array, using empty fallback",
+      {
+        preview: json?.substring(0, 50),
+      },
+      err as Error,
+    );
     return [];
   }
 }
@@ -30,12 +35,12 @@ export function parseJsonArray(json: string | null | undefined): string[] {
  */
 export function formatDateTime(dateInput: string | number): string {
   const date = new Date(dateInput);
-  return date.toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true
+  return date.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
   });
 }
 
@@ -45,10 +50,10 @@ export function formatDateTime(dateInput: string | number): string {
  */
 export function formatTime(dateInput: string | number): string {
   const date = new Date(dateInput);
-  return date.toLocaleString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true
+  return date.toLocaleString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
   });
 }
 
@@ -58,10 +63,10 @@ export function formatTime(dateInput: string | number): string {
  */
 export function formatDate(dateInput: string | number): string {
   const date = new Date(dateInput);
-  return date.toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
+  return date.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
   });
 }
 
@@ -83,7 +88,7 @@ export function toRelativePath(filePath: string, cwd: string): string {
 export function extractFirstFile(
   filesModified: string | null | undefined,
   cwd: string,
-  filesRead?: string | null | undefined
+  filesRead?: string | null | undefined,
 ): string {
   const modified = parseJsonArray(filesModified);
   if (modified.length > 0) {
@@ -97,7 +102,7 @@ export function extractFirstFile(
     }
   }
 
-  return 'General';
+  return "General";
 }
 
 /**
@@ -118,10 +123,7 @@ export function estimateTokens(text: string | null | undefined): number {
  * @param getDate - Function to extract date string from each item
  * @returns Map of formatted date strings to item arrays, sorted chronologically
  */
-export function groupByDate<T>(
-  items: T[],
-  getDate: (item: T) => string
-): Map<string, T[]> {
+export function groupByDate<T>(items: T[], getDate: (item: T) => string): Map<string, T[]> {
   const itemsByDay = new Map<string, T[]>();
   for (const item of items) {
     const itemDate = getDate(item);

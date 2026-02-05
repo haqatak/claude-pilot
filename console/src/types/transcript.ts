@@ -6,8 +6,8 @@
 export interface TodoItem {
   id: string;
   content: string;
-  status: 'pending' | 'in_progress' | 'completed';
-  priority: 'high' | 'medium' | 'low';
+  status: "pending" | "in_progress" | "completed";
+  priority: "high" | "medium" | "low";
 }
 
 export interface UsageInfo {
@@ -20,57 +20,52 @@ export interface UsageInfo {
 }
 
 export interface TextContent {
-  type: 'text';
+  type: "text";
   text: string;
 }
 
 export interface ToolUseContent {
-  type: 'tool_use';
+  type: "tool_use";
   id: string;
   name: string;
   input: Record<string, any>;
 }
 
 export interface ToolResultContent {
-  type: 'tool_result';
+  type: "tool_result";
   tool_use_id: string;
   content: string | Array<Record<string, any>>;
   is_error?: boolean;
 }
 
 export interface ThinkingContent {
-  type: 'thinking';
+  type: "thinking";
   thinking: string;
   signature?: string;
 }
 
 export interface ImageSource {
-  type: 'base64';
+  type: "base64";
   media_type: string;
   data: string;
 }
 
 export interface ImageContent {
-  type: 'image';
+  type: "image";
   source: ImageSource;
 }
 
-export type ContentItem =
-  | TextContent
-  | ToolUseContent
-  | ToolResultContent
-  | ThinkingContent
-  | ImageContent;
+export type ContentItem = TextContent | ToolUseContent | ToolResultContent | ThinkingContent | ImageContent;
 
 export interface UserMessage {
-  role: 'user';
+  role: "user";
   content: string | ContentItem[];
 }
 
 export interface AssistantMessage {
   id: string;
-  type: 'message';
-  role: 'assistant';
+  type: "message";
+  role: "assistant";
   model: string;
   content: ContentItem[];
   stop_reason?: string;
@@ -87,7 +82,7 @@ export interface FileInfo {
 }
 
 export interface FileReadResult {
-  type: 'text';
+  type: "text";
   file: FileInfo;
 }
 
@@ -134,36 +129,36 @@ export interface BaseTranscriptEntry {
 }
 
 export interface UserTranscriptEntry extends BaseTranscriptEntry {
-  type: 'user';
+  type: "user";
   message: UserMessage;
   toolUseResult?: ToolUseResult;
 }
 
 export interface AssistantTranscriptEntry extends BaseTranscriptEntry {
-  type: 'assistant';
+  type: "assistant";
   message: AssistantMessage;
   requestId?: string;
 }
 
 export interface SummaryTranscriptEntry {
-  type: 'summary';
+  type: "summary";
   summary: string;
   leafUuid: string;
   cwd?: string;
 }
 
 export interface SystemTranscriptEntry extends BaseTranscriptEntry {
-  type: 'system';
+  type: "system";
   content: string;
-  level?: string; // 'warning', 'info', 'error'
+  level?: string;
 }
 
 export interface QueueOperationTranscriptEntry {
-  type: 'queue-operation';
-  operation: 'enqueue' | 'dequeue';
+  type: "queue-operation";
+  operation: "enqueue" | "dequeue";
   timestamp: string;
   sessionId: string;
-  content?: ContentItem[]; // Only present for enqueue operations
+  content?: ContentItem[];
 }
 
 export type TranscriptEntry =

@@ -4,29 +4,23 @@
  * Returns the appropriate handler for a given event type.
  */
 
-import type { EventHandler } from '../types.js';
-import { contextHandler } from './context.js';
-import { sessionInitHandler } from './session-init.js';
-import { observationHandler } from './observation.js';
-import { summarizeHandler } from './summarize.js';
-import { userMessageHandler } from './user-message.js';
-import { fileEditHandler } from './file-edit.js';
+import type { EventHandler } from "../types.js";
+import { contextHandler } from "./context.js";
+import { sessionInitHandler } from "./session-init.js";
+import { observationHandler } from "./observation.js";
+import { summarizeHandler } from "./summarize.js";
+import { userMessageHandler } from "./user-message.js";
+import { fileEditHandler } from "./file-edit.js";
 
-export type EventType =
-  | 'context'        // SessionStart - inject context
-  | 'session-init'   // UserPromptSubmit - initialize session
-  | 'observation'    // PostToolUse - save observation
-  | 'summarize'      // Stop - generate summary
-  | 'user-message'   // SessionStart (parallel) - display to user
-  | 'file-edit';     // Cursor afterFileEdit
+export type EventType = "context" | "session-init" | "observation" | "summarize" | "user-message" | "file-edit";
 
 const handlers: Record<EventType, EventHandler> = {
-  'context': contextHandler,
-  'session-init': sessionInitHandler,
-  'observation': observationHandler,
-  'summarize': summarizeHandler,
-  'user-message': userMessageHandler,
-  'file-edit': fileEditHandler
+  context: contextHandler,
+  "session-init": sessionInitHandler,
+  observation: observationHandler,
+  summarize: summarizeHandler,
+  "user-message": userMessageHandler,
+  "file-edit": fileEditHandler,
 };
 
 /**
@@ -44,10 +38,9 @@ export function getEventHandler(eventType: EventType): EventHandler {
   return handler;
 }
 
-// Re-export individual handlers for direct access if needed
-export { contextHandler } from './context.js';
-export { sessionInitHandler } from './session-init.js';
-export { observationHandler } from './observation.js';
-export { summarizeHandler } from './summarize.js';
-export { userMessageHandler } from './user-message.js';
-export { fileEditHandler } from './file-edit.js';
+export { contextHandler } from "./context.js";
+export { sessionInitHandler } from "./session-init.js";
+export { observationHandler } from "./observation.js";
+export { summarizeHandler } from "./summarize.js";
+export { userMessageHandler } from "./user-message.js";
+export { fileEditHandler } from "./file-edit.js";

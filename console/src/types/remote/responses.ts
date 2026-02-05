@@ -8,7 +8,7 @@
  * Health check response from remote worker
  */
 export interface RemoteHealthResponse {
-  status: 'ok' | 'degraded' | 'error';
+  status: "ok" | "degraded" | "error";
   version: string;
   services: {
     database: boolean;
@@ -22,12 +22,12 @@ export interface RemoteHealthResponse {
  * Remote worker error codes
  */
 export type RemoteErrorCode =
-  | 'UNAUTHORIZED'
-  | 'FORBIDDEN'
-  | 'RATE_LIMITED'
-  | 'SERVICE_UNAVAILABLE'
-  | 'INTERNAL_ERROR'
-  | 'INVALID_REQUEST';
+  | "UNAUTHORIZED"
+  | "FORBIDDEN"
+  | "RATE_LIMITED"
+  | "SERVICE_UNAVAILABLE"
+  | "INTERNAL_ERROR"
+  | "INVALID_REQUEST";
 
 /**
  * Error response from remote worker

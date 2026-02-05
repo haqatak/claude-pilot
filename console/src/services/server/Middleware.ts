@@ -6,9 +6,4 @@
  * while providing a cleaner import path for server setup.
  */
 
-// Re-export all middleware from the existing location
-export {
-  createMiddleware,
-  requireLocalhost,
-  summarizeRequestBody
-} from '../worker/http/middleware.js';
+export { createMiddleware, requireLocalhost, summarizeRequestBody } from "../worker/http/middleware.js";

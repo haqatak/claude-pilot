@@ -1,7 +1,6 @@
 /**
  * Type definitions for summary-related database operations
  */
-import { logger } from '../../../utils/logger.js';
 
 /**
  * Summary input for storage (from SDK parsing)
@@ -92,7 +91,7 @@ export interface FullSummary {
  * Options for getByIds query
  */
 export interface GetByIdsOptions {
-  orderBy?: 'date_desc' | 'date_asc';
+  orderBy?: "date_desc" | "date_asc";
   limit?: number;
   project?: string;
 }

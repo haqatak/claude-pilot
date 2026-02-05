@@ -3,36 +3,33 @@
  *
  * Provides utilities for filtering observations by type.
  */
-import { logger } from '../../../../utils/logger.js';
 
-type ObservationType = 'decision' | 'bugfix' | 'feature' | 'refactor' | 'discovery' | 'change';
+type ObservationType = "decision" | "bugfix" | "feature" | "refactor" | "discovery" | "change";
 
 /**
  * Valid observation types
  */
 export const OBSERVATION_TYPES: ObservationType[] = [
-  'decision',
-  'bugfix',
-  'feature',
-  'refactor',
-  'discovery',
-  'change'
+  "decision",
+  "bugfix",
+  "feature",
+  "refactor",
+  "discovery",
+  "change",
 ];
 
 /**
  * Normalize type filter value(s)
  */
-export function normalizeType(
-  type?: string | string[]
-): ObservationType[] | undefined {
+export function normalizeType(type?: string | string[]): ObservationType[] | undefined {
   if (!type) {
     return undefined;
   }
 
   const types = Array.isArray(type) ? type : [type];
   const normalized = types
-    .map(t => t.trim().toLowerCase())
-    .filter(t => OBSERVATION_TYPES.includes(t as ObservationType)) as ObservationType[];
+    .map((t) => t.trim().toLowerCase())
+    .filter((t) => OBSERVATION_TYPES.includes(t as ObservationType)) as ObservationType[];
 
   return normalized.length > 0 ? normalized : undefined;
 }
@@ -40,10 +37,7 @@ export function normalizeType(
 /**
  * Check if a result matches the type filter
  */
-export function matchesType(
-  resultType: string,
-  filterTypes?: ObservationType[]
-): boolean {
+export function matchesType(resultType: string, filterTypes?: ObservationType[]): boolean {
   if (!filterTypes || filterTypes.length === 0) {
     return true;
   }
@@ -56,13 +50,13 @@ export function matchesType(
  */
 export function filterObservationsByType<T extends { type: string }>(
   observations: T[],
-  types?: ObservationType[]
+  types?: ObservationType[],
 ): T[] {
   if (!types || types.length === 0) {
     return observations;
   }
 
-  return observations.filter(obs => matchesType(obs.type, types));
+  return observations.filter((obs) => matchesType(obs.type, types));
 }
 
 /**
@@ -70,7 +64,7 @@ export function filterObservationsByType<T extends { type: string }>(
  */
 export function parseTypeString(typeString: string): ObservationType[] {
   return typeString
-    .split(',')
-    .map(t => t.trim().toLowerCase())
-    .filter(t => OBSERVATION_TYPES.includes(t as ObservationType)) as ObservationType[];
+    .split(",")
+    .map((t) => t.trim().toLowerCase())
+    .filter((t) => OBSERVATION_TYPES.includes(t as ObservationType)) as ObservationType[];
 }

@@ -212,82 +212,6 @@ def install_claude_code(project_dir: Path, ui: Any = None) -> tuple[bool, str]:
     return True, version
 
 
-def _migrate_legacy_plugins(ui: Any = None) -> None:
-    """Remove legacy plugins and marketplaces installed by previous Pilot versions.
-
-    MCP servers are now defined in plugin/.mcp.json, so we clean up:
-    - Context7 from official marketplace
-    - pilot-memory from thedotmack marketplace
-    - pilot-memory from customable (maxritter) marketplace
-    - LSP plugins (basedpyright, typescript-lsp, gopls) from claude-code-lsps
-    - thedotmack marketplace
-    - customable marketplace
-
-    Uses 'claude plugin uninstall' CLI for proper cleanup.
-    """
-    import shutil
-    import subprocess
-
-    removed_plugins: list[str] = []
-    removed_marketplaces: list[str] = []
-
-    plugins_to_remove = [
-        "context7",
-        "pilot-memory",
-        "basedpyright",
-        "typescript-lsp",
-        "vtsls",
-        "gopls",
-        "pyright-lsp",
-        "gopls-lsp",
-    ]
-
-    for plugin_name in plugins_to_remove:
-        try:
-            result = subprocess.run(
-                ["claude", "plugin", "uninstall", plugin_name],
-                capture_output=True,
-                text=True,
-                timeout=30,
-            )
-            if result.returncode == 0:
-                removed_plugins.append(plugin_name)
-        except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
-            pass
-
-    cache_dir = Path.home() / ".claude" / "plugins" / "cache"
-    marketplaces_to_clean = ["thedotmack", "customable", "claude-code-lsps"]
-    for marketplace in marketplaces_to_clean:
-        marketplace_cache = cache_dir / marketplace
-        if marketplace_cache.exists():
-            shutil.rmtree(marketplace_cache, ignore_errors=True)
-
-    marketplaces_path = Path.home() / ".claude" / "plugins" / "known_marketplaces.json"
-    if marketplaces_path.exists():
-        try:
-            data = json.loads(marketplaces_path.read_text())
-            modified = False
-            for marketplace in ["thedotmack", "customable", "claude-code-lsps"]:
-                if marketplace in data:
-                    del data[marketplace]
-                    removed_marketplaces.append(marketplace)
-                    modified = True
-            if modified:
-                marketplaces_path.write_text(json.dumps(data, indent=2))
-        except (json.JSONDecodeError, OSError):
-            pass
-
-    marketplaces_dir = Path.home() / ".claude" / "plugins" / "marketplaces"
-    for marketplace in ["thedotmack", "customable", "claude-code-lsps"]:
-        marketplace_dir = marketplaces_dir / marketplace
-        if marketplace_dir.exists():
-            shutil.rmtree(marketplace_dir, ignore_errors=True)
-
-    if ui and (removed_plugins or removed_marketplaces):
-        total = len(removed_plugins) + len(removed_marketplaces)
-        ui.success(f"Cleaned up {total} legacy plugins")
-
-
 def _configure_vexor_defaults() -> bool:
     """Configure Vexor with recommended defaults for semantic search (OpenAI)."""
 
@@ -563,11 +487,7 @@ def _install_plugin_dependencies(_project_dir: Path, ui: Any = None) -> bool:
 
 
 def _setup_pilot_memory(ui: Any) -> bool:
-    """Migrate legacy plugins."""
-    _migrate_legacy_plugins(ui)
-    if ui:
-        ui.success("pilot-memory legacy plugins cleaned")
-
+    """Setup pilot-memory (no-op, kept for compatibility)."""
     return True
 
 

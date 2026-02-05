@@ -1,5 +1,4 @@
-import { readFileSync, existsSync } from 'fs';
-import { logger } from '../utils/logger.js';
+import { readFileSync, existsSync } from "fs";
 
 /**
  * Extract last message of specified role from transcript JSONL file
@@ -9,19 +8,19 @@ import { logger } from '../utils/logger.js';
  */
 export function extractLastMessage(
   transcriptPath: string,
-  role: 'user' | 'assistant',
-  stripSystemReminders: boolean = false
+  role: "user" | "assistant",
+  stripSystemReminders: boolean = false,
 ): string {
   if (!transcriptPath || !existsSync(transcriptPath)) {
     throw new Error(`Transcript path missing or file does not exist: ${transcriptPath}`);
   }
 
-  const content = readFileSync(transcriptPath, 'utf-8').trim();
+  const content = readFileSync(transcriptPath, "utf-8").trim();
   if (!content) {
     throw new Error(`Transcript file exists but is empty: ${transcriptPath}`);
   }
 
-  const lines = content.split('\n');
+  const lines = content.split("\n");
   let foundMatchingRole = false;
 
   for (let i = lines.length - 1; i >= 0; i--) {
@@ -30,36 +29,33 @@ export function extractLastMessage(
       foundMatchingRole = true;
 
       if (line.message?.content) {
-        let text = '';
+        let text = "";
         const msgContent = line.message.content;
 
-        if (typeof msgContent === 'string') {
+        if (typeof msgContent === "string") {
           text = msgContent;
         } else if (Array.isArray(msgContent)) {
           text = msgContent
-            .filter((c: any) => c.type === 'text')
+            .filter((c: any) => c.type === "text")
             .map((c: any) => c.text)
-            .join('\n');
+            .join("\n");
         } else {
-          // Unknown content format - throw error
           throw new Error(`Unknown message content format in transcript. Type: ${typeof msgContent}`);
         }
 
         if (stripSystemReminders) {
-          text = text.replace(/<system-reminder>[\s\S]*?<\/system-reminder>/g, '');
-          text = text.replace(/\n{3,}/g, '\n\n').trim();
+          text = text.replace(/<system-reminder>[\s\S]*?<\/system-reminder>/g, "");
+          text = text.replace(/\n{3,}/g, "\n\n").trim();
         }
 
-        // Return text even if empty - caller decides if that's an error
         return text;
       }
     }
   }
 
-  // If we searched the whole transcript and didn't find any message of this role
   if (!foundMatchingRole) {
     throw new Error(`No message found for role '${role}' in transcript: ${transcriptPath}`);
   }
 
-  return '';
+  return "";
 }

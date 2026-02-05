@@ -7,7 +7,7 @@
 /**
  * Worker operation mode
  */
-export type WorkerMode = 'local' | 'remote';
+export type WorkerMode = "local" | "remote";
 
 /**
  * Remote worker configuration from settings

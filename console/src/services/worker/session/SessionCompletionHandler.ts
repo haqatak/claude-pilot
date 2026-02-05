@@ -9,14 +9,13 @@
  * 2. Broadcast session completed event (updates UI spinner)
  */
 
-import { SessionManager } from '../SessionManager.js';
-import { SessionEventBroadcaster } from '../events/SessionEventBroadcaster.js';
-import { logger } from '../../../utils/logger.js';
+import { SessionManager } from "../SessionManager.js";
+import { SessionEventBroadcaster } from "../events/SessionEventBroadcaster.js";
 
 export class SessionCompletionHandler {
   constructor(
     private sessionManager: SessionManager,
-    private eventBroadcaster: SessionEventBroadcaster
+    private eventBroadcaster: SessionEventBroadcaster,
   ) {}
 
   /**
@@ -24,10 +23,8 @@ export class SessionCompletionHandler {
    * Used by DELETE /api/sessions/:id and POST /api/sessions/:id/complete
    */
   async completeByDbId(sessionDbId: number): Promise<void> {
-    // Delete from session manager (aborts SDK agent)
     await this.sessionManager.deleteSession(sessionDbId);
 
-    // Broadcast session completed event
     this.eventBroadcaster.broadcastSessionCompleted(sessionDbId);
   }
 }

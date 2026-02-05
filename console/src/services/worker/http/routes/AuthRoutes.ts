@@ -5,39 +5,34 @@
  * Provides login/logout functionality with cookie-based sessions.
  */
 
-import express, { Request, Response } from 'express';
-import { logger } from '../../../../utils/logger.js';
-import { BaseRouteHandler } from '../BaseRouteHandler.js';
+import express, { Request, Response } from "express";
+import { logger } from "../../../../utils/logger.js";
+import { BaseRouteHandler } from "../BaseRouteHandler.js";
 import {
   createSession,
   invalidateSession,
   getSessionCookieName,
   getConfiguredToken,
   isRemoteAuthConfigured,
-} from '../../../server/middleware/auth.js';
+} from "../../../server/middleware/auth.js";
 
 export class AuthRoutes extends BaseRouteHandler {
   setupRoutes(app: express.Application): void {
-    // Login page (served for unauthenticated browser requests)
-    app.get('/login', this.handleLoginPage.bind(this));
+    app.get("/login", this.handleLoginPage.bind(this));
 
-    // Login endpoint
-    app.post('/api/auth/login', this.handleLogin.bind(this));
+    app.post("/api/auth/login", this.handleLogin.bind(this));
 
-    // Logout endpoint
-    app.post('/api/auth/logout', this.handleLogout.bind(this));
+    app.post("/api/auth/logout", this.handleLogout.bind(this));
 
-    // Check auth status
-    app.get('/api/auth/status', this.handleAuthStatus.bind(this));
+    app.get("/api/auth/status", this.handleAuthStatus.bind(this));
   }
 
   /**
    * Serve the login page HTML
    */
   private handleLoginPage = this.wrapHandler((req: Request, res: Response): void => {
-    // If no remote auth is configured, redirect to viewer
     if (!isRemoteAuthConfigured()) {
-      res.redirect('/');
+      res.redirect("/");
       return;
     }
 
@@ -237,7 +232,7 @@ export class AuthRoutes extends BaseRouteHandler {
 </html>
     `.trim();
 
-    res.setHeader('Content-Type', 'text/html');
+    res.setHeader("Content-Type", "text/html");
     res.send(html);
   });
 
@@ -249,8 +244,8 @@ export class AuthRoutes extends BaseRouteHandler {
 
     if (!token) {
       res.status(400).json({
-        code: 'MISSING_TOKEN',
-        message: 'Token is required',
+        code: "MISSING_TOKEN",
+        message: "Token is required",
       });
       return;
     }
@@ -259,41 +254,39 @@ export class AuthRoutes extends BaseRouteHandler {
 
     if (!configuredToken) {
       res.status(500).json({
-        code: 'NOT_CONFIGURED',
-        message: 'Remote authentication is not configured',
+        code: "NOT_CONFIGURED",
+        message: "Remote authentication is not configured",
       });
       return;
     }
 
     if (token !== configuredToken) {
-      logger.warn('SECURITY', 'Failed login attempt', {
+      logger.warn("SECURITY", "Failed login attempt", {
         ip: req.ip || req.socket.remoteAddress,
       });
       res.status(401).json({
-        code: 'INVALID_TOKEN',
-        message: 'Invalid token',
+        code: "INVALID_TOKEN",
+        message: "Invalid token",
       });
       return;
     }
 
-    // Create session
-    const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
+    const clientIp = req.ip || req.socket.remoteAddress || "unknown";
     const sessionId = createSession(clientIp);
 
-    // Set session cookie
     res.cookie(getSessionCookieName(), sessionId, {
       httpOnly: true,
-      secure: req.protocol === 'https',
-      sameSite: 'lax',
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      path: '/',
+      secure: req.protocol === "https",
+      sameSite: "lax",
+      maxAge: 24 * 60 * 60 * 1000,
+      path: "/",
     });
 
-    logger.info('SECURITY', 'User logged in', { ip: clientIp });
+    logger.info("SECURITY", "User logged in", { ip: clientIp });
 
     res.json({
-      code: 'SUCCESS',
-      message: 'Login successful',
+      code: "SUCCESS",
+      message: "Login successful",
     });
   });
 
@@ -308,21 +301,20 @@ export class AuthRoutes extends BaseRouteHandler {
       invalidateSession(sessionId);
     }
 
-    // Clear cookie
     res.clearCookie(cookieName, {
       httpOnly: true,
-      secure: req.protocol === 'https',
-      sameSite: 'lax',
-      path: '/',
+      secure: req.protocol === "https",
+      sameSite: "lax",
+      path: "/",
     });
 
-    logger.info('SECURITY', 'User logged out', {
+    logger.info("SECURITY", "User logged out", {
       ip: req.ip || req.socket.remoteAddress,
     });
 
     res.json({
-      code: 'SUCCESS',
-      message: 'Logout successful',
+      code: "SUCCESS",
+      message: "Logout successful",
     });
   });
 

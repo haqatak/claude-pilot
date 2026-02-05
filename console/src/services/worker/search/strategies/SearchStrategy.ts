@@ -7,8 +7,7 @@
  * - HybridSearchStrategy: Metadata filtering + semantic ranking
  */
 
-import type { SearchResults, StrategySearchOptions, StrategySearchResult } from '../types.js';
-import { logger } from '../../../../utils/logger.js';
+import type { SearchResults, StrategySearchOptions, StrategySearchResult } from "../types.js";
 
 /**
  * Base interface for all search strategies
@@ -46,16 +45,16 @@ export abstract class BaseSearchStrategy implements SearchStrategy {
   /**
    * Create an empty search result
    */
-  protected emptyResult(strategy: 'chroma' | 'sqlite' | 'hybrid' | 'vector'): StrategySearchResult {
+  protected emptyResult(strategy: "chroma" | "sqlite" | "hybrid" | "vector"): StrategySearchResult {
     return {
       results: {
         observations: [],
         sessions: [],
-        prompts: []
+        prompts: [],
       },
-      usedChroma: strategy === 'chroma' || strategy === 'hybrid' || strategy === 'vector',
+      usedChroma: strategy === "chroma" || strategy === "hybrid" || strategy === "vector",
       fellBack: false,
-      strategy
+      strategy,
     };
   }
 }

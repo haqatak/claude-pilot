@@ -1,11 +1,10 @@
-import type { PlatformAdapter, NormalizedHookInput, HookResult } from '../types.js';
+import type { PlatformAdapter } from "../types.js";
 
-// Raw adapter passes through with minimal transformation - useful for testing
 export const rawAdapter: PlatformAdapter = {
   normalizeInput(raw) {
     const r = raw as any;
     return {
-      sessionId: r.sessionId ?? r.session_id ?? 'unknown',
+      sessionId: r.sessionId ?? r.session_id ?? "unknown",
       cwd: r.cwd ?? process.cwd(),
       prompt: r.prompt,
       toolName: r.toolName ?? r.tool_name,
@@ -18,5 +17,5 @@ export const rawAdapter: PlatformAdapter = {
   },
   formatOutput(result) {
     return result;
-  }
+  },
 };

@@ -9,24 +9,24 @@
  * - Centralized error handling
  */
 
-import { Request, Response } from 'express';
-import { logger } from '../../../utils/logger.js';
+import { Request, Response } from "express";
+import { logger } from "../../../utils/logger.js";
 
 export abstract class BaseRouteHandler {
   /**
    * Wrap handler with automatic try-catch and error logging
    */
   protected wrapHandler(
-    handler: (req: Request, res: Response) => void | Promise<void>
+    handler: (req: Request, res: Response) => void | Promise<void>,
   ): (req: Request, res: Response) => void {
     return (req: Request, res: Response): void => {
       try {
         const result = handler(req, res);
         if (result instanceof Promise) {
-          result.catch(error => this.handleError(res, error as Error));
+          result.catch((error) => this.handleError(res, error as Error));
         }
       } catch (error) {
-        logger.error('HTTP', 'Route handler error', { path: req.path }, error as Error);
+        logger.error("HTTP", "Route handler error", { path: req.path }, error as Error);
         this.handleError(res, error as Error);
       }
     };
@@ -78,7 +78,7 @@ export abstract class BaseRouteHandler {
    * Checks headersSent to avoid "Cannot set headers after they are sent" errors
    */
   protected handleError(res: Response, error: Error, context?: string): void {
-    logger.failure('WORKER', context || 'Request failed', {}, error);
+    logger.failure("WORKER", context || "Request failed", {}, error);
     if (!res.headersSent) {
       res.status(500).json({ error: error.message });
     }

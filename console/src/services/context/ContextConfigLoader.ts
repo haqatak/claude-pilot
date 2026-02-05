@@ -4,40 +4,41 @@
  * Handles loading settings from file with mode-based filtering for observation types.
  */
 
-import path from 'path';
-import { homedir } from 'os';
-import { SettingsDefaultsManager } from '../../shared/SettingsDefaultsManager.js';
-import { ModeManager } from '../domain/ModeManager.js';
-import type { ContextConfig } from './types.js';
+import path from "path";
+import { homedir } from "os";
+import { SettingsDefaultsManager } from "../../shared/SettingsDefaultsManager.js";
+import { ModeManager } from "../domain/ModeManager.js";
+import type { ContextConfig } from "./types.js";
 
 /**
  * Load all context configuration settings
  * Priority: ~/.pilot/memory/settings.json > env var > defaults
  */
 export function loadContextConfig(): ContextConfig {
-  const settingsPath = path.join(homedir(), '.pilot/memory', 'settings.json');
+  const settingsPath = path.join(homedir(), ".pilot/memory", "settings.json");
   const settings = SettingsDefaultsManager.loadFromFile(settingsPath);
 
-  // For non-code modes, use all types/concepts from active mode instead of settings
   const modeId = settings.CLAUDE_PILOT_MODE;
-  const isCodeMode = modeId === 'code' || modeId.startsWith('code--');
+  const isCodeMode = modeId === "code" || modeId.startsWith("code--");
 
   let observationTypes: Set<string>;
   let observationConcepts: Set<string>;
 
   if (isCodeMode) {
-    // Code mode: use settings-based filtering
     observationTypes = new Set(
-      settings.CLAUDE_PILOT_CONTEXT_OBSERVATION_TYPES.split(',').map((t: string) => t.trim()).filter(Boolean)
+      settings.CLAUDE_PILOT_CONTEXT_OBSERVATION_TYPES.split(",")
+        .map((t: string) => t.trim())
+        .filter(Boolean),
     );
     observationConcepts = new Set(
-      settings.CLAUDE_PILOT_CONTEXT_OBSERVATION_CONCEPTS.split(',').map((c: string) => c.trim()).filter(Boolean)
+      settings.CLAUDE_PILOT_CONTEXT_OBSERVATION_CONCEPTS.split(",")
+        .map((c: string) => c.trim())
+        .filter(Boolean),
     );
   } else {
-    // Non-code modes: use all types/concepts from active mode
     const mode = ModeManager.getInstance().getActiveMode();
-    observationTypes = new Set(mode.observation_types.map(t => t.id));
-    observationConcepts = new Set(mode.observation_concepts.map(c => c.id));
+    observationTypes = new Set(mode.observation_types.map((t) => t.id));
+    observationConcepts = new Set(mode.observation_concepts.map((c) => c.id));
   }
 
   return {
@@ -50,7 +51,7 @@ export function loadContextConfig(): ContextConfig {
     showSavingsPercent: settings.CLAUDE_PILOT_CONTEXT_SHOW_SAVINGS_PERCENT,
     observationTypes,
     observationConcepts,
-    fullObservationField: settings.CLAUDE_PILOT_CONTEXT_FULL_FIELD as 'narrative' | 'facts',
+    fullObservationField: settings.CLAUDE_PILOT_CONTEXT_FULL_FIELD as "narrative" | "facts",
     showLastSummary: settings.CLAUDE_PILOT_CONTEXT_SHOW_LAST_SUMMARY,
     showLastMessage: settings.CLAUDE_PILOT_CONTEXT_SHOW_LAST_MESSAGE,
   };

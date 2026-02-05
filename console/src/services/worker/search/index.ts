@@ -4,25 +4,20 @@
  * This is the public API for the search module.
  */
 
-// Main orchestrator
-export { SearchOrchestrator } from './SearchOrchestrator.js';
+export { SearchOrchestrator } from "./SearchOrchestrator.js";
 
-// Formatters
-export { ResultFormatter } from './ResultFormatter.js';
-export { TimelineBuilder } from './TimelineBuilder.js';
-export type { TimelineItem, TimelineData } from './TimelineBuilder.js';
+export { ResultFormatter } from "./ResultFormatter.js";
+export { TimelineBuilder } from "./TimelineBuilder.js";
+export type { TimelineItem, TimelineData } from "./TimelineBuilder.js";
 
-// Strategies
-export type { SearchStrategy } from './strategies/SearchStrategy.js';
-export { BaseSearchStrategy } from './strategies/SearchStrategy.js';
-export { VectorSearchStrategy, ChromaSearchStrategy } from './strategies/VectorSearchStrategy.js';
-export { SQLiteSearchStrategy } from './strategies/SQLiteSearchStrategy.js';
-export { HybridSearchStrategy } from './strategies/HybridSearchStrategy.js';
+export type { SearchStrategy } from "./strategies/SearchStrategy.js";
+export { BaseSearchStrategy } from "./strategies/SearchStrategy.js";
+export { VectorSearchStrategy, ChromaSearchStrategy } from "./strategies/VectorSearchStrategy.js";
+export { SQLiteSearchStrategy } from "./strategies/SQLiteSearchStrategy.js";
+export { HybridSearchStrategy } from "./strategies/HybridSearchStrategy.js";
 
-// Filters
-export * from './filters/DateFilter.js';
-export * from './filters/ProjectFilter.js';
-export * from './filters/TypeFilter.js';
+export * from "./filters/DateFilter.js";
+export * from "./filters/ProjectFilter.js";
+export * from "./filters/TypeFilter.js";
 
-// Types
-export * from './types.js';
+export * from "./types.js";

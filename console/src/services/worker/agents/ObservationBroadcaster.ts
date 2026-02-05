@@ -11,8 +11,7 @@
  * - SDKAgent used hardcoded `files_modified: JSON.stringify([])` - should use `obs.files_modified`
  */
 
-import type { WorkerRef, ObservationSSEPayload, SummarySSEPayload } from './types.js';
-import { logger } from '../../../utils/logger.js';
+import type { WorkerRef, ObservationSSEPayload, SummarySSEPayload } from "./types.js";
 
 /**
  * Broadcast a new observation to SSE clients
@@ -20,17 +19,14 @@ import { logger } from '../../../utils/logger.js';
  * @param worker - Worker reference with SSE broadcaster (can be undefined)
  * @param payload - Observation data to broadcast
  */
-export function broadcastObservation(
-  worker: WorkerRef | undefined,
-  payload: ObservationSSEPayload
-): void {
+export function broadcastObservation(worker: WorkerRef | undefined, payload: ObservationSSEPayload): void {
   if (!worker?.sseBroadcaster) {
     return;
   }
 
   worker.sseBroadcaster.broadcast({
-    type: 'new_observation',
-    observation: payload
+    type: "new_observation",
+    observation: payload,
   });
 }
 
@@ -40,16 +36,13 @@ export function broadcastObservation(
  * @param worker - Worker reference with SSE broadcaster (can be undefined)
  * @param payload - Summary data to broadcast
  */
-export function broadcastSummary(
-  worker: WorkerRef | undefined,
-  payload: SummarySSEPayload
-): void {
+export function broadcastSummary(worker: WorkerRef | undefined, payload: SummarySSEPayload): void {
   if (!worker?.sseBroadcaster) {
     return;
   }
 
   worker.sseBroadcaster.broadcast({
-    type: 'new_summary',
-    summary: payload
+    type: "new_summary",
+    summary: payload,
   });
 }

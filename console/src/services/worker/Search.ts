@@ -3,6 +3,5 @@
  *
  * Provides a clean import path for the search module.
  */
-import { logger } from '../../utils/logger.js';
 
-export * from './search/index.js';
+export * from "./search/index.js";

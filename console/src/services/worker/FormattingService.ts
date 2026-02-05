@@ -3,11 +3,9 @@
  * Uses table format matching context-generator style for visual consistency
  */
 
-import type { ObservationSearchResult, SessionSummarySearchResult, UserPromptSearchResult } from '../sqlite/types.js';
-import { ModeManager } from '../domain/ModeManager.js';
-import { logger } from '../../utils/logger.js';
+import type { ObservationSearchResult, SessionSummarySearchResult, UserPromptSearchResult } from "../sqlite/types.js";
+import { ModeManager } from "../domain/ModeManager.js";
 
-// Token estimation constant (matches context-generator)
 const CHARS_PER_TOKEN_ESTIMATE = 4;
 
 export class FormattingService {
@@ -31,10 +29,10 @@ Tips:
    * Format time from epoch (matches context-generator formatTime)
    */
   private formatTime(epoch: number): string {
-    return new Date(epoch).toLocaleString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
+    return new Date(epoch).toLocaleString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
     });
   }
 
@@ -42,10 +40,8 @@ Tips:
    * Estimate read tokens for an observation
    */
   private estimateReadTokens(obs: ObservationSearchResult): number {
-    const size = (obs.title?.length || 0) +
-                 (obs.subtitle?.length || 0) +
-                 (obs.narrative?.length || 0) +
-                 (obs.facts?.length || 0);
+    const size =
+      (obs.title?.length || 0) + (obs.subtitle?.length || 0) + (obs.narrative?.length || 0) + (obs.facts?.length || 0);
     return Math.ceil(size / CHARS_PER_TOKEN_ESTIMATE);
   }
 
@@ -57,11 +53,11 @@ Tips:
     const id = `#${obs.id}`;
     const time = this.formatTime(obs.created_at_epoch);
     const icon = ModeManager.getInstance().getTypeIcon(obs.type);
-    const title = obs.title || 'Untitled';
+    const title = obs.title || "Untitled";
     const readTokens = this.estimateReadTokens(obs);
     const workEmoji = ModeManager.getInstance().getWorkEmoji(obs.type);
     const workTokens = obs.discovery_tokens || 0;
-    const workDisplay = workTokens > 0 ? `${workEmoji} ${workTokens}` : '-';
+    const workDisplay = workTokens > 0 ? `${workEmoji} ${workTokens}` : "-";
 
     return `| ${id} | ${time} | ${icon} | ${title} | ~${readTokens} | ${workDisplay} |`;
   }
@@ -73,8 +69,8 @@ Tips:
   formatSessionIndex(session: SessionSummarySearchResult, _index: number): string {
     const id = `#S${session.id}`;
     const time = this.formatTime(session.created_at_epoch);
-    const icon = '🎯';
-    const title = session.request || `Session ${session.memory_session_id?.substring(0, 8) || 'unknown'}`;
+    const icon = "🎯";
+    const title = session.request || `Session ${session.memory_session_id?.substring(0, 8) || "unknown"}`;
 
     return `| ${id} | ${time} | ${icon} | ${title} | - | - |`;
   }
@@ -86,11 +82,8 @@ Tips:
   formatUserPromptIndex(prompt: UserPromptSearchResult, _index: number): string {
     const id = `#P${prompt.id}`;
     const time = this.formatTime(prompt.created_at_epoch);
-    const icon = '💬';
-    // Truncate long prompts for table display
-    const title = prompt.prompt_text.length > 60
-      ? prompt.prompt_text.substring(0, 57) + '...'
-      : prompt.prompt_text;
+    const icon = "💬";
+    const title = prompt.prompt_text.length > 60 ? prompt.prompt_text.substring(0, 57) + "..." : prompt.prompt_text;
 
     return `| ${id} | ${time} | ${icon} | ${title} | - | - |`;
   }
@@ -118,15 +111,14 @@ Tips:
     const id = `#${obs.id}`;
     const time = this.formatTime(obs.created_at_epoch);
     const icon = ModeManager.getInstance().getTypeIcon(obs.type);
-    const title = obs.title || 'Untitled';
+    const title = obs.title || "Untitled";
     const readTokens = this.estimateReadTokens(obs);
 
-    // Use ditto mark if same time as previous row
-    const timeDisplay = time === lastTime ? '″' : time;
+    const timeDisplay = time === lastTime ? "″" : time;
 
     return {
       row: `| ${id} | ${timeDisplay} | ${icon} | ${title} | ~${readTokens} |`,
-      time
+      time,
     };
   }
 
@@ -136,15 +128,14 @@ Tips:
   formatSessionSearchRow(session: SessionSummarySearchResult, lastTime: string): { row: string; time: string } {
     const id = `#S${session.id}`;
     const time = this.formatTime(session.created_at_epoch);
-    const icon = '🎯';
-    const title = session.request || `Session ${session.memory_session_id?.substring(0, 8) || 'unknown'}`;
+    const icon = "🎯";
+    const title = session.request || `Session ${session.memory_session_id?.substring(0, 8) || "unknown"}`;
 
-    // Use ditto mark if same time as previous row
-    const timeDisplay = time === lastTime ? '″' : time;
+    const timeDisplay = time === lastTime ? "″" : time;
 
     return {
       row: `| ${id} | ${timeDisplay} | ${icon} | ${title} | - |`,
-      time
+      time,
     };
   }
 
@@ -154,18 +145,14 @@ Tips:
   formatUserPromptSearchRow(prompt: UserPromptSearchResult, lastTime: string): { row: string; time: string } {
     const id = `#P${prompt.id}`;
     const time = this.formatTime(prompt.created_at_epoch);
-    const icon = '💬';
-    // Truncate long prompts for table display
-    const title = prompt.prompt_text.length > 60
-      ? prompt.prompt_text.substring(0, 57) + '...'
-      : prompt.prompt_text;
+    const icon = "💬";
+    const title = prompt.prompt_text.length > 60 ? prompt.prompt_text.substring(0, 57) + "..." : prompt.prompt_text;
 
-    // Use ditto mark if same time as previous row
-    const timeDisplay = time === lastTime ? '″' : time;
+    const timeDisplay = time === lastTime ? "″" : time;
 
     return {
       row: `| ${id} | ${timeDisplay} | ${icon} | ${title} | - |`,
-      time
+      time,
     };
   }
 }

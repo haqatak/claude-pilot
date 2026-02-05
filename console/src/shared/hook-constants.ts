@@ -1,11 +1,11 @@
 export const HOOK_TIMEOUTS = {
-  DEFAULT: 300000,            // Standard HTTP timeout (5 min for slow systems)
-  HEALTH_CHECK: 30000,        // Worker health check (30s for slow systems)
+  DEFAULT: 300000,
+  HEALTH_CHECK: 30000,
   WORKER_STARTUP_WAIT: 1000,
   WORKER_STARTUP_RETRIES: 300,
-  PRE_RESTART_SETTLE_DELAY: 2000,  // Give files time to sync before restart
-  POWERSHELL_COMMAND: 10000,     // PowerShell process enumeration (10s - typically completes in <1s)
-  WINDOWS_MULTIPLIER: 1.5     // Platform-specific adjustment
+  PRE_RESTART_SETTLE_DELAY: 2000,
+  POWERSHELL_COMMAND: 10000,
+  WINDOWS_MULTIPLIER: 1.5,
 } as const;
 
 /**
@@ -26,7 +26,5 @@ export const HOOK_EXIT_CODES = {
 } as const;
 
 export function getTimeout(baseTimeout: number): number {
-  return process.platform === 'win32'
-    ? Math.round(baseTimeout * HOOK_TIMEOUTS.WINDOWS_MULTIPLIER)
-    : baseTimeout;
+  return process.platform === "win32" ? Math.round(baseTimeout * HOOK_TIMEOUTS.WINDOWS_MULTIPLIER) : baseTimeout;
 }

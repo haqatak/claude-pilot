@@ -3,8 +3,7 @@
  * Database-first parameter pattern for functional composition
  */
 
-import type { Database } from 'bun:sqlite';
-import { logger } from '../../../utils/logger.js';
+import type { Database } from "bun:sqlite";
 
 /**
  * Create a new SDK session (idempotent - returns existing session ID if already exists)
@@ -21,29 +20,23 @@ import { logger } from '../../../utils/logger.js';
  * - SAVE hook observations go to correct session (same session_id)
  * - SDKAgent continuation prompt has correct context (same session_id)
  */
-export function createSDKSession(
-  db: Database,
-  contentSessionId: string,
-  project: string,
-  userPrompt: string
-): number {
+export function createSDKSession(db: Database, contentSessionId: string, project: string, userPrompt: string): number {
   const now = new Date();
   const nowEpoch = now.getTime();
 
-  // Generate a unique memory_session_id at creation time
-  // CRITICAL: memory_session_id must NEVER equal contentSessionId - that would inject memory
-  // messages into the user's transcript!
   const memorySessionId = crypto.randomUUID();
 
-  db.prepare(`
+  db.prepare(
+    `
     INSERT OR IGNORE INTO sdk_sessions
     (content_session_id, memory_session_id, project, user_prompt, started_at, started_at_epoch, status)
     VALUES (?, ?, ?, ?, ?, ?, 'active')
-  `).run(contentSessionId, memorySessionId, project, userPrompt, now.toISOString(), nowEpoch);
+  `,
+  ).run(contentSessionId, memorySessionId, project, userPrompt, now.toISOString(), nowEpoch);
 
-  // Return existing or new ID
-  const row = db.prepare('SELECT id FROM sdk_sessions WHERE content_session_id = ?')
-    .get(contentSessionId) as { id: number };
+  const row = db.prepare("SELECT id FROM sdk_sessions WHERE content_session_id = ?").get(contentSessionId) as {
+    id: number;
+  };
   return row.id;
 }
 
@@ -51,14 +44,12 @@ export function createSDKSession(
  * Update the memory session ID for a session
  * Called by SDKAgent when it captures the session ID from the first SDK message
  */
-export function updateMemorySessionId(
-  db: Database,
-  sessionDbId: number,
-  memorySessionId: string
-): void {
-  db.prepare(`
+export function updateMemorySessionId(db: Database, sessionDbId: number, memorySessionId: string): void {
+  db.prepare(
+    `
     UPDATE sdk_sessions
     SET memory_session_id = ?
     WHERE id = ?
-  `).run(memorySessionId, sessionDbId);
+  `,
+  ).run(memorySessionId, sessionDbId);
 }

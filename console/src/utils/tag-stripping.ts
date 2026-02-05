@@ -11,7 +11,7 @@
  * This keeps the worker service simple and follows one-way data stream.
  */
 
-import { logger } from './logger.js';
+import { logger } from "./logger.js";
 
 /**
  * Maximum number of tags allowed in a single content block
@@ -35,20 +35,18 @@ function countTags(content: string): number {
  * Shared logic extracted from both JSON and prompt stripping functions
  */
 function stripTagsInternal(content: string): string {
-  // ReDoS protection: limit tag count before regex processing
   const tagCount = countTags(content);
   if (tagCount > MAX_TAG_COUNT) {
-    logger.warn('SYSTEM', 'tag count exceeds limit', undefined, {
+    logger.warn("SYSTEM", "tag count exceeds limit", undefined, {
       tagCount,
       maxAllowed: MAX_TAG_COUNT,
-      contentLength: content.length
+      contentLength: content.length,
     });
-    // Still process but log the anomaly
   }
 
   return content
-    .replace(/<pilot-memory-context>[\s\S]*?<\/pilot-memory-context>/g, '')
-    .replace(/<private>[\s\S]*?<\/private>/g, '')
+    .replace(/<pilot-memory-context>[\s\S]*?<\/pilot-memory-context>/g, "")
+    .replace(/<private>[\s\S]*?<\/private>/g, "")
     .trim();
 }
 

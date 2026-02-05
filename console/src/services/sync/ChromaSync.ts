@@ -8,20 +8,19 @@
  * Design: Fail-fast with no fallbacks - if Chroma is unavailable, syncing fails.
  */
 
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { ParsedObservation, ParsedSummary } from '../../sdk/parser.js';
-import { SessionStore } from '../sqlite/SessionStore.js';
-import { logger } from '../../utils/logger.js';
-import { SettingsDefaultsManager } from '../../shared/SettingsDefaultsManager.js';
-import { USER_SETTINGS_PATH } from '../../shared/paths.js';
-import { IVectorSync, VectorQueryResult } from './IVectorSync.js';
-import path from 'path';
-import os from 'os';
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { ParsedObservation, ParsedSummary } from "../../sdk/parser.js";
+import { SessionStore } from "../sqlite/SessionStore.js";
+import { logger } from "../../utils/logger.js";
+import { SettingsDefaultsManager } from "../../shared/SettingsDefaultsManager.js";
+import { USER_SETTINGS_PATH } from "../../shared/paths.js";
+import { IVectorSync, VectorQueryResult } from "./IVectorSync.js";
+import path from "path";
+import os from "os";
 
-// Version injected at build time by esbuild define
 declare const __DEFAULT_PACKAGE_VERSION__: string;
-const packageVersion = typeof __DEFAULT_PACKAGE_VERSION__ !== 'undefined' ? __DEFAULT_PACKAGE_VERSION__ : '0.0.0-dev';
+const packageVersion = typeof __DEFAULT_PACKAGE_VERSION__ !== "undefined" ? __DEFAULT_PACKAGE_VERSION__ : "0.0.0-dev";
 
 interface ChromaDocument {
   id: string;
@@ -48,13 +47,13 @@ interface StoredObservation {
   type: string;
   title: string | null;
   subtitle: string | null;
-  facts: string | null; // JSON
+  facts: string | null;
   narrative: string | null;
-  concepts: string | null; // JSON
-  files_read: string | null; // JSON
-  files_modified: string | null; // JSON
+  concepts: string | null;
+  files_read: string | null;
+  files_modified: string | null;
   prompt_number: number;
-  discovery_tokens: number; // ROI metrics
+  discovery_tokens: number;
   created_at: string;
   created_at_epoch: number;
 }
@@ -70,7 +69,7 @@ interface StoredSummary {
   next_steps: string | null;
   notes: string | null;
   prompt_number: number;
-  discovery_tokens: number; // ROI metrics
+  discovery_tokens: number;
   created_at: string;
   created_at_epoch: number;
 }
@@ -98,7 +97,7 @@ export class ChromaSync implements IVectorSync {
   constructor(project: string) {
     this.project = project;
     this.collectionName = `cm__${project}`;
-    this.VECTOR_DB_DIR = path.join(os.homedir(), '.pilot/memory', 'vector-db');
+    this.VECTOR_DB_DIR = path.join(os.homedir(), ".pilot/memory", "vector-db");
   }
 
   /**
@@ -108,81 +107,60 @@ export class ChromaSync implements IVectorSync {
   private async getWorkingTransportOptions(): Promise<any> {
     const settings = SettingsDefaultsManager.loadFromFile(USER_SETTINGS_PATH);
     const pythonVersion = settings.CLAUDE_PILOT_PYTHON_VERSION;
-    const isWindows = process.platform === 'win32';
+    const isWindows = process.platform === "win32";
 
-    // Try uvx first (preferred, works in most environments)
     const uvxOptions: any = {
-      command: 'uvx',
-      args: [
-        '--python', pythonVersion,
-        'chroma-mcp',
-        '--client-type', 'persistent',
-        '--data-dir', this.VECTOR_DB_DIR
-      ],
-      stderr: 'ignore'
+      command: "uvx",
+      args: ["--python", pythonVersion, "chroma-mcp", "--client-type", "persistent", "--data-dir", this.VECTOR_DB_DIR],
+      stderr: "ignore",
     };
 
     if (isWindows) {
       uvxOptions.windowsHide = true;
     }
 
-    // Check if uvx is available
     try {
-      const { spawnSync } = await import('child_process');
-      const result = spawnSync('uvx', ['--version'], {
-        encoding: 'utf-8',
-        stdio: ['pipe', 'pipe', 'pipe'],
-        timeout: 5000
+      const { spawnSync } = await import("child_process");
+      const result = spawnSync("uvx", ["--version"], {
+        encoding: "utf-8",
+        stdio: ["pipe", "pipe", "pipe"],
+        timeout: 5000,
       });
 
       if (result.status === 0) {
-        logger.debug('CHROMA_SYNC', 'Using uvx for Chroma MCP', { project: this.project });
+        logger.debug("CHROMA_SYNC", "Using uvx for Chroma MCP", { project: this.project });
         return uvxOptions;
       }
-    } catch {
-      // uvx not available, try fallback
-    }
+    } catch {}
 
-    // Fallback: Try pip-installed chroma-mcp via python -m
-    // This works in Claude Code sandbox where uvx may not be available
-    logger.info('CHROMA_SYNC', 'uvx not available, trying pip fallback', { project: this.project });
+    logger.info("CHROMA_SYNC", "uvx not available, trying pip fallback", { project: this.project });
 
-    const pythonCmd = isWindows ? 'python' : `python${pythonVersion}`;
+    const pythonCmd = isWindows ? "python" : `python${pythonVersion}`;
     const pipOptions: any = {
       command: pythonCmd,
-      args: [
-        '-m', 'chroma_mcp',
-        '--client-type', 'persistent',
-        '--data-dir', this.VECTOR_DB_DIR
-      ],
-      stderr: 'ignore'
+      args: ["-m", "chroma_mcp", "--client-type", "persistent", "--data-dir", this.VECTOR_DB_DIR],
+      stderr: "ignore",
     };
 
     if (isWindows) {
       pipOptions.windowsHide = true;
     }
 
-    // Check if chroma-mcp is pip-installed
     try {
-      const { spawnSync } = await import('child_process');
-      const result = spawnSync(pythonCmd, ['-c', 'import chroma_mcp'], {
-        encoding: 'utf-8',
-        stdio: ['pipe', 'pipe', 'pipe'],
-        timeout: 5000
+      const { spawnSync } = await import("child_process");
+      const result = spawnSync(pythonCmd, ["-c", "import chroma_mcp"], {
+        encoding: "utf-8",
+        stdio: ["pipe", "pipe", "pipe"],
+        timeout: 5000,
       });
 
       if (result.status === 0) {
-        logger.debug('CHROMA_SYNC', 'Using pip-installed chroma-mcp', { project: this.project });
+        logger.debug("CHROMA_SYNC", "Using pip-installed chroma-mcp", { project: this.project });
         return pipOptions;
       }
-    } catch {
-      // pip fallback also not available
-    }
+    } catch {}
 
-    // Neither uvx nor pip works - provide helpful error message
-    throw new Error(
-      'Chroma MCP not available. Install with: uvx chroma-mcp OR pip install chroma-mcp'
-    );
+    throw new Error("Chroma MCP not available. Install with: uvx chroma-mcp OR pip install chroma-mcp");
   }
 
   /**
@@ -194,27 +172,29 @@ export class ChromaSync implements IVectorSync {
       return;
     }
 
-    logger.info('CHROMA_SYNC', 'Connecting to Chroma MCP server...', { project: this.project });
+    logger.info("CHROMA_SYNC", "Connecting to Chroma MCP server...", { project: this.project });
 
     try {
       const transportOptions = await this.getWorkingTransportOptions();
 
       this.transport = new StdioClientTransport(transportOptions);
 
-      // Empty capabilities object: this client only calls Chroma tools, doesn't expose any
-      this.client = new Client({
-        name: 'pilot-memory-chroma-sync',
-        version: packageVersion
-      }, {
-        capabilities: {}
-      });
+      this.client = new Client(
+        {
+          name: "pilot-memory-chroma-sync",
+          version: packageVersion,
+        },
+        {
+          capabilities: {},
+        },
+      );
 
       await this.client.connect(this.transport);
       this.connected = true;
 
-      logger.info('CHROMA_SYNC', 'Connected to Chroma MCP server', { project: this.project });
+      logger.info("CHROMA_SYNC", "Connected to Chroma MCP server", { project: this.project });
     } catch (error) {
-      logger.error('CHROMA_SYNC', 'Failed to connect to Chroma MCP server', { project: this.project }, error as Error);
+      logger.error("CHROMA_SYNC", "Failed to connect to Chroma MCP server", { project: this.project }, error as Error);
       throw new Error(`Chroma connection failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
@@ -228,55 +208,67 @@ export class ChromaSync implements IVectorSync {
 
     if (!this.client) {
       throw new Error(
-        'Chroma client not initialized. Call ensureConnection() before using client methods.' +
-        ` Project: ${this.project}`
+        "Chroma client not initialized. Call ensureConnection() before using client methods." +
+          ` Project: ${this.project}`,
       );
     }
 
     try {
-      // Try to get collection info (will fail if doesn't exist)
       await this.client.callTool({
-        name: 'chroma_get_collection_info',
+        name: "chroma_get_collection_info",
         arguments: {
-          collection_name: this.collectionName
-        }
+          collection_name: this.collectionName,
+        },
       });
 
-      logger.debug('CHROMA_SYNC', 'Collection exists', { collection: this.collectionName });
+      logger.debug("CHROMA_SYNC", "Collection exists", { collection: this.collectionName });
     } catch (error) {
-      // Check if this is a connection error - don't try to create collection
       const errorMessage = error instanceof Error ? error.message : String(error);
       const isConnectionError =
-        errorMessage.includes('Not connected') ||
-        errorMessage.includes('Connection closed') ||
-        errorMessage.includes('MCP error -32000');
+        errorMessage.includes("Not connected") ||
+        errorMessage.includes("Connection closed") ||
+        errorMessage.includes("MCP error -32000");
 
       if (isConnectionError) {
-        // Reset connection state so next call attempts reconnect
         this.connected = false;
         this.client = null;
-        logger.error('CHROMA_SYNC', 'Connection lost during collection check',
-          { collection: this.collectionName }, error as Error);
+        logger.error(
+          "CHROMA_SYNC",
+          "Connection lost during collection check",
+          { collection: this.collectionName },
+          error as Error,
+        );
         throw new Error(`Chroma connection lost: ${errorMessage}`);
       }
 
-      // Only attempt creation if it's genuinely a "collection not found" error
-      logger.error('CHROMA_SYNC', 'Collection check failed, attempting to create', { collection: this.collectionName }, error as Error);
-      logger.info('CHROMA_SYNC', 'Creating collection', { collection: this.collectionName });
+      logger.error(
+        "CHROMA_SYNC",
+        "Collection check failed, attempting to create",
+        { collection: this.collectionName },
+        error as Error,
+      );
+      logger.info("CHROMA_SYNC", "Creating collection", { collection: this.collectionName });
 
       try {
         await this.client.callTool({
-          name: 'chroma_create_collection',
+          name: "chroma_create_collection",
           arguments: {
             collection_name: this.collectionName,
-            embedding_function_name: 'default'
-          }
+            embedding_function_name: "default",
+          },
         });
 
-        logger.info('CHROMA_SYNC', 'Collection created', { collection: this.collectionName });
+        logger.info("CHROMA_SYNC", "Collection created", { collection: this.collectionName });
       } catch (createError) {
-        logger.error('CHROMA_SYNC', 'Failed to create collection', { collection: this.collectionName }, createError as Error);
-        throw new Error(`Collection creation failed: ${createError instanceof Error ? createError.message : String(createError)}`);
+        logger.error(
+          "CHROMA_SYNC",
+          "Failed to create collection",
+          { collection: this.collectionName },
+          createError as Error,
+        );
+        throw new Error(
+          `Collection creation failed: ${createError instanceof Error ? createError.message : String(createError)}`,
+        );
       }
     }
   }
@@ -288,7 +280,6 @@ export class ChromaSync implements IVectorSync {
   private formatObservationDocs(obs: StoredObservation): ChromaDocument[] {
     const documents: ChromaDocument[] = [];
 
-    // Parse JSON fields
     const facts = obs.facts ? JSON.parse(obs.facts) : [];
     const concepts = obs.concepts ? JSON.parse(obs.concepts) : [];
     const files_read = obs.files_read ? JSON.parse(obs.files_read) : [];
@@ -296,52 +287,48 @@ export class ChromaSync implements IVectorSync {
 
     const baseMetadata: Record<string, string | number> = {
       sqlite_id: obs.id,
-      doc_type: 'observation',
+      doc_type: "observation",
       memory_session_id: obs.memory_session_id,
       project: obs.project,
       created_at_epoch: obs.created_at_epoch,
-      type: obs.type || 'discovery',
-      title: obs.title || 'Untitled'
+      type: obs.type || "discovery",
+      title: obs.title || "Untitled",
     };
 
-    // Add optional metadata fields
     if (obs.subtitle) {
       baseMetadata.subtitle = obs.subtitle;
     }
     if (concepts.length > 0) {
-      baseMetadata.concepts = concepts.join(',');
+      baseMetadata.concepts = concepts.join(",");
     }
     if (files_read.length > 0) {
-      baseMetadata.files_read = files_read.join(',');
+      baseMetadata.files_read = files_read.join(",");
     }
     if (files_modified.length > 0) {
-      baseMetadata.files_modified = files_modified.join(',');
+      baseMetadata.files_modified = files_modified.join(",");
     }
 
-    // Narrative as separate document
     if (obs.narrative) {
       documents.push({
         id: `obs_${obs.id}_narrative`,
         document: obs.narrative,
-        metadata: { ...baseMetadata, field_type: 'narrative' }
+        metadata: { ...baseMetadata, field_type: "narrative" },
       });
     }
 
-    // Text as separate document (legacy field)
     if (obs.text) {
       documents.push({
         id: `obs_${obs.id}_text`,
         document: obs.text,
-        metadata: { ...baseMetadata, field_type: 'text' }
+        metadata: { ...baseMetadata, field_type: "text" },
       });
     }
 
-    // Each fact as separate document
     facts.forEach((fact: string, index: number) => {
       documents.push({
         id: `obs_${obs.id}_fact_${index}`,
         document: fact,
-        metadata: { ...baseMetadata, field_type: 'fact', fact_index: index }
+        metadata: { ...baseMetadata, field_type: "fact", fact_index: index },
       });
     });
 
@@ -357,19 +344,18 @@ export class ChromaSync implements IVectorSync {
 
     const baseMetadata: Record<string, string | number> = {
       sqlite_id: summary.id,
-      doc_type: 'session_summary',
+      doc_type: "session_summary",
       memory_session_id: summary.memory_session_id,
       project: summary.project,
       created_at_epoch: summary.created_at_epoch,
-      prompt_number: summary.prompt_number || 0
+      prompt_number: summary.prompt_number || 0,
     };
 
-    // Each field becomes a separate document
     if (summary.request) {
       documents.push({
         id: `summary_${summary.id}_request`,
         document: summary.request,
-        metadata: { ...baseMetadata, field_type: 'request' }
+        metadata: { ...baseMetadata, field_type: "request" },
       });
     }
 
@@ -377,7 +363,7 @@ export class ChromaSync implements IVectorSync {
       documents.push({
         id: `summary_${summary.id}_investigated`,
         document: summary.investigated,
-        metadata: { ...baseMetadata, field_type: 'investigated' }
+        metadata: { ...baseMetadata, field_type: "investigated" },
       });
     }
 
@@ -385,7 +371,7 @@ export class ChromaSync implements IVectorSync {
       documents.push({
         id: `summary_${summary.id}_learned`,
         document: summary.learned,
-        metadata: { ...baseMetadata, field_type: 'learned' }
+        metadata: { ...baseMetadata, field_type: "learned" },
       });
     }
 
@@ -393,7 +379,7 @@ export class ChromaSync implements IVectorSync {
       documents.push({
         id: `summary_${summary.id}_completed`,
         document: summary.completed,
-        metadata: { ...baseMetadata, field_type: 'completed' }
+        metadata: { ...baseMetadata, field_type: "completed" },
       });
     }
 
@@ -401,7 +387,7 @@ export class ChromaSync implements IVectorSync {
       documents.push({
         id: `summary_${summary.id}_next_steps`,
         document: summary.next_steps,
-        metadata: { ...baseMetadata, field_type: 'next_steps' }
+        metadata: { ...baseMetadata, field_type: "next_steps" },
       });
     }
 
@@ -409,7 +395,7 @@ export class ChromaSync implements IVectorSync {
       documents.push({
         id: `summary_${summary.id}_notes`,
         document: summary.notes,
-        metadata: { ...baseMetadata, field_type: 'notes' }
+        metadata: { ...baseMetadata, field_type: "notes" },
       });
     }
 
@@ -429,31 +415,36 @@ export class ChromaSync implements IVectorSync {
 
     if (!this.client) {
       throw new Error(
-        'Chroma client not initialized. Call ensureConnection() before using client methods.' +
-        ` Project: ${this.project}`
+        "Chroma client not initialized. Call ensureConnection() before using client methods." +
+          ` Project: ${this.project}`,
       );
     }
 
     try {
       await this.client.callTool({
-        name: 'chroma_add_documents',
+        name: "chroma_add_documents",
         arguments: {
           collection_name: this.collectionName,
-          documents: documents.map(d => d.document),
-          ids: documents.map(d => d.id),
-          metadatas: documents.map(d => d.metadata)
-        }
+          documents: documents.map((d) => d.document),
+          ids: documents.map((d) => d.id),
+          metadatas: documents.map((d) => d.metadata),
+        },
       });
 
-      logger.debug('CHROMA_SYNC', 'Documents added', {
+      logger.debug("CHROMA_SYNC", "Documents added", {
         collection: this.collectionName,
-        count: documents.length
+        count: documents.length,
       });
     } catch (error) {
-      logger.error('CHROMA_SYNC', 'Failed to add documents', {
-        collection: this.collectionName,
-        count: documents.length
-      }, error as Error);
+      logger.error(
+        "CHROMA_SYNC",
+        "Failed to add documents",
+        {
+          collection: this.collectionName,
+          count: documents.length,
+        },
+        error as Error,
+      );
       throw new Error(`Document add failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
@@ -469,14 +460,13 @@ export class ChromaSync implements IVectorSync {
     obs: ParsedObservation,
     promptNumber: number,
     createdAtEpoch: number,
-    discoveryTokens: number = 0
+    discoveryTokens: number = 0,
   ): Promise<void> {
-    // Convert ParsedObservation to StoredObservation format
     const stored: StoredObservation = {
       id: observationId,
       memory_session_id: memorySessionId,
       project: project,
-      text: null, // Legacy field, not used
+      text: null,
       type: obs.type,
       title: obs.title,
       subtitle: obs.subtitle,
@@ -488,15 +478,15 @@ export class ChromaSync implements IVectorSync {
       prompt_number: promptNumber,
       discovery_tokens: discoveryTokens,
       created_at: new Date(createdAtEpoch * 1000).toISOString(),
-      created_at_epoch: createdAtEpoch
+      created_at_epoch: createdAtEpoch,
     };
 
     const documents = this.formatObservationDocs(stored);
 
-    logger.info('CHROMA_SYNC', 'Syncing observation', {
+    logger.info("CHROMA_SYNC", "Syncing observation", {
       observationId,
       documentCount: documents.length,
-      project
+      project,
     });
 
     await this.addDocuments(documents);
@@ -513,9 +503,8 @@ export class ChromaSync implements IVectorSync {
     summary: ParsedSummary,
     promptNumber: number,
     createdAtEpoch: number,
-    discoveryTokens: number = 0
+    discoveryTokens: number = 0,
   ): Promise<void> {
-    // Convert ParsedSummary to StoredSummary format
     const stored: StoredSummary = {
       id: summaryId,
       memory_session_id: memorySessionId,
@@ -529,15 +518,15 @@ export class ChromaSync implements IVectorSync {
       prompt_number: promptNumber,
       discovery_tokens: discoveryTokens,
       created_at: new Date(createdAtEpoch * 1000).toISOString(),
-      created_at_epoch: createdAtEpoch
+      created_at_epoch: createdAtEpoch,
     };
 
     const documents = this.formatSummaryDocs(stored);
 
-    logger.info('CHROMA_SYNC', 'Syncing summary', {
+    logger.info("CHROMA_SYNC", "Syncing summary", {
       summaryId,
       documentCount: documents.length,
-      project
+      project,
     });
 
     await this.addDocuments(documents);
@@ -553,12 +542,12 @@ export class ChromaSync implements IVectorSync {
       document: prompt.prompt_text,
       metadata: {
         sqlite_id: prompt.id,
-        doc_type: 'user_prompt',
+        doc_type: "user_prompt",
         memory_session_id: prompt.memory_session_id,
         project: prompt.project,
         created_at_epoch: prompt.created_at_epoch,
-        prompt_number: prompt.prompt_number
-      }
+        prompt_number: prompt.prompt_number,
+      },
     };
   }
 
@@ -572,25 +561,24 @@ export class ChromaSync implements IVectorSync {
     project: string,
     promptText: string,
     promptNumber: number,
-    createdAtEpoch: number
+    createdAtEpoch: number,
   ): Promise<void> {
-    // Create StoredUserPrompt format
     const stored: StoredUserPrompt = {
       id: promptId,
-      content_session_id: '', // Not needed for Chroma sync
+      content_session_id: "",
       prompt_number: promptNumber,
       prompt_text: promptText,
       created_at: new Date(createdAtEpoch * 1000).toISOString(),
       created_at_epoch: createdAtEpoch,
       memory_session_id: memorySessionId,
-      project: project
+      project: project,
     };
 
     const document = this.formatUserPromptDoc(stored);
 
-    logger.info('CHROMA_SYNC', 'Syncing user prompt', {
+    logger.info("CHROMA_SYNC", "Syncing user prompt", {
       promptId,
-      project
+      project,
     });
 
     await this.addDocuments([document]);
@@ -609,8 +597,8 @@ export class ChromaSync implements IVectorSync {
 
     if (!this.client) {
       throw new Error(
-        'Chroma client not initialized. Call ensureConnection() before using client methods.' +
-        ` Project: ${this.project}`
+        "Chroma client not initialized. Call ensureConnection() before using client methods." +
+          ` Project: ${this.project}`,
       );
     }
 
@@ -619,43 +607,42 @@ export class ChromaSync implements IVectorSync {
     const promptIds = new Set<number>();
 
     let offset = 0;
-    const limit = 1000; // Large batches, metadata only = fast
+    const limit = 1000;
 
-    logger.info('CHROMA_SYNC', 'Fetching existing Chroma document IDs...', { project: this.project });
+    logger.info("CHROMA_SYNC", "Fetching existing Chroma document IDs...", { project: this.project });
 
     while (true) {
       try {
-        const result = await this.client.callTool({
-          name: 'chroma_get_documents',
+        const result = (await this.client.callTool({
+          name: "chroma_get_documents",
           arguments: {
             collection_name: this.collectionName,
             limit,
             offset,
-            where: { project: this.project }, // Filter by project
-            include: ['metadatas']
-          }
-        }) as McpToolResult;
+            where: { project: this.project },
+            include: ["metadatas"],
+          },
+        })) as McpToolResult;
 
         const data = result.content[0];
-        if (!data || data.type !== 'text' || !data.text) {
-          throw new Error('Unexpected response type from chroma_get_documents');
+        if (!data || data.type !== "text" || !data.text) {
+          throw new Error("Unexpected response type from chroma_get_documents");
         }
 
         const parsed = JSON.parse(data.text);
         const metadatas = parsed.metadatas || [];
 
         if (metadatas.length === 0) {
-          break; // No more documents
+          break;
         }
 
-        // Extract SQLite IDs from metadata
         for (const meta of metadatas) {
           if (meta.sqlite_id) {
-            if (meta.doc_type === 'observation') {
+            if (meta.doc_type === "observation") {
               observationIds.add(meta.sqlite_id);
-            } else if (meta.doc_type === 'session_summary') {
+            } else if (meta.doc_type === "session_summary") {
               summaryIds.add(meta.sqlite_id);
-            } else if (meta.doc_type === 'user_prompt') {
+            } else if (meta.doc_type === "user_prompt") {
               promptIds.add(meta.sqlite_id);
             }
           }
@@ -663,22 +650,22 @@ export class ChromaSync implements IVectorSync {
 
         offset += limit;
 
-        logger.debug('CHROMA_SYNC', 'Fetched batch of existing IDs', {
+        logger.debug("CHROMA_SYNC", "Fetched batch of existing IDs", {
           project: this.project,
           offset,
-          batchSize: metadatas.length
+          batchSize: metadatas.length,
         });
       } catch (error) {
-        logger.error('CHROMA_SYNC', 'Failed to fetch existing IDs', { project: this.project }, error as Error);
+        logger.error("CHROMA_SYNC", "Failed to fetch existing IDs", { project: this.project }, error as Error);
         throw error;
       }
     }
 
-    logger.info('CHROMA_SYNC', 'Existing IDs fetched', {
+    logger.info("CHROMA_SYNC", "Existing IDs fetched", {
       project: this.project,
       observations: observationIds.size,
       summaries: summaryIds.size,
-      prompts: promptIds.size
+      prompts: promptIds.size,
     });
 
     return { observations: observationIds, summaries: summaryIds, prompts: promptIds };
@@ -690,106 +677,109 @@ export class ChromaSync implements IVectorSync {
    * Throws error if backfill fails
    */
   async ensureBackfilled(): Promise<void> {
-    logger.info('CHROMA_SYNC', 'Starting smart backfill', { project: this.project });
+    logger.info("CHROMA_SYNC", "Starting smart backfill", { project: this.project });
 
     await this.ensureCollection();
 
-    // Fetch existing IDs from Chroma (fast, metadata only)
     const existing = await this.getExistingChromaIds();
 
     const db = new SessionStore();
 
     try {
-      // Build exclusion list for observations
       const existingObsIds = Array.from(existing.observations);
-      const obsExclusionClause = existingObsIds.length > 0
-        ? `AND id NOT IN (${existingObsIds.join(',')})`
-        : '';
+      const obsExclusionClause = existingObsIds.length > 0 ? `AND id NOT IN (${existingObsIds.join(",")})` : "";
 
-      // Get only observations missing from Chroma
-      const observations = db.db.prepare(`
+      const observations = db.db
+        .prepare(
+          `
         SELECT * FROM observations
         WHERE project = ? ${obsExclusionClause}
         ORDER BY id ASC
-      `).all(this.project) as StoredObservation[];
+      `,
+        )
+        .all(this.project) as StoredObservation[];
 
-      const totalObsCount = db.db.prepare(`
+      const totalObsCount = db.db
+        .prepare(
+          `
         SELECT COUNT(*) as count FROM observations WHERE project = ?
-      `).get(this.project) as { count: number };
+      `,
+        )
+        .get(this.project) as { count: number };
 
-      logger.info('CHROMA_SYNC', 'Backfilling observations', {
+      logger.info("CHROMA_SYNC", "Backfilling observations", {
         project: this.project,
         missing: observations.length,
         existing: existing.observations.size,
-        total: totalObsCount.count
+        total: totalObsCount.count,
       });
 
-      // Format all observation documents
       const allDocs: ChromaDocument[] = [];
       for (const obs of observations) {
         allDocs.push(...this.formatObservationDocs(obs));
       }
 
-      // Sync in batches
       for (let i = 0; i < allDocs.length; i += this.BATCH_SIZE) {
         const batch = allDocs.slice(i, i + this.BATCH_SIZE);
         await this.addDocuments(batch);
 
-        logger.debug('CHROMA_SYNC', 'Backfill progress', {
+        logger.debug("CHROMA_SYNC", "Backfill progress", {
           project: this.project,
-          progress: `${Math.min(i + this.BATCH_SIZE, allDocs.length)}/${allDocs.length}`
+          progress: `${Math.min(i + this.BATCH_SIZE, allDocs.length)}/${allDocs.length}`,
         });
       }
 
-      // Build exclusion list for summaries
       const existingSummaryIds = Array.from(existing.summaries);
-      const summaryExclusionClause = existingSummaryIds.length > 0
-        ? `AND id NOT IN (${existingSummaryIds.join(',')})`
-        : '';
+      const summaryExclusionClause =
+        existingSummaryIds.length > 0 ? `AND id NOT IN (${existingSummaryIds.join(",")})` : "";
 
-      // Get only summaries missing from Chroma
-      const summaries = db.db.prepare(`
+      const summaries = db.db
+        .prepare(
+          `
         SELECT * FROM session_summaries
         WHERE project = ? ${summaryExclusionClause}
         ORDER BY id ASC
-      `).all(this.project) as StoredSummary[];
+      `,
+        )
+        .all(this.project) as StoredSummary[];
 
-      const totalSummaryCount = db.db.prepare(`
+      const totalSummaryCount = db.db
+        .prepare(
+          `
         SELECT COUNT(*) as count FROM session_summaries WHERE project = ?
-      `).get(this.project) as { count: number };
+      `,
+        )
+        .get(this.project) as { count: number };
 
-      logger.info('CHROMA_SYNC', 'Backfilling summaries', {
+      logger.info("CHROMA_SYNC", "Backfilling summaries", {
         project: this.project,
         missing: summaries.length,
         existing: existing.summaries.size,
-        total: totalSummaryCount.count
+        total: totalSummaryCount.count,
       });
 
-      // Format all summary documents
       const summaryDocs: ChromaDocument[] = [];
       for (const summary of summaries) {
         summaryDocs.push(...this.formatSummaryDocs(summary));
       }
 
-      // Sync in batches
       for (let i = 0; i < summaryDocs.length; i += this.BATCH_SIZE) {
         const batch = summaryDocs.slice(i, i + this.BATCH_SIZE);
         await this.addDocuments(batch);
 
-        logger.debug('CHROMA_SYNC', 'Backfill progress', {
+        logger.debug("CHROMA_SYNC", "Backfill progress", {
           project: this.project,
-          progress: `${Math.min(i + this.BATCH_SIZE, summaryDocs.length)}/${summaryDocs.length}`
+          progress: `${Math.min(i + this.BATCH_SIZE, summaryDocs.length)}/${summaryDocs.length}`,
         });
       }
 
-      // Build exclusion list for prompts
       const existingPromptIds = Array.from(existing.prompts);
-      const promptExclusionClause = existingPromptIds.length > 0
-        ? `AND up.id NOT IN (${existingPromptIds.join(',')})`
-        : '';
+      const promptExclusionClause =
+        existingPromptIds.length > 0 ? `AND up.id NOT IN (${existingPromptIds.join(",")})` : "";
 
-      // Get only user prompts missing from Chroma
-      const prompts = db.db.prepare(`
+      const prompts = db.db
+        .prepare(
+          `
         SELECT
           up.*,
           s.project,
@@ -798,55 +788,58 @@ export class ChromaSync implements IVectorSync {
         JOIN sdk_sessions s ON up.content_session_id = s.content_session_id
         WHERE s.project = ? ${promptExclusionClause}
         ORDER BY up.id ASC
-      `).all(this.project) as StoredUserPrompt[];
+      `,
+        )
+        .all(this.project) as StoredUserPrompt[];
 
-      const totalPromptCount = db.db.prepare(`
+      const totalPromptCount = db.db
+        .prepare(
+          `
         SELECT COUNT(*) as count
         FROM user_prompts up
         JOIN sdk_sessions s ON up.content_session_id = s.content_session_id
         WHERE s.project = ?
-      `).get(this.project) as { count: number };
+      `,
+        )
+        .get(this.project) as { count: number };
 
-      logger.info('CHROMA_SYNC', 'Backfilling user prompts', {
+      logger.info("CHROMA_SYNC", "Backfilling user prompts", {
         project: this.project,
         missing: prompts.length,
         existing: existing.prompts.size,
-        total: totalPromptCount.count
+        total: totalPromptCount.count,
       });
 
-      // Format all prompt documents
       const promptDocs: ChromaDocument[] = [];
       for (const prompt of prompts) {
         promptDocs.push(this.formatUserPromptDoc(prompt));
       }
 
-      // Sync in batches
       for (let i = 0; i < promptDocs.length; i += this.BATCH_SIZE) {
         const batch = promptDocs.slice(i, i + this.BATCH_SIZE);
         await this.addDocuments(batch);
 
-        logger.debug('CHROMA_SYNC', 'Backfill progress', {
+        logger.debug("CHROMA_SYNC", "Backfill progress", {
           project: this.project,
-          progress: `${Math.min(i + this.BATCH_SIZE, promptDocs.length)}/${promptDocs.length}`
+          progress: `${Math.min(i + this.BATCH_SIZE, promptDocs.length)}/${promptDocs.length}`,
         });
       }
 
-      logger.info('CHROMA_SYNC', 'Smart backfill complete', {
+      logger.info("CHROMA_SYNC", "Smart backfill complete", {
         project: this.project,
         synced: {
           observationDocs: allDocs.length,
           summaryDocs: summaryDocs.length,
-          promptDocs: promptDocs.length
+          promptDocs: promptDocs.length,
         },
         skipped: {
           observations: existing.observations.size,
           summaries: existing.summaries.size,
-          prompts: existing.prompts.size
-        }
+          prompts: existing.prompts.size,
+        },
       });
-
     } catch (error) {
-      logger.error('CHROMA_SYNC', 'Backfill failed', { project: this.project }, error as Error);
+      logger.error("CHROMA_SYNC", "Backfill failed", { project: this.project }, error as Error);
       throw new Error(`Backfill failed: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       db.close();
@@ -860,14 +853,14 @@ export class ChromaSync implements IVectorSync {
   async queryChroma(
     query: string,
     limit: number,
-    whereFilter?: Record<string, any>
+    whereFilter?: Record<string, any>,
   ): Promise<{ ids: number[]; distances: number[]; metadatas: any[] }> {
     await this.ensureConnection();
 
     if (!this.client) {
       throw new Error(
-        'Chroma client not initialized. Call ensureConnection() before using client methods.' +
-        ` Project: ${this.project}`
+        "Chroma client not initialized. Call ensureConnection() before using client methods." +
+          ` Project: ${this.project}`,
       );
     }
 
@@ -877,59 +870,53 @@ export class ChromaSync implements IVectorSync {
       collection_name: this.collectionName,
       query_texts: [query],
       n_results: limit,
-      include: ['documents', 'metadatas', 'distances'],
-      where: whereStringified
+      include: ["documents", "metadatas", "distances"],
+      where: whereStringified,
     };
 
     let result: McpToolResult;
     try {
-      result = await this.client.callTool({
-        name: 'chroma_query_documents',
-        arguments: arguments_obj
-      }) as McpToolResult;
+      result = (await this.client.callTool({
+        name: "chroma_query_documents",
+        arguments: arguments_obj,
+      })) as McpToolResult;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       const isConnectionError =
-        errorMessage.includes('Not connected') ||
-        errorMessage.includes('Connection closed') ||
-        errorMessage.includes('MCP error -32000');
+        errorMessage.includes("Not connected") ||
+        errorMessage.includes("Connection closed") ||
+        errorMessage.includes("MCP error -32000");
 
       if (isConnectionError) {
-        // Reset connection state so next call attempts reconnect
         this.connected = false;
         this.client = null;
-        logger.error('CHROMA_SYNC', 'Connection lost during query',
-          { project: this.project, query }, error as Error);
+        logger.error("CHROMA_SYNC", "Connection lost during query", { project: this.project, query }, error as Error);
         throw new Error(`Chroma query failed - connection lost: ${errorMessage}`);
       }
       throw error;
     }
 
-    const resultText = result.content[0]?.text || (() => {
-      logger.error('CHROMA', 'Missing text in MCP chroma_query_documents result', {
-        project: this.project,
-        query_text: query
-      });
-      return '';
-    })();
+    const resultText =
+      result.content[0]?.text ||
+      (() => {
+        logger.error("CHROMA", "Missing text in MCP chroma_query_documents result", {
+          project: this.project,
+          query_text: query,
+        });
+        return "";
+      })();
 
-    // Parse JSON response
     let parsed: any;
     try {
       parsed = JSON.parse(resultText);
     } catch (error) {
-      logger.error('CHROMA_SYNC', 'Failed to parse Chroma response', { project: this.project }, error as Error);
+      logger.error("CHROMA_SYNC", "Failed to parse Chroma response", { project: this.project }, error as Error);
       return { ids: [], distances: [], metadatas: [] };
     }
 
-    // Extract unique IDs from document IDs
     const ids: number[] = [];
     const docIds = parsed.ids?.[0] || [];
     for (const docId of docIds) {
-      // Extract sqlite_id from document ID (supports three formats):
-      // - obs_{id}_narrative, obs_{id}_fact_0, etc (observations)
-      // - summary_{id}_request, summary_{id}_learned, etc (session summaries)
-      // - prompt_{id} (user prompts)
       const obsMatch = docId.match(/obs_(\d+)_/);
       const summaryMatch = docId.match(/summary_(\d+)_/);
       const promptMatch = docId.match(/prompt_(\d+)/);
@@ -962,19 +949,16 @@ export class ChromaSync implements IVectorSync {
       return;
     }
 
-    // Close client first
     if (this.client) {
       await this.client.close();
     }
 
-    // Explicitly close transport to kill subprocess
     if (this.transport) {
       await this.transport.close();
     }
 
-    logger.info('CHROMA_SYNC', 'Chroma client and subprocess closed', { project: this.project });
+    logger.info("CHROMA_SYNC", "Chroma client and subprocess closed", { project: this.project });
 
-    // Always reset state
     this.connected = false;
     this.client = null;
     this.transport = null;
@@ -984,11 +968,7 @@ export class ChromaSync implements IVectorSync {
    * Query method (IVectorSync interface)
    * Alias for queryChroma for interface compatibility
    */
-  async query(
-    queryText: string,
-    limit: number,
-    whereFilter?: Record<string, any>
-  ): Promise<VectorQueryResult> {
+  async query(queryText: string, limit: number, whereFilter?: Record<string, any>): Promise<VectorQueryResult> {
     return this.queryChroma(queryText, limit, whereFilter);
   }
 
@@ -1000,12 +980,11 @@ export class ChromaSync implements IVectorSync {
       await this.ensureConnection();
       if (!this.client) return false;
 
-      // Try to get collection info to verify connectivity
       await this.client.callTool({
-        name: 'chroma_get_collection_info',
+        name: "chroma_get_collection_info",
         arguments: {
-          collection_name: this.collectionName
-        }
+          collection_name: this.collectionName,
+        },
       });
 
       return true;

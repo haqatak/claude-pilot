@@ -8,12 +8,11 @@
  * - VectorSync integration (ChromaDB)
  */
 
-import { SessionStore } from '../sqlite/SessionStore.js';
-import { SessionSearch } from '../sqlite/SessionSearch.js';
-import { IVectorSync } from '../sync/IVectorSync.js';
-import { createVectorSync } from '../sync/VectorSyncFactory.js';
-import { logger } from '../../utils/logger.js';
-import type { DBSession } from '../worker-types.js';
+import { SessionStore } from "../sqlite/SessionStore.js";
+import { SessionSearch } from "../sqlite/SessionSearch.js";
+import { IVectorSync } from "../sync/IVectorSync.js";
+import { createVectorSync } from "../sync/VectorSyncFactory.js";
+import { logger } from "../../utils/logger.js";
 
 export class DatabaseManager {
   private sessionStore: SessionStore | null = null;
@@ -24,22 +23,18 @@ export class DatabaseManager {
    * Initialize database connection (once, stays open)
    */
   async initialize(): Promise<void> {
-    // Open database connection (ONCE)
     this.sessionStore = new SessionStore();
     this.sessionSearch = new SessionSearch();
 
-    // Initialize VectorSync using factory (selects ChromaDB based on settings)
-    // Lazy - connects on first search, not at startup
-    this.vectorSync = createVectorSync('pilot-memory');
+    this.vectorSync = createVectorSync("pilot-memory");
 
-    logger.info('DB', 'Database initialized');
+    logger.info("DB", "Database initialized");
   }
 
   /**
    * Close database connection and cleanup all resources
    */
   async close(): Promise<void> {
-    // Close VectorSync first (terminates subprocesses if any)
     if (this.vectorSync) {
       await this.vectorSync.close();
       this.vectorSync = null;
@@ -53,7 +48,7 @@ export class DatabaseManager {
       this.sessionSearch.close();
       this.sessionSearch = null;
     }
-    logger.info('DB', 'Database closed');
+    logger.info("DB", "Database closed");
   }
 
   /**
@@ -61,7 +56,7 @@ export class DatabaseManager {
    */
   getSessionStore(): SessionStore {
     if (!this.sessionStore) {
-      throw new Error('Database not initialized');
+      throw new Error("Database not initialized");
     }
     return this.sessionStore;
   }
@@ -71,7 +66,7 @@ export class DatabaseManager {
    */
   getSessionSearch(): SessionSearch {
     if (!this.sessionSearch) {
-      throw new Error('Database not initialized');
+      throw new Error("Database not initialized");
     }
     return this.sessionSearch;
   }
@@ -82,7 +77,7 @@ export class DatabaseManager {
    */
   getVectorSync(): IVectorSync {
     if (!this.vectorSync) {
-      throw new Error('VectorSync not initialized');
+      throw new Error("VectorSync not initialized");
     }
     return this.vectorSync;
   }
@@ -94,10 +89,6 @@ export class DatabaseManager {
   getChromaSync(): IVectorSync {
     return this.getVectorSync();
   }
-
-  // REMOVED: cleanupOrphanedSessions - violates "EVERYTHING SHOULD SAVE ALWAYS"
-  // Worker restarts don't make sessions orphaned. Sessions are managed by hooks
-  // and exist independently of worker state.
 
   /**
    * Get session by ID (throws if not found)
@@ -115,5 +106,4 @@ export class DatabaseManager {
     }
     return session;
   }
-
 }

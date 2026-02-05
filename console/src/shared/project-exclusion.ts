@@ -8,10 +8,10 @@
  * Supports: exact match, prefix (*), suffix (*), single char wildcard (?)
  */
 
-import { existsSync, readFileSync } from 'fs';
-import { join } from 'path';
-import { SettingsDefaultsManager } from './SettingsDefaultsManager.js';
-import { USER_SETTINGS_PATH } from './paths.js';
+import { existsSync, readFileSync } from "fs";
+import { join } from "path";
+import { SettingsDefaultsManager } from "./SettingsDefaultsManager.js";
+import { USER_SETTINGS_PATH } from "./paths.js";
 
 /**
  * Project-level config structure for .pilot/memory.json
@@ -29,17 +29,16 @@ interface ProjectMemConfig {
  * Returns null if file doesn't exist or is invalid.
  */
 function readProjectConfig(cwd: string): ProjectMemConfig | null {
-  const configPath = join(cwd, '.pilot/memory.json');
+  const configPath = join(cwd, ".pilot/memory.json");
   if (!existsSync(configPath)) {
     return null;
   }
 
   try {
-    const content = readFileSync(configPath, 'utf-8');
+    const content = readFileSync(configPath, "utf-8");
     const config = JSON.parse(content) as ProjectMemConfig;
     return config;
   } catch {
-    // Invalid JSON or read error - ignore
     return null;
   }
 }
@@ -52,7 +51,6 @@ export function isMemoryDisabledByProjectConfig(cwd: string): boolean {
   const config = readProjectConfig(cwd);
   if (!config) return false;
 
-  // If enabled is explicitly false, memory is disabled
   if (config.enabled === false) {
     return true;
   }
@@ -66,10 +64,10 @@ export function isMemoryDisabledByProjectConfig(cwd: string): boolean {
  */
 function globToRegex(pattern: string): RegExp {
   const escaped = pattern
-    .replace(/[.+^${}()|[\]\\]/g, '\\$&')  // Escape regex special chars
-    .replace(/\*/g, '.*')                   // * -> .*
-    .replace(/\?/g, '.');                   // ? -> .
-  return new RegExp(`^${escaped}$`, 'i');   // Case insensitive, full match
+    .replace(/[.+^${}()|[\]\\]/g, "\\$&")
+    .replace(/\*/g, ".*")
+    .replace(/\?/g, ".");
+  return new RegExp(`^${escaped}$`, "i");
 }
 
 /**
@@ -97,15 +95,13 @@ export function isProjectExcluded(projectName: string): boolean {
 
   const settings = SettingsDefaultsManager.loadFromFile(USER_SETTINGS_PATH);
 
-  // Parse exclusion patterns
   let patterns: string[] = [];
   try {
-    const parsed = JSON.parse(settings.CLAUDE_PILOT_EXCLUDE_PROJECTS || '[]');
+    const parsed = JSON.parse(settings.CLAUDE_PILOT_EXCLUDE_PROJECTS || "[]");
     if (Array.isArray(parsed)) {
-      patterns = parsed.filter((p): p is string => typeof p === 'string' && p.length > 0);
+      patterns = parsed.filter((p): p is string => typeof p === "string" && p.length > 0);
     }
   } catch {
-    // Invalid JSON - no patterns
     return false;
   }
 

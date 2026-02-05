@@ -5,15 +5,15 @@
  * Local connections (127.0.0.1, ::1) bypass authentication.
  */
 
-import crypto from 'crypto';
-import type { Request, Response, NextFunction } from 'express';
-import { logger } from '../../../utils/logger.js';
-import type { RemoteAuthScope } from '../../../types/remote/index.js';
-import { SettingsDefaultsManager } from '../../../shared/SettingsDefaultsManager.js';
-import { USER_SETTINGS_PATH } from '../../../shared/paths.js';
+import crypto from "crypto";
+import type { Request, Response, NextFunction } from "express";
+import { logger } from "../../../utils/logger.js";
+import type { RemoteAuthScope } from "../../../types/remote/index.js";
+import { SettingsDefaultsManager } from "../../../shared/SettingsDefaultsManager.js";
+import { USER_SETTINGS_PATH } from "../../../shared/paths.js";
 
 /** Session cookie name */
-const SESSION_COOKIE = 'claude_pilot_session';
+const SESSION_COOKIE = "claude_pilot_session";
 
 /** Session expiry in milliseconds (24 hours) */
 const SESSION_EXPIRY_MS = 24 * 60 * 60 * 1000;
@@ -40,13 +40,8 @@ export interface AuthenticatedRequest extends Request {
  * Check if request is from localhost
  */
 function isLocalRequest(req: Request): boolean {
-  const clientIp = req.ip || req.socket.remoteAddress || '';
-  return (
-    clientIp === '127.0.0.1' ||
-    clientIp === '::1' ||
-    clientIp === '::ffff:127.0.0.1' ||
-    clientIp === 'localhost'
-  );
+  const clientIp = req.ip || req.socket.remoteAddress || "";
+  return clientIp === "127.0.0.1" || clientIp === "::1" || clientIp === "::ffff:127.0.0.1" || clientIp === "localhost";
 }
 
 /**
@@ -61,7 +56,7 @@ function getConfiguredToken(): string {
  * Generate a secure session ID
  */
 function generateSessionId(): string {
-  return crypto.randomBytes(32).toString('hex');
+  return crypto.randomBytes(32).toString("hex");
 }
 
 /**
@@ -117,66 +112,62 @@ setInterval(cleanupSessions, 60 * 60 * 1000);
  * - Localhost requests: Always allowed with full access
  * - Remote requests: Require valid bearer token OR session cookie
  */
-export function authMiddleware(
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction
-): void {
+export function authMiddleware(req: AuthenticatedRequest, res: Response, next: NextFunction): void {
   if (isLocalRequest(req)) {
     req.auth = {
       isLocal: true,
-      scopes: ['*'],
+      scopes: ["*"],
     };
     return next();
   }
 
-  if (req.path === '/login' || req.path.startsWith('/api/auth/')) {
+  if (req.path === "/login" || req.path.startsWith("/api/auth/")) {
     return next();
   }
 
-  const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
+  const clientIp = req.ip || req.socket.remoteAddress || "unknown";
 
   const sessionId = req.cookies?.[SESSION_COOKIE];
   if (sessionId && isValidSession(sessionId, clientIp)) {
     req.auth = {
       isLocal: false,
-      clientId: 'web-session',
-      scopes: ['*'],
+      clientId: "web-session",
+      scopes: ["*"],
     };
     return next();
   }
 
   const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
+  if (authHeader && authHeader.startsWith("Bearer ")) {
     const token = authHeader.slice(7);
     const configuredToken = getConfiguredToken();
 
     if (configuredToken && token === configuredToken) {
       req.auth = {
         isLocal: false,
-        clientId: 'api-client',
-        scopes: ['*'],
+        clientId: "api-client",
+        scopes: ["*"],
       };
       return next();
     }
   }
 
-  const acceptHeader = req.headers.accept || '';
-  const isBrowserRequest = acceptHeader.includes('text/html');
+  const acceptHeader = req.headers.accept || "";
+  const isBrowserRequest = acceptHeader.includes("text/html");
 
-  if (isBrowserRequest && (req.path === '/' || req.path === '/viewer.html')) {
-    res.redirect('/login');
+  if (isBrowserRequest && (req.path === "/" || req.path === "/viewer.html")) {
+    res.redirect("/login");
     return;
   }
 
-  logger.warn('SECURITY', 'Unauthorized request', {
+  logger.warn("SECURITY", "Unauthorized request", {
     path: req.path,
     ip: clientIp,
   });
 
   res.status(401).json({
-    code: 'UNAUTHORIZED',
-    message: 'Authentication required',
+    code: "UNAUTHORIZED",
+    message: "Authentication required",
   });
 }
 
@@ -190,24 +181,24 @@ export function requireScope(scope: RemoteAuthScope) {
 
     if (!auth) {
       res.status(401).json({
-        code: 'UNAUTHORIZED',
-        message: 'Authentication required',
+        code: "UNAUTHORIZED",
+        message: "Authentication required",
       });
       return;
     }
 
-    if (auth.scopes.includes('*') || auth.scopes.includes(scope)) {
+    if (auth.scopes.includes("*") || auth.scopes.includes(scope)) {
       return next();
     }
 
-    logger.warn('SECURITY', 'Insufficient permissions', {
+    logger.warn("SECURITY", "Insufficient permissions", {
       path: req.path,
       requiredScope: scope,
       grantedScopes: auth.scopes,
     });
 
     res.status(403).json({
-      code: 'FORBIDDEN',
+      code: "FORBIDDEN",
       message: `Scope '${scope}' required`,
     });
   };

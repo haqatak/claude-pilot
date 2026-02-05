@@ -3,7 +3,13 @@
  * Centralizes all search-related types, options, and result interfaces
  */
 
-import type { ObservationSearchResult, SessionSummarySearchResult, UserPromptSearchResult, SearchOptions, DateRange } from '../../sqlite/types.js';
+import type {
+  ObservationSearchResult,
+  SessionSummarySearchResult,
+  UserPromptSearchResult,
+  SearchOptions,
+  DateRange,
+} from "../../sqlite/types.js";
 
 export type { ObservationSearchResult, SessionSummarySearchResult, UserPromptSearchResult, SearchOptions, DateRange };
 
@@ -14,13 +20,13 @@ export const SEARCH_CONSTANTS = {
   RECENCY_WINDOW_DAYS: 90,
   RECENCY_WINDOW_MS: 90 * 24 * 60 * 60 * 1000,
   DEFAULT_LIMIT: 20,
-  CHROMA_BATCH_SIZE: 100
+  CHROMA_BATCH_SIZE: 100,
 } as const;
 
 /**
  * Document types stored in Chroma
  */
-export type ChromaDocType = 'observation' | 'session_summary' | 'user_prompt';
+export type ChromaDocType = "observation" | "session_summary" | "user_prompt";
 
 /**
  * Chroma query result with typed metadata
@@ -69,7 +75,7 @@ export interface SearchResults {
  */
 export interface ExtendedSearchOptions extends SearchOptions {
   /** Type filter for search API (observations, sessions, prompts) */
-  searchType?: 'observations' | 'sessions' | 'prompts' | 'all';
+  searchType?: "observations" | "sessions" | "prompts" | "all";
   /** Observation type filter (decision, bugfix, feature, etc.) */
   obsType?: string | string[];
   /** Concept tags to filter by */
@@ -77,13 +83,13 @@ export interface ExtendedSearchOptions extends SearchOptions {
   /** File paths to filter by */
   files?: string | string[];
   /** Output format */
-  format?: 'text' | 'json';
+  format?: "text" | "json";
 }
 
 /**
  * Search strategy selection hint
  */
-export type SearchStrategyHint = 'chroma' | 'sqlite' | 'hybrid' | 'auto' | 'vector';
+export type SearchStrategyHint = "chroma" | "sqlite" | "hybrid" | "auto" | "vector";
 
 /**
  * Options passed to search strategies
@@ -112,7 +118,7 @@ export interface StrategySearchResult {
  * Combined result type for timeline items
  */
 export interface CombinedResult {
-  type: 'observation' | 'session' | 'prompt';
+  type: "observation" | "session" | "prompt";
   data: SearchResult;
   epoch: number;
   created_at: string;

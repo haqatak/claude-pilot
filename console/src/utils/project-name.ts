@@ -1,22 +1,19 @@
-import path from 'path';
-import fs from 'fs';
-import os from 'os';
-import { logger } from './logger.js';
-import { detectWorktree } from './worktree.js';
+import path from "path";
+import fs from "fs";
+import os from "os";
+import { logger } from "./logger.js";
+import { detectWorktree } from "./worktree.js";
 
-// Common container directories where projects are typically located
-const PROJECT_CONTAINER_DIRS = [
-  'repos', 'projects', 'code', 'work', 'src', 'dev', 'git', 'workspace', 'workspaces'
-];
+const PROJECT_CONTAINER_DIRS = ["repos", "projects", "code", "work", "src", "dev", "git", "workspace", "workspaces"];
 
 /**
  * Expand tilde (~) in file paths to the user's home directory
  */
 function expandTilde(filePath: string): string {
-  if (filePath.startsWith('~/')) {
+  if (filePath.startsWith("~/")) {
     return path.join(os.homedir(), filePath.slice(2));
   }
-  if (filePath === '~') {
+  if (filePath === "~") {
     return os.homedir();
   }
   return filePath;
@@ -30,30 +27,26 @@ function expandTilde(filePath: string): string {
  * @returns Project name or "unknown-project" if extraction fails
  */
 export function getProjectName(cwd: string | null | undefined): string {
-  if (!cwd || cwd.trim() === '') {
-    logger.warn('PROJECT_NAME', 'Empty cwd provided, using fallback', { cwd });
-    return 'unknown-project';
+  if (!cwd || cwd.trim() === "") {
+    logger.warn("PROJECT_NAME", "Empty cwd provided, using fallback", { cwd });
+    return "unknown-project";
   }
 
-  // Extract basename (handles trailing slashes automatically)
   const basename = path.basename(cwd);
 
-  // Edge case: Drive roots on Windows (C:\, J:\) or Unix root (/)
-  // path.basename('C:\') returns '' (empty string)
-  if (basename === '') {
-    // Extract drive letter on Windows, or use 'root' on Unix
-    const isWindows = process.platform === 'win32';
+  if (basename === "") {
+    const isWindows = process.platform === "win32";
     if (isWindows) {
       const driveMatch = cwd.match(/^([A-Z]):\\/i);
       if (driveMatch) {
         const driveLetter = driveMatch[1].toUpperCase();
         const projectName = `drive-${driveLetter}`;
-        logger.info('PROJECT_NAME', 'Drive root detected', { cwd, projectName });
+        logger.info("PROJECT_NAME", "Drive root detected", { cwd, projectName });
         return projectName;
       }
     }
-    logger.warn('PROJECT_NAME', 'Root directory detected, using fallback', { cwd });
-    return 'unknown-project';
+    logger.warn("PROJECT_NAME", "Root directory detected, using fallback", { cwd });
+    return "unknown-project";
   }
 
   return basename;
@@ -92,12 +85,11 @@ export function getProjectContext(cwd: string | null | undefined): ProjectContex
   const worktreeInfo = detectWorktree(cwd);
 
   if (worktreeInfo.isWorktree && worktreeInfo.parentProjectName) {
-    // In a worktree: include parent first for chronological ordering
     return {
       primary,
       parent: worktreeInfo.parentProjectName,
       isWorktree: true,
-      allProjects: [worktreeInfo.parentProjectName, primary]
+      allProjects: [worktreeInfo.parentProjectName, primary],
     };
   }
 
@@ -117,41 +109,33 @@ export function getProjectContext(cwd: string | null | undefined): ProjectContex
  * @returns Project name or null if cannot be determined
  */
 export function getProjectFromFilePath(filePath: string | null | undefined, basePath?: string): string | null {
-  if (!filePath || filePath.trim() === '') {
+  if (!filePath || filePath.trim() === "") {
     return null;
   }
 
-  // Expand tilde and normalize path
   let expandedPath = expandTilde(filePath);
 
-  // Handle relative paths - resolve against basePath if provided
   if (!path.isAbsolute(expandedPath)) {
     if (basePath) {
       expandedPath = path.resolve(basePath, expandedPath);
     } else {
-      // Can't determine project from relative path without base
-      logger.debug('PROJECT_NAME', 'Skipping relative path without basePath', { filePath });
+      logger.debug("PROJECT_NAME", "Skipping relative path without basePath", { filePath });
       return null;
     }
   }
 
   const normalizedPath = path.normalize(expandedPath);
 
-  // Strategy 1: Look for .git directory by walking up the tree
   const gitProject = findGitProjectRoot(normalizedPath);
   if (gitProject) {
     return gitProject;
   }
 
-  // Strategy 2: Look for known container directory patterns
-  // e.g., /home/user/repos/my-project/src/file.ts -> "my-project"
   const containerProject = findProjectFromContainerPath(normalizedPath);
   if (containerProject) {
     return containerProject;
   }
 
-  // Strategy 3: Use a reasonable parent directory
-  // Go up 2-3 levels from the file to find a sensible project name
   return findProjectFromParentDirectory(normalizedPath);
 }
 
@@ -160,38 +144,32 @@ export function getProjectFromFilePath(filePath: string | null | undefined, base
  */
 function findGitProjectRoot(filePath: string): string | null {
   try {
-    // Determine if path is directory or file
     let currentDir: string;
     try {
       const stat = fs.statSync(filePath);
       currentDir = stat.isDirectory() ? filePath : path.dirname(filePath);
     } catch {
-      // File doesn't exist, use parent directory
       currentDir = path.dirname(filePath);
     }
 
     const root = path.parse(currentDir).root;
 
-    // Limit search depth to prevent infinite loops
     let depth = 0;
     const maxDepth = 20;
 
     while (currentDir !== root && depth < maxDepth) {
-      const gitPath = path.join(currentDir, '.git');
+      const gitPath = path.join(currentDir, ".git");
       try {
         if (fs.existsSync(gitPath)) {
           return path.basename(currentDir);
         }
-      } catch {
-        // Ignore permission errors, etc.
-      }
+      } catch {}
       currentDir = path.dirname(currentDir);
       depth++;
     }
 
     return null;
   } catch {
-    // Any unexpected error, return null
     return null;
   }
 }
@@ -206,9 +184,8 @@ function findProjectFromContainerPath(filePath: string): string | null {
   for (let i = 0; i < parts.length - 1; i++) {
     const part = parts[i].toLowerCase();
     if (PROJECT_CONTAINER_DIRS.includes(part)) {
-      // The next part after the container dir is the project name
       const projectName = parts[i + 1];
-      if (projectName && projectName !== '') {
+      if (projectName && projectName !== "") {
         return projectName;
       }
     }
@@ -223,29 +200,24 @@ function findProjectFromContainerPath(filePath: string): string | null {
  */
 function findProjectFromParentDirectory(filePath: string): string | null {
   try {
-    // Determine if path is directory or file
     let currentDir: string;
     try {
       const stat = fs.statSync(filePath);
       currentDir = stat.isDirectory() ? filePath : path.dirname(filePath);
     } catch {
-      // File doesn't exist, use parent directory
       currentDir = path.dirname(filePath);
     }
 
     const root = path.parse(currentDir).root;
 
-    // Go up to find a directory that looks like a project root
-    // (not too deep, not at system level)
     let depth = 0;
-    const minDepth = 2;  // Skip immediate parent (likely src/, lib/, etc.)
+    const minDepth = 2;
     const maxDepth = 5;
 
     while (currentDir !== root && depth < maxDepth) {
       const dirName = path.basename(currentDir);
 
-      // Skip common non-project directories
-      const skipDirs = ['src', 'lib', 'dist', 'build', 'node_modules', 'vendor', '.git', 'bin', 'pkg', 'cmd'];
+      const skipDirs = ["src", "lib", "dist", "build", "node_modules", "vendor", ".git", "bin", "pkg", "cmd"];
       if (depth >= minDepth && !skipDirs.includes(dirName.toLowerCase())) {
         return dirName;
       }
@@ -272,16 +244,11 @@ function findProjectFromParentDirectory(filePath: string): string | null {
  * @param basePath - Optional base path to resolve relative paths against (e.g., session cwd)
  * @returns The most common project name from the files, or fallback
  */
-export function getProjectFromFiles(
-  filePaths: string[],
-  fallbackProject: string,
-  basePath?: string
-): string {
+export function getProjectFromFiles(filePaths: string[], fallbackProject: string, basePath?: string): string {
   if (!filePaths || filePaths.length === 0) {
     return fallbackProject;
   }
 
-  // Count projects from all files
   const projectCounts = new Map<string, number>();
 
   for (const filePath of filePaths) {
@@ -295,7 +262,6 @@ export function getProjectFromFiles(
     return fallbackProject;
   }
 
-  // Find the most common project
   let maxCount = 0;
   let mostCommonProject = fallbackProject;
 
@@ -306,12 +272,11 @@ export function getProjectFromFiles(
     }
   }
 
-  // Log if we detected a different project than the session default
   if (mostCommonProject !== fallbackProject) {
-    logger.debug('PROJECT_NAME', 'Detected project from files differs from session', {
+    logger.debug("PROJECT_NAME", "Detected project from files differs from session", {
       detectedProject: mostCommonProject,
       sessionProject: fallbackProject,
-      fileCount: filePaths.length
+      fileCount: filePaths.length,
     });
   }
 

@@ -1,9 +1,8 @@
 /**
  * Store session summaries in the database
  */
-import type { Database } from 'bun:sqlite';
-import { logger } from '../../../utils/logger.js';
-import type { SummaryInput, StoreSummaryResult } from './types.js';
+import type { Database } from "bun:sqlite";
+import type { SummaryInput, StoreSummaryResult } from "./types.js";
 
 /**
  * Store a session summary (from SDK parsing)
@@ -24,9 +23,8 @@ export function storeSummary(
   summary: SummaryInput,
   promptNumber?: number,
   discoveryTokens: number = 0,
-  overrideTimestampEpoch?: number
+  overrideTimestampEpoch?: number,
 ): StoreSummaryResult {
-  // Use override timestamp if provided (for processing backlog messages with original timestamps)
   const timestampEpoch = overrideTimestampEpoch ?? Date.now();
   const timestampIso = new Date(timestampEpoch).toISOString();
 
@@ -49,11 +47,11 @@ export function storeSummary(
     promptNumber || null,
     discoveryTokens,
     timestampIso,
-    timestampEpoch
+    timestampEpoch,
   );
 
   return {
     id: Number(result.lastInsertRowid),
-    createdAtEpoch: timestampEpoch
+    createdAtEpoch: timestampEpoch,
   };
 }

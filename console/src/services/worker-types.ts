@@ -2,14 +2,13 @@
  * Shared types for Worker Service architecture
  */
 
-import type { Response } from 'express';
-
+import type { Response } from "express";
 
 /**
  * Conversation message for session history
  */
 export interface ConversationMessage {
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
 }
 
@@ -29,12 +28,12 @@ export interface ActiveSession {
   cumulativeOutputTokens: number;
   earliestPendingTimestamp: number | null;
   conversationHistory: ConversationMessage[];
-  currentProvider: 'claude' | null;
+  currentProvider: "claude" | null;
   consecutiveRestarts: number;
 }
 
 export interface PendingMessage {
-  type: 'observation' | 'summarize';
+  type: "observation" | "summarize";
   tool_name?: string;
   tool_input?: any;
   tool_response?: any;
@@ -61,7 +60,6 @@ export interface ObservationData {
   cwd?: string;
 }
 
-
 export interface SSEEvent {
   type: string;
   timestamp?: number;
@@ -69,7 +67,6 @@ export interface SSEEvent {
 }
 
 export type SSEClient = Response;
-
 
 export interface PaginatedResult<T> {
   items: T[];
@@ -84,13 +81,11 @@ export interface PaginationParams {
   project?: string;
 }
 
-
 export interface ViewerSettings {
   sidebarOpen: boolean;
   selectedProject: string | null;
-  theme: 'light' | 'dark' | 'system';
+  theme: "light" | "dark" | "system";
 }
-
 
 export interface Observation {
   id: number;
@@ -140,15 +135,14 @@ export interface DBSession {
   project: string;
   user_prompt: string;
   memory_session_id: string | null;
-  status: 'active' | 'completed' | 'failed';
+  status: "active" | "completed" | "failed";
   started_at: string;
   started_at_epoch: number;
   completed_at: string | null;
   completed_at_epoch: number | null;
 }
 
-
-export type { SDKUserMessage } from '@anthropic-ai/claude-agent-sdk';
+export type { SDKUserMessage } from "@anthropic-ai/claude-agent-sdk";
 
 export interface ParsedObservation {
   type: string;
@@ -168,16 +162,18 @@ export interface ParsedSummary {
   notes: string | null;
 }
 
-
 export interface DatabaseStats {
   totalObservations: number;
   totalSessions: number;
   totalPrompts: number;
   totalSummaries: number;
-  projectCounts: Record<string, {
-    observations: number;
-    sessions: number;
-    prompts: number;
-    summaries: number;
-  }>;
+  projectCounts: Record<
+    string,
+    {
+      observations: number;
+      sessions: number;
+      prompts: number;
+      summaries: number;
+    }
+  >;
 }

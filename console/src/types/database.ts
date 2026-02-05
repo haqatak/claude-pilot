@@ -53,7 +53,7 @@ export interface SdkSessionRecord {
   started_at_epoch: number;
   completed_at: string | null;
   completed_at_epoch: number | null;
-  status: 'active' | 'completed' | 'failed';
+  status: "active" | "completed" | "failed";
   worker_port?: number;
   prompt_counter?: number;
 }
@@ -66,7 +66,7 @@ export interface ObservationRecord {
   memory_session_id: string;
   project: string;
   text: string | null;
-  type: 'decision' | 'bugfix' | 'feature' | 'refactor' | 'discovery' | 'change';
+  type: "decision" | "bugfix" | "feature" | "refactor" | "discovery" | "change";
   created_at: string;
   created_at_epoch: number;
   title?: string;

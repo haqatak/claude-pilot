@@ -4,20 +4,12 @@
  * Functions for reading and caching remote worker configuration.
  */
 
-import type { RemoteWorkerConfig, WorkerMode } from '../types/remote/index.js';
-import { SettingsDefaultsManager } from './SettingsDefaultsManager.js';
-import { USER_SETTINGS_PATH } from './paths.js';
+import type { RemoteWorkerConfig, WorkerMode } from "../types/remote/index.js";
+import { SettingsDefaultsManager } from "./SettingsDefaultsManager.js";
+import { USER_SETTINGS_PATH } from "./paths.js";
 
 /** Cached remote configuration */
 let cachedConfig: RemoteWorkerConfig | null = null;
-
-/**
- * Clear the remote configuration cache
- * Call when settings are updated
- */
-export function clearRemoteConfigCache(): void {
-  cachedConfig = null;
-}
 
 /**
  * Get remote worker configuration from settings
@@ -46,12 +38,12 @@ export function getRemoteConfig(): RemoteWorkerConfig {
  */
 export function getWorkerMode(): WorkerMode {
   const config = getRemoteConfig();
-  return config.enabled && config.url ? 'remote' : 'local';
+  return config.enabled && config.url ? "remote" : "local";
 }
 
 /**
  * Check if running in remote mode
  */
 export function isRemoteMode(): boolean {
-  return getWorkerMode() === 'remote';
+  return getWorkerMode() === "remote";
 }

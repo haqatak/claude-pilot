@@ -6,9 +6,8 @@
  * - Provide type safety for response processing and broadcasting
  */
 
-import type { ActiveSession } from '../../worker-types.js';
-import type { ParsedObservation, ParsedSummary } from '../../../sdk/parser.js';
-
+import type { ActiveSession } from "../../worker-types.js";
+import type { ParsedObservation, ParsedSummary } from "../../../sdk/parser.js";
 
 /**
  * Worker reference for SSE broadcasting and status updates
@@ -21,7 +20,6 @@ export interface WorkerRef {
   };
   broadcastProcessingStatus?: () => void;
 }
-
 
 export interface ObservationSSEPayload {
   id: number;
@@ -56,9 +54,8 @@ export interface SummarySSEPayload {
 }
 
 export type SSEEventPayload =
-  | { type: 'new_observation'; observation: ObservationSSEPayload }
-  | { type: 'new_summary'; summary: SummarySSEPayload };
-
+  | { type: "new_observation"; observation: ObservationSSEPayload }
+  | { type: "new_summary"; summary: SummarySSEPayload };
 
 /**
  * Result from atomic database transaction for observations/summary storage
@@ -87,7 +84,6 @@ export interface ParsedResponse {
   summary: ParsedSummary | null;
 }
 
-
 /**
  * Interface for fallback agent
  */
@@ -95,24 +91,23 @@ export interface FallbackAgent {
   startSession(session: ActiveSession, worker?: WorkerRef): Promise<void>;
 }
 
-
 /**
  * Base configuration shared across all agents
  */
 export interface BaseAgentConfig {
-  dbManager: import('../DatabaseManager.js').DatabaseManager;
-  sessionManager: import('../SessionManager.js').SessionManager;
+  dbManager: import("../DatabaseManager.js").DatabaseManager;
+  sessionManager: import("../SessionManager.js").SessionManager;
 }
 
 /**
  * Error codes that should trigger fallback to Claude
  */
 export const FALLBACK_ERROR_PATTERNS = [
-  '429',
-  '500',
-  '502',
-  '503',
-  'ECONNREFUSED',
-  'ETIMEDOUT',
-  'fetch failed',
+  "429",
+  "500",
+  "502",
+  "503",
+  "ECONNREFUSED",
+  "ETIMEDOUT",
+  "fetch failed",
 ] as const;

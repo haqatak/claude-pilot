@@ -2,8 +2,7 @@
  * Bulk import functions for importing data with duplicate checking
  */
 
-import { Database } from 'bun:sqlite';
-import { logger } from '../../../utils/logger.js';
+import { Database } from "bun:sqlite";
 
 export interface ImportResult {
   imported: boolean;
@@ -26,11 +25,10 @@ export function importSdkSession(
     completed_at: string | null;
     completed_at_epoch: number | null;
     status: string;
-  }
+  },
 ): ImportResult {
-  // Check if session already exists
   const existing = db
-    .prepare('SELECT id FROM sdk_sessions WHERE content_session_id = ?')
+    .prepare("SELECT id FROM sdk_sessions WHERE content_session_id = ?")
     .get(session.content_session_id) as { id: number } | undefined;
 
   if (existing) {
@@ -53,7 +51,7 @@ export function importSdkSession(
     session.started_at_epoch,
     session.completed_at,
     session.completed_at_epoch,
-    session.status
+    session.status,
   );
 
   return { imported: true, id: result.lastInsertRowid as number };
@@ -80,11 +78,10 @@ export function importSessionSummary(
     discovery_tokens: number;
     created_at: string;
     created_at_epoch: number;
-  }
+  },
 ): ImportResult {
-  // Check if summary already exists for this session
   const existing = db
-    .prepare('SELECT id FROM session_summaries WHERE memory_session_id = ?')
+    .prepare("SELECT id FROM session_summaries WHERE memory_session_id = ?")
     .get(summary.memory_session_id) as { id: number } | undefined;
 
   if (existing) {
@@ -113,7 +110,7 @@ export function importSessionSummary(
     summary.prompt_number,
     summary.discovery_tokens || 0,
     summary.created_at,
-    summary.created_at_epoch
+    summary.created_at_epoch,
   );
 
   return { imported: true, id: result.lastInsertRowid as number };
@@ -141,19 +138,16 @@ export function importObservation(
     discovery_tokens: number;
     created_at: string;
     created_at_epoch: number;
-  }
+  },
 ): ImportResult {
-  // Check if observation already exists
   const existing = db
     .prepare(
       `
       SELECT id FROM observations
       WHERE memory_session_id = ? AND title = ? AND created_at_epoch = ?
-    `
+    `,
     )
-    .get(obs.memory_session_id, obs.title, obs.created_at_epoch) as
-    | { id: number }
-    | undefined;
+    .get(obs.memory_session_id, obs.title, obs.created_at_epoch) as { id: number } | undefined;
 
   if (existing) {
     return { imported: false, id: existing.id };
@@ -182,7 +176,7 @@ export function importObservation(
     obs.prompt_number,
     obs.discovery_tokens || 0,
     obs.created_at,
-    obs.created_at_epoch
+    obs.created_at_epoch,
   );
 
   return { imported: true, id: result.lastInsertRowid as number };
@@ -200,19 +194,16 @@ export function importUserPrompt(
     prompt_text: string;
     created_at: string;
     created_at_epoch: number;
-  }
+  },
 ): ImportResult {
-  // Check if prompt already exists
   const existing = db
     .prepare(
       `
       SELECT id FROM user_prompts
       WHERE content_session_id = ? AND prompt_number = ?
-    `
+    `,
     )
-    .get(prompt.content_session_id, prompt.prompt_number) as
-    | { id: number }
-    | undefined;
+    .get(prompt.content_session_id, prompt.prompt_number) as { id: number } | undefined;
 
   if (existing) {
     return { imported: false, id: existing.id };
@@ -230,7 +221,7 @@ export function importUserPrompt(
     prompt.prompt_number,
     prompt.prompt_text,
     prompt.created_at,
-    prompt.created_at_epoch
+    prompt.created_at_epoch,
   );
 
   return { imported: true, id: result.lastInsertRowid as number };

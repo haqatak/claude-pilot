@@ -20,23 +20,19 @@ export interface ContextInput {
  * Configuration for context generation
  */
 export interface ContextConfig {
-  // Display counts
   totalObservationCount: number;
   fullObservationCount: number;
   sessionCount: number;
 
-  // Token display toggles
   showReadTokens: boolean;
   showWorkTokens: boolean;
   showSavingsAmount: boolean;
   showSavingsPercent: boolean;
 
-  // Filters
   observationTypes: Set<string>;
   observationConcepts: Set<string>;
 
-  // Display options
-  fullObservationField: 'narrative' | 'facts';
+  fullObservationField: "narrative" | "facts";
   showLastSummary: boolean;
   showLastMessage: boolean;
 }
@@ -91,9 +87,7 @@ export interface SummaryTimelineItem extends SessionSummary {
 /**
  * Timeline item - either observation or summary
  */
-export type TimelineItem =
-  | { type: 'observation'; data: Observation }
-  | { type: 'summary'; data: SummaryTimelineItem };
+export type TimelineItem = { type: "observation"; data: Observation } | { type: "summary"; data: SummaryTimelineItem };
 
 /**
  * Token economics data
@@ -118,16 +112,16 @@ export interface PriorMessages {
  * ANSI color codes for terminal output
  */
 export const colors = {
-  reset: '\x1b[0m',
-  bright: '\x1b[1m',
-  dim: '\x1b[2m',
-  cyan: '\x1b[36m',
-  green: '\x1b[32m',
-  yellow: '\x1b[33m',
-  blue: '\x1b[34m',
-  magenta: '\x1b[35m',
-  gray: '\x1b[90m',
-  red: '\x1b[31m',
+  reset: "\x1b[0m",
+  bright: "\x1b[1m",
+  dim: "\x1b[2m",
+  cyan: "\x1b[36m",
+  green: "\x1b[32m",
+  yellow: "\x1b[33m",
+  blue: "\x1b[34m",
+  magenta: "\x1b[35m",
+  gray: "\x1b[90m",
+  red: "\x1b[31m",
 };
 
 /**

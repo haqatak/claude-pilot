@@ -5,9 +5,9 @@
  * grep-friendly: getTimelineAroundTimestamp, getTimelineAroundObservation, getAllProjects
  */
 
-import type { Database } from 'bun:sqlite';
-import type { ObservationRecord, SessionSummaryRecord, UserPromptRecord } from '../../../types/database.js';
-import { logger } from '../../../utils/logger.js';
+import type { Database } from "bun:sqlite";
+import type { ObservationRecord, SessionSummaryRecord, UserPromptRecord } from "../../../types/database.js";
+import { logger } from "../../../utils/logger.js";
 
 /**
  * Timeline result containing observations, sessions, and prompts within a time window
@@ -51,7 +51,7 @@ export function getTimelineAroundTimestamp(
   anchorEpoch: number,
   depthBefore: number = 10,
   depthAfter: number = 10,
-  project?: string
+  project?: string,
 ): TimelineResult {
   return getTimelineAroundObservation(db, null, anchorEpoch, depthBefore, depthAfter, project);
 }
@@ -74,16 +74,15 @@ export function getTimelineAroundObservation(
   anchorEpoch: number,
   depthBefore: number = 10,
   depthAfter: number = 10,
-  project?: string
+  project?: string,
 ): TimelineResult {
-  const projectFilter = project ? 'AND project = ?' : '';
+  const projectFilter = project ? "AND project = ?" : "";
   const projectParams = project ? [project] : [];
 
   let startEpoch: number;
   let endEpoch: number;
 
   if (anchorObservationId !== null) {
-    // Get boundary observations by ID offset
     const beforeQuery = `
       SELECT id, created_at_epoch
       FROM observations
@@ -100,10 +99,14 @@ export function getTimelineAroundObservation(
     `;
 
     try {
-      const beforeRecords = db.prepare(beforeQuery).all(anchorObservationId, ...projectParams, depthBefore + 1) as Array<{id: number; created_at_epoch: number}>;
-      const afterRecords = db.prepare(afterQuery).all(anchorObservationId, ...projectParams, depthAfter + 1) as Array<{id: number; created_at_epoch: number}>;
+      const beforeRecords = db
+        .prepare(beforeQuery)
+        .all(anchorObservationId, ...projectParams, depthBefore + 1) as Array<{ id: number; created_at_epoch: number }>;
+      const afterRecords = db.prepare(afterQuery).all(anchorObservationId, ...projectParams, depthAfter + 1) as Array<{
+        id: number;
+        created_at_epoch: number;
+      }>;
 
-      // Get the earliest and latest timestamps from boundary observations
       if (beforeRecords.length === 0 && afterRecords.length === 0) {
         return { observations: [], sessions: [], prompts: [] };
       }
@@ -111,12 +114,10 @@ export function getTimelineAroundObservation(
       startEpoch = beforeRecords.length > 0 ? beforeRecords[beforeRecords.length - 1].created_at_epoch : anchorEpoch;
       endEpoch = afterRecords.length > 0 ? afterRecords[afterRecords.length - 1].created_at_epoch : anchorEpoch;
     } catch (err: any) {
-      logger.error('DB', 'Error getting boundary observations', undefined, { error: err, project });
+      logger.error("DB", "Error getting boundary observations", undefined, { error: err, project });
       return { observations: [], sessions: [], prompts: [] };
     }
   } else {
-    // For timestamp-based anchors, use time-based boundaries
-    // Get observations to find the time window
     const beforeQuery = `
       SELECT created_at_epoch
       FROM observations
@@ -133,8 +134,12 @@ export function getTimelineAroundObservation(
     `;
 
     try {
-      const beforeRecords = db.prepare(beforeQuery).all(anchorEpoch, ...projectParams, depthBefore) as Array<{created_at_epoch: number}>;
-      const afterRecords = db.prepare(afterQuery).all(anchorEpoch, ...projectParams, depthAfter + 1) as Array<{created_at_epoch: number}>;
+      const beforeRecords = db.prepare(beforeQuery).all(anchorEpoch, ...projectParams, depthBefore) as Array<{
+        created_at_epoch: number;
+      }>;
+      const afterRecords = db.prepare(afterQuery).all(anchorEpoch, ...projectParams, depthAfter + 1) as Array<{
+        created_at_epoch: number;
+      }>;
 
       if (beforeRecords.length === 0 && afterRecords.length === 0) {
         return { observations: [], sessions: [], prompts: [] };
@@ -143,12 +148,11 @@ export function getTimelineAroundObservation(
       startEpoch = beforeRecords.length > 0 ? beforeRecords[beforeRecords.length - 1].created_at_epoch : anchorEpoch;
       endEpoch = afterRecords.length > 0 ? afterRecords[afterRecords.length - 1].created_at_epoch : anchorEpoch;
     } catch (err: any) {
-      logger.error('DB', 'Error getting boundary timestamps', undefined, { error: err, project });
+      logger.error("DB", "Error getting boundary timestamps", undefined, { error: err, project });
       return { observations: [], sessions: [], prompts: [] };
     }
   }
 
-  // Now query ALL record types within the time window
   const obsQuery = `
     SELECT *
     FROM observations
@@ -167,7 +171,7 @@ export function getTimelineAroundObservation(
     SELECT up.*, s.project, s.memory_session_id
     FROM user_prompts up
     JOIN sdk_sessions s ON up.content_session_id = s.content_session_id
-    WHERE up.created_at_epoch >= ? AND up.created_at_epoch <= ? ${projectFilter.replace('project', 's.project')}
+    WHERE up.created_at_epoch >= ? AND up.created_at_epoch <= ? ${projectFilter.replace("project", "s.project")}
     ORDER BY up.created_at_epoch ASC
   `;
 
@@ -177,7 +181,7 @@ export function getTimelineAroundObservation(
 
   return {
     observations,
-    sessions: sessions.map(s => ({
+    sessions: sessions.map((s) => ({
       id: s.id,
       memory_session_id: s.memory_session_id,
       project: s.project,
@@ -185,17 +189,17 @@ export function getTimelineAroundObservation(
       completed: s.completed,
       next_steps: s.next_steps,
       created_at: s.created_at,
-      created_at_epoch: s.created_at_epoch
+      created_at_epoch: s.created_at_epoch,
     })),
-    prompts: prompts.map(p => ({
+    prompts: prompts.map((p) => ({
       id: p.id,
       content_session_id: p.content_session_id,
       prompt_number: p.prompt_number,
       prompt_text: p.prompt_text,
       project: p.project,
       created_at: p.created_at,
-      created_at_epoch: p.created_at_epoch
-    }))
+      created_at_epoch: p.created_at_epoch,
+    })),
   };
 }
 
@@ -214,5 +218,5 @@ export function getAllProjects(db: Database): string[] {
   `);
 
   const rows = stmt.all() as Array<{ project: string }>;
-  return rows.map(row => row.project);
+  return rows.map((row) => row.project);
 }

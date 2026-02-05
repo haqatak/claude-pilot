@@ -3,14 +3,8 @@
  * Database-first parameter pattern for functional composition
  */
 
-import type { Database } from 'bun:sqlite';
-import { logger } from '../../../utils/logger.js';
-import type {
-  SessionBasic,
-  SessionFull,
-  SessionWithStatus,
-  SessionSummaryDetail,
-} from './types.js';
+import type { Database } from "bun:sqlite";
+import type { SessionBasic, SessionFull, SessionWithStatus, SessionSummaryDetail } from "./types.js";
 
 /**
  * Get session by ID (basic fields only)
@@ -30,13 +24,10 @@ export function getSessionById(db: Database, id: number): SessionBasic | null {
  * Get SDK sessions by memory session IDs
  * Used for exporting session metadata
  */
-export function getSdkSessionsBySessionIds(
-  db: Database,
-  memorySessionIds: string[]
-): SessionFull[] {
+export function getSdkSessionsBySessionIds(db: Database, memorySessionIds: string[]): SessionFull[] {
   if (memorySessionIds.length === 0) return [];
 
-  const placeholders = memorySessionIds.map(() => '?').join(',');
+  const placeholders = memorySessionIds.map(() => "?").join(",");
   const stmt = db.prepare(`
     SELECT id, content_session_id, memory_session_id, project, user_prompt,
            started_at, started_at_epoch, completed_at, completed_at_epoch, status
@@ -52,11 +43,7 @@ export function getSdkSessionsBySessionIds(
  * Get recent sessions with their status and summary info
  * Returns sessions ordered oldest-first for display
  */
-export function getRecentSessionsWithStatus(
-  db: Database,
-  project: string,
-  limit: number = 3
-): SessionWithStatus[] {
+export function getRecentSessionsWithStatus(db: Database, project: string, limit: number = 3): SessionWithStatus[] {
   const stmt = db.prepare(`
     SELECT * FROM (
       SELECT
@@ -82,10 +69,7 @@ export function getRecentSessionsWithStatus(
 /**
  * Get full session summary by ID (includes request_summary and learned_summary)
  */
-export function getSessionSummaryById(
-  db: Database,
-  id: number
-): SessionSummaryDetail | null {
+export function getSessionSummaryById(db: Database, id: number): SessionSummaryDetail | null {
   const stmt = db.prepare(`
     SELECT
       id,
