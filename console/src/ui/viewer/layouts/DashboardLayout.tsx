@@ -1,7 +1,6 @@
 import React from 'react';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
-import { Footer } from '../components/Footer';
 
 interface Project {
   name: string;
@@ -57,11 +56,8 @@ export function DashboardLayout({
           onToggleTheme={onToggleTheme}
           onToggleLogs={onToggleLogs}
         />
-        <main className="flex-1 p-6 overflow-y-auto flex flex-col">
-          <div className="flex-1">
-            {children}
-          </div>
-          <Footer />
+        <main className="flex-1 p-6 overflow-y-auto">
+          {children}
         </main>
       </div>
     </div>

@@ -38,24 +38,44 @@ MAGENTA = "\033[0;35m"
 NC = "\033[0m"
 
 
+def _get_session_plan_path() -> Path:
+    """Get session-scoped active plan JSON path."""
+    session_id = os.environ.get("PILOT_SESSION_ID", "").strip() or "default"
+    return _sessions_base() / session_id / "active_plan.json"
+
+
 def find_active_spec() -> tuple[Path | None, str | None]:
-    """Find an active spec file (PENDING or COMPLETE status)."""
-    plans_dir = Path("docs/plans")
-    if not plans_dir.exists():
+    """Find the active spec for THIS session via session-scoped active_plan.json."""
+    plan_json = _get_session_plan_path()
+    if not plan_json.exists():
         return None, None
 
-    plan_files = sorted(plans_dir.glob("*.md"), reverse=True)
+    try:
+        data = json.loads(plan_json.read_text())
+        plan_path_str = data.get("plan_path", "")
+    except (json.JSONDecodeError, OSError):
+        return None, None
 
-    for plan_file in plan_files:
-        try:
-            content = plan_file.read_text()
-            status_match = re.search(r"^Status:\s*(\w+)", content, re.MULTILINE)
-            if status_match:
-                status = status_match.group(1).upper()
-                if status in ("PENDING", "COMPLETE"):
-                    return plan_file, status
-        except OSError:
-            continue
+    if not plan_path_str:
+        return None, None
+
+    plan_file = Path(plan_path_str)
+    if not plan_file.is_absolute():
+        project_root = os.environ.get("CLAUDE_PROJECT_ROOT", str(Path.cwd()))
+        plan_file = Path(project_root) / plan_file
+    if not plan_file.exists():
+        return None, None
+
+    try:
+        content = plan_file.read_text()
+        status_match = re.search(r"^Status:\s*(\w+)", content, re.MULTILINE)
+        if not status_match:
+            return None, None
+        status = status_match.group(1).upper()
+        if status in ("PENDING", "COMPLETE"):
+            return plan_file, status
+    except OSError:
+        pass
 
     return None, None
 
@@ -272,13 +292,14 @@ def run_context_monitor() -> int:
     if percentage >= THRESHOLD_CRITICAL:
         save_cache(total_tokens, session_id, new_learn_shown if new_learn_shown else None)
         print("", file=sys.stderr)
-        print(f"{RED}🚨 CONTEXT {percentage:.0f}% - CRITICAL: HANDOFF IMMEDIATELY{NC}", file=sys.stderr)
+        print(f"{RED}🚨 CONTEXT {percentage:.0f}% - CRITICAL: HANDOFF NOW IN THIS TURN{NC}", file=sys.stderr)
         print(f"{RED}Do NOT write code, fix errors, or run commands.{NC}", file=sys.stderr)
+        print(f"{RED}Execute BOTH steps below in THIS SINGLE TURN (no stopping between):{NC}", file=sys.stderr)
+        print(f"{RED}  1. Write ~/.pilot/sessions/$PILOT_SESSION_ID/continuation.md{NC}", file=sys.stderr)
+        print(f"{RED}  2. Run: ~/.pilot/bin/pilot send-clear [plan-path|--general]{NC}", file=sys.stderr)
         print(
-            f"{RED}ONLY action: write ~/.pilot/sessions/$PILOT_SESSION_ID/continuation.md then run:{NC}",
-            file=sys.stderr,
+            f"{RED}Do NOT output a summary and stop. Do NOT wait for user. Execute send-clear NOW.{NC}", file=sys.stderr
         )
-        print(f"{RED}  ~/.pilot/bin/pilot send-clear [plan-path|--general]{NC}", file=sys.stderr)
         return 2
 
     if percentage >= THRESHOLD_STOP:
@@ -291,9 +312,13 @@ def run_context_monitor() -> int:
             if spec_status == "COMPLETE":
                 return 2
 
-        print(f"{RED}⚠️  CONTEXT {percentage:.0f}% - STOP and execute handoff protocol{NC}", file=sys.stderr)
-        print(f"{RED}Do NOT continue fixing errors. Document remaining work and hand off.{NC}", file=sys.stderr)
-        print(f"{RED}Follow context-continuation.md rules → write continuation file → send-clear{NC}", file=sys.stderr)
+        print(f"{RED}⚠️  CONTEXT {percentage:.0f}% - MANDATORY HANDOFF{NC}", file=sys.stderr)
+        print(f"{RED}Do NOT start new tasks or fix cycles. Execute handoff in a SINGLE TURN:{NC}", file=sys.stderr)
+        print(f"{RED}  1. Write ~/.pilot/sessions/$PILOT_SESSION_ID/continuation.md{NC}", file=sys.stderr)
+        print(f"{RED}  2. Run: ~/.pilot/bin/pilot send-clear [plan-path|--general]{NC}", file=sys.stderr)
+        print(
+            f"{RED}Do NOT summarize and stop. The send-clear command triggers automatic restart.{NC}", file=sys.stderr
+        )
         return 2
 
     if percentage >= THRESHOLD_WARN and not shown_80_warn:

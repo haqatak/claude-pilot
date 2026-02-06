@@ -7,17 +7,17 @@
 
 import { Database } from "bun:sqlite";
 import express, { Request, Response } from "express";
-import { readdirSync, readFileSync, statSync, existsSync } from "fs";
+import { readdirSync, readFileSync, statSync, existsSync, unlinkSync } from "fs";
 import { execSync } from "child_process";
 import path from "path";
 import { BaseRouteHandler } from "../BaseRouteHandler.js";
+import { logger } from "../../../../utils/logger.js";
 import type { DatabaseManager } from "../../DatabaseManager.js";
 import type { SSEBroadcaster } from "../../SSEBroadcaster.js";
 import {
   associatePlan,
   getPlanForSession,
   getPlanByContentSessionId,
-  getAllActivePlans,
   updatePlanStatus,
   clearPlanAssociation,
 } from "../../../sqlite/plans/store.js";
@@ -56,6 +56,7 @@ export class PlanRoutes extends BaseRouteHandler {
     app.get("/api/plans", this.handleGetAllPlans.bind(this));
     app.get("/api/plans/active", this.handleGetActiveSpecs.bind(this));
     app.get("/api/plan/content", this.handleGetPlanContent.bind(this));
+    app.delete("/api/plan", this.handleDeletePlan.bind(this));
     app.get("/api/git", this.handleGetGitInfo.bind(this));
 
     app.post("/api/sessions/:sessionDbId/plan", this.handleAssociatePlan.bind(this));
@@ -77,14 +78,13 @@ export class PlanRoutes extends BaseRouteHandler {
    */
   private handleGetActivePlan = this.wrapHandler((_req: Request, res: Response): void => {
     const projectRoot = process.env.CLAUDE_PROJECT_ROOT || process.cwd();
-    const plan = this.getActivePlanInfo(projectRoot);
+    const plans = this.getActivePlans(projectRoot);
 
-    if (!plan) {
-      res.json({ active: false, plan: null });
-      return;
-    }
-
-    res.json({ active: true, plan });
+    res.json({
+      active: plans.length > 0,
+      plans,
+      plan: plans[0] || null,
+    });
   });
 
   /**
@@ -171,6 +171,36 @@ export class PlanRoutes extends BaseRouteHandler {
     });
   });
 
+
+  /**
+   * Delete a plan file from the filesystem.
+   */
+  private handleDeletePlan = this.wrapHandler((req: Request, res: Response): void => {
+    const projectRoot = process.env.CLAUDE_PROJECT_ROOT || process.cwd();
+    const plansDir = path.join(projectRoot, "docs", "plans");
+    const requestedPath = req.query.path as string | undefined;
+
+    if (!requestedPath) {
+      this.badRequest(res, "Missing path query parameter");
+      return;
+    }
+
+    const resolvedPath = path.resolve(projectRoot, requestedPath);
+    const normalizedPlansDir = path.resolve(plansDir);
+
+    if (!resolvedPath.startsWith(normalizedPlansDir) || !resolvedPath.endsWith(".md")) {
+      res.status(403).json({ error: "Access denied: path must be within docs/plans/" });
+      return;
+    }
+
+    if (!existsSync(resolvedPath)) {
+      this.notFound(res, "Plan not found");
+      return;
+    }
+
+    unlinkSync(resolvedPath);
+    res.json({ success: true });
+  });
 
   private handleAssociatePlan = this.wrapHandler((req: Request, res: Response): void => {
     const sessionDbId = this.parseIntParam(req, res, "sessionDbId");
@@ -274,14 +304,15 @@ export class PlanRoutes extends BaseRouteHandler {
    * Get info about active plan from docs/plans/ directory.
    * Only considers specs modified today to avoid showing stale plans.
    */
-  private getActivePlanInfo(projectRoot: string): PlanInfo | null {
+  private getActivePlans(projectRoot: string): PlanInfo[] {
     const plansDir = path.join(projectRoot, "docs", "plans");
     if (!existsSync(plansDir)) {
-      return null;
+      return [];
     }
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const activePlans: PlanInfo[] = [];
 
     try {
       const planFiles = readdirSync(plansDir)
@@ -303,32 +334,22 @@ export class PlanRoutes extends BaseRouteHandler {
         const planInfo = this.parsePlanContent(content, planFile, filePath, stat.mtime);
 
         if (planInfo && planInfo.status !== "VERIFIED") {
-          return planInfo;
+          activePlans.push(planInfo);
         }
       }
-    } catch (error) {}
+    } catch (error) {
+      logger.error("HTTP", "Failed to read active plans", {}, error as Error);
+    }
 
-    return null;
+    return activePlans;
   }
 
   /**
-   * Get active specs for the Spec viewer.
-   * Returns plans with PENDING/COMPLETE status + most recent VERIFIED plan.
+   * Get all specs for the Spec viewer, sorted by modification date (newest first).
    */
   private getActiveSpecs(projectRoot: string): PlanInfo[] {
-    const allPlans = this.getAllPlans(projectRoot);
-
-    const activeSpecs = allPlans.filter((p) => p.status === "PENDING" || p.status === "COMPLETE");
-
-    const verifiedPlans = allPlans
-      .filter((p) => p.status === "VERIFIED")
+    return this.getAllPlans(projectRoot)
       .sort((a, b) => new Date(b.modifiedAt).getTime() - new Date(a.modifiedAt).getTime());
-
-    if (verifiedPlans.length > 0) {
-      activeSpecs.push(verifiedPlans[0]);
-    }
-
-    return activeSpecs.sort((a, b) => new Date(b.modifiedAt).getTime() - new Date(a.modifiedAt).getTime());
   }
 
   /**
@@ -358,7 +379,9 @@ export class PlanRoutes extends BaseRouteHandler {
           plans.push(planInfo);
         }
       }
-    } catch (error) {}
+    } catch (error) {
+      logger.error("HTTP", "Failed to read all plans", {}, error as Error);
+    }
 
     return plans.slice(0, 10);
   }

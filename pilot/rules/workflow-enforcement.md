@@ -148,6 +148,21 @@ Note: Task management tools (TaskCreate, TaskList, etc.) are ALWAYS allowed.
 - Use `/spec` command instead
 - Built-in plan mode is incompatible with this workflow
 
+## Plan Registration (MANDATORY for /spec)
+
+**Every time a plan file is created or continued, register it with the session:**
+
+```bash
+~/.pilot/bin/pilot register-plan "<plan_path>" "<status>" 2>/dev/null || true
+```
+
+**When to call:**
+- After creating the plan file header (Step 1.1 in spec-plan)
+- After reading an existing plan for continuation (Step 0.1 in spec)
+- After status changes (PENDING → COMPLETE → VERIFIED)
+
+**Why:** Without registration, the statusline shows the wrong plan in parallel sessions. Each session must register its own plan so the statusbar displays correctly per-terminal.
+
 ## /spec Workflow
 
 The `/spec` command is a **dispatcher** that invokes phase skills via `Skill()`:

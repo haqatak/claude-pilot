@@ -19,7 +19,6 @@ const routes = [
 ];
 
 const SIDEBAR_COLLAPSED_KEY = 'pilot-memory-sidebar-collapsed';
-const LOGS_OPEN_KEY = 'pilot-memory-logs-open';
 
 export function App() {
   const { path, navigate } = useRouter();
@@ -37,13 +36,7 @@ export function App() {
       return false;
     }
   });
-  const [showLogs, setShowLogs] = useState(() => {
-    try {
-      return localStorage.getItem(LOGS_OPEN_KEY) === 'true';
-    } catch {
-      return false;
-    }
-  });
+  const [showLogs, setShowLogs] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
 
   useEffect(() => {
@@ -91,13 +84,7 @@ export function App() {
   }, []);
 
   const handleToggleLogs = useCallback(() => {
-    setShowLogs((prev) => {
-      const newValue = !prev;
-      try {
-        localStorage.setItem(LOGS_OPEN_KEY, String(newValue));
-      } catch {}
-      return newValue;
-    });
+    setShowLogs((prev) => !prev);
   }, []);
 
   const handleShortcut = useCallback(

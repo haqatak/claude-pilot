@@ -76,7 +76,7 @@ ELSE:
 **After reading the plan file, register the plan association (non-blocking):**
 
 ```bash
-python ~/.claude/pilot/scripts/register_plan.py "<plan_path>" "<status>" 2>/dev/null || true
+~/.pilot/bin/pilot register-plan "<plan_path>" "<status>" 2>/dev/null || true
 ```
 
 This tells Console which session is working on which plan. Failure is silently ignored.

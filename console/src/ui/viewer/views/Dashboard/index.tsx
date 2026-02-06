@@ -1,15 +1,13 @@
-import React from 'react';
 import { StatsGrid } from './StatsGrid';
 import { WorkerStatus } from './WorkerStatus';
 import { VectorDbStatus } from './VectorDbStatus';
 import { PlanStatus } from './PlanStatus';
 import { GitStatus } from './GitStatus';
 import { RecentActivity } from './RecentActivity';
-import { ActiveSessions } from './ActiveSessions';
 import { useStats } from '../../hooks/useStats';
 
 export function DashboardView() {
-  const { stats, workerStatus, vectorDbStatus, recentActivity, planStatus, gitInfo, activeSessions, isLoading } = useStats();
+  const { stats, workerStatus, vectorDbStatus, recentActivity, planStatus, gitInfo, isLoading } = useStats();
 
   if (isLoading) {
     return (
@@ -30,10 +28,8 @@ export function DashboardView() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <PlanStatus
-          active={planStatus.active}
-          plan={planStatus.plan}
+          plans={planStatus.plans}
         />
-        <ActiveSessions sessions={activeSessions} />
         <WorkerStatus
           status={workerStatus.status}
           version={workerStatus.version}

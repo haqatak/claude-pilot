@@ -37,6 +37,7 @@ import {
   checkVersionMatch,
 } from "./infrastructure/HealthMonitor.js";
 import { performGracefulShutdown } from "./infrastructure/GracefulShutdown.js";
+import { ensureWorkerDaemon } from "./infrastructure/EnsureWorkerDaemon.js";
 
 import { Server } from "./server/Server.js";
 
@@ -580,6 +581,7 @@ export class WorkerService {
   }
 }
 
+
 async function main() {
   const command = process.argv[2];
   const port = getWorkerPort();
@@ -600,57 +602,14 @@ async function main() {
         );
       }
 
-      if (await waitForHealth(port, 1000)) {
-        const versionCheck = await checkVersionMatch(port);
-        if (!versionCheck.matches) {
-          logger.info("SYSTEM", "Worker version mismatch detected - auto-restarting", {
-            pluginVersion: versionCheck.pluginVersion,
-            workerVersion: versionCheck.workerVersion,
-          });
-
-          await httpShutdown(port);
-          const freed = await waitForPortFree(port, getPlatformTimeout(15000));
-          if (!freed) {
-            logger.error("SYSTEM", "Port did not free up after shutdown for version mismatch restart", { port });
-            exitWithStatus("error", "Port did not free after version mismatch restart");
-          }
-          removePidFile();
-        } else {
-          logger.info("SYSTEM", "Worker already running and healthy");
-          exitWithStatus("ready");
-        }
+      const result = await ensureWorkerDaemon(port, __filename);
+      if (result.ready) {
+        logger.info("SYSTEM", "Worker started successfully");
+        exitWithStatus("ready");
+      } else {
+        logger.error("SYSTEM", result.error ?? "Worker failed to start");
+        exitWithStatus("error", result.error);
       }
-
-      const portInUse = await isPortInUse(port);
-      if (portInUse) {
-        logger.info("SYSTEM", "Port in use, waiting for worker to become healthy");
-        const healthy = await waitForHealth(port, getPlatformTimeout(15000));
-        if (healthy) {
-          logger.info("SYSTEM", "Worker is now healthy");
-          exitWithStatus("ready");
-        }
-        logger.error("SYSTEM", "Port in use but worker not responding to health checks");
-        exitWithStatus("error", "Port in use but worker not responding");
-      }
-
-      logger.info("SYSTEM", "Starting worker daemon");
-      const pid = spawnDaemon(__filename, port);
-      if (pid === undefined) {
-        logger.error("SYSTEM", "Failed to spawn worker daemon");
-        exitWithStatus("error", "Failed to spawn worker daemon");
-      }
-
-      writePidFile({ pid, port, startedAt: new Date().toISOString() });
-
-      const healthy = await waitForHealth(port, getPlatformTimeout(30000));
-      if (!healthy) {
-        removePidFile();
-        logger.error("SYSTEM", "Worker failed to start (health check timeout)");
-        exitWithStatus("error", "Worker failed to start (health check timeout)");
-      }
-
-      logger.info("SYSTEM", "Worker started successfully");
-      exitWithStatus("ready");
     }
 
     case "stop": {
@@ -708,6 +667,7 @@ async function main() {
         console.error("Events: context, session-init, observation, summarize, user-message");
         process.exit(1);
       }
+      await ensureWorkerDaemon(port, __filename);
       const { hookCommand } = await import("../cli/hook-command.js");
       await hookCommand(platform, event);
       break;

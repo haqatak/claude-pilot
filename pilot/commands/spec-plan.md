@@ -162,10 +162,17 @@ model: opus
    *Exploring codebase and gathering requirements...*
    ```
 
-4. **Why this matters:**
+4. **Register plan association (MANDATORY):**
+   ```bash
+   ~/.pilot/bin/pilot register-plan "<plan_path>" "PENDING" 2>/dev/null || true
+   ```
+   This tells the statusline which plan belongs to THIS session. Without it, parallel sessions show the wrong plan.
+
+5. **Why this matters:**
    - Status bar shows "Spec: <name> [/plan]" immediately
    - User sees progress even during exploration phase
    - Plan file exists for continuation if session clears
+   - Plan is correctly associated with this specific terminal
 
 **CRITICAL:** Do this FIRST, before any exploration or questions.
 

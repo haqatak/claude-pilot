@@ -38,32 +38,51 @@ def get_stop_guard_path() -> Path:
     return guard_dir / "spec-stop-guard"
 
 
+def _get_session_plan_path() -> Path:
+    """Get session-scoped active plan JSON path."""
+    session_id = os.environ.get("PILOT_SESSION_ID", "").strip() or "default"
+    return _sessions_base() / session_id / "active_plan.json"
+
+
 def find_active_plan() -> tuple[Path | None, str | None, bool]:
-    """Find an active plan file and return (path, status, approved)."""
-    plans_dir = Path("docs/plans")
-    if not plans_dir.exists():
+    """Find the active plan for THIS session via session-scoped active_plan.json."""
+    plan_json = _get_session_plan_path()
+    if not plan_json.exists():
         return None, None, False
 
-    plan_files = sorted(plans_dir.glob("*.md"), reverse=True)
+    try:
+        data = json.loads(plan_json.read_text())
+        plan_path_str = data.get("plan_path", "")
+    except (json.JSONDecodeError, OSError):
+        return None, None, False
 
-    for plan_file in plan_files:
-        try:
-            content = plan_file.read_text()
-            status_match = re.search(r"^Status:\s*(\w+)", content, re.MULTILINE)
-            if status_match:
-                status = status_match.group(1).upper()
-                if status in ("PENDING", "COMPLETE"):
-                    approved_match = re.search(
-                        r"^Approved:\s*(Yes|No)", content, re.MULTILINE | re.IGNORECASE
-                    )
-                    approved = bool(
-                        approved_match and approved_match.group(1).lower() == "yes"
-                    )
-                    return plan_file, status, approved
-        except OSError:
-            continue
+    if not plan_path_str:
+        return None, None, False
 
-    return None, None, False
+    plan_file = Path(plan_path_str)
+    if not plan_file.is_absolute():
+        project_root = os.environ.get("CLAUDE_PROJECT_ROOT", str(Path.cwd()))
+        plan_file = Path(project_root) / plan_file
+    if not plan_file.exists():
+        return None, None, False
+
+    try:
+        content = plan_file.read_text()
+        status_match = re.search(r"^Status:\s*(\w+)", content, re.MULTILINE)
+        if not status_match:
+            return None, None, False
+        status = status_match.group(1).upper()
+        if status not in ("PENDING", "COMPLETE"):
+            return None, None, False
+        approved_match = re.search(
+            r"^Approved:\s*(Yes|No)", content, re.MULTILINE | re.IGNORECASE
+        )
+        approved = bool(
+            approved_match and approved_match.group(1).lower() == "yes"
+        )
+        return plan_file, status, approved
+    except OSError:
+        return None, None, False
 
 
 def get_next_phase(status: str, approved: bool) -> str:
