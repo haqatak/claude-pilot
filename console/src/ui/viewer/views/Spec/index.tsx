@@ -108,7 +108,9 @@ export function SpecView() {
       setError('Failed to load spec content');
       console.error('Failed to load spec content:', err);
     } finally {
-      setIsLoadingContent(false);
+      if (!background) {
+        setIsLoadingContent(false);
+      }
     }
   }, []);
 

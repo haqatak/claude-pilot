@@ -14,11 +14,13 @@ interface WorkerStatus {
   queueDepth?: number;
 }
 
-interface VectorDbStatus {
-  type: 'chroma' | 'none';
-  status: 'connected' | 'disconnected' | 'error';
-  documentCount?: number;
-  collectionCount?: number;
+interface VexorStatus {
+  isIndexed: boolean;
+  files: number;
+  mode: string;
+  model: string;
+  generatedAt: string | null;
+  isReindexing: boolean;
 }
 
 interface ActivityItem {
@@ -37,6 +39,7 @@ interface PlanInfo {
   phase: 'plan' | 'implement' | 'verify';
   iterations: number;
   approved: boolean;
+  filePath?: string;
 }
 
 interface PlanStatus {
@@ -54,13 +57,15 @@ interface GitInfo {
 interface UseStatsResult {
   stats: Stats;
   workerStatus: WorkerStatus;
-  vectorDbStatus: VectorDbStatus;
+  vexorStatus: VexorStatus;
   recentActivity: ActivityItem[];
   planStatus: PlanStatus;
   gitInfo: GitInfo;
   isLoading: boolean;
   refreshStats: () => Promise<void>;
 }
+
+const VEXOR_POLL_INTERVAL_MS = 60_000;
 
 export function useStats(): UseStatsResult {
   const [stats, setStats] = useState<Stats>({
@@ -72,14 +77,34 @@ export function useStats(): UseStatsResult {
   const [workerStatus, setWorkerStatus] = useState<WorkerStatus>({
     status: 'offline',
   });
-  const [vectorDbStatus, setVectorDbStatus] = useState<VectorDbStatus>({
-    type: 'none',
-    status: 'disconnected',
+  const [vexorStatus, setVexorStatus] = useState<VexorStatus>({
+    isIndexed: false,
+    files: 0,
+    mode: '',
+    model: '',
+    generatedAt: null,
+    isReindexing: false,
   });
   const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([]);
   const [planStatus, setPlanStatus] = useState<PlanStatus>({ active: false, plans: [] });
   const [gitInfo, setGitInfo] = useState<GitInfo>({ branch: null, staged: 0, unstaged: 0, untracked: 0 });
   const [isLoading, setIsLoading] = useState(true);
+
+  const loadVexorStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/vexor/status');
+      const data = await res.json();
+      setVexorStatus({
+        isIndexed: data.isIndexed ?? false,
+        files: data.files ?? 0,
+        mode: data.mode ?? '',
+        model: data.model ?? '',
+        generatedAt: data.generatedAt ?? null,
+        isReindexing: data.isReindexing ?? false,
+      });
+    } catch {
+    }
+  }, []);
 
   const loadStats = useCallback(async () => {
     try {
@@ -119,13 +144,6 @@ export function useStats(): UseStatsResult {
         queueDepth: healthData.queueDepth || 0,
       });
 
-      setVectorDbStatus({
-        type: 'chroma',
-        status: healthData.status === 'ok' ? 'connected' : 'disconnected',
-        documentCount: 0,
-        collectionCount: projectsData.projects?.length || 0,
-      });
-
       const items = activityData.items || activityData.observations || activityData || [];
       setRecentActivity(
         (Array.isArray(items) ? items : []).slice(0, 5).map((obs: any) => ({
@@ -160,6 +178,9 @@ export function useStats(): UseStatsResult {
 
   useEffect(() => {
     loadStats();
+    loadVexorStatus();
+
+    const vexorInterval = setInterval(loadVexorStatus, VEXOR_POLL_INTERVAL_MS);
 
     const eventSource = new EventSource('/stream');
 
@@ -182,13 +203,16 @@ export function useStats(): UseStatsResult {
       }
     };
 
-    return () => eventSource.close();
-  }, [loadStats]);
+    return () => {
+      clearInterval(vexorInterval);
+      eventSource.close();
+    };
+  }, [loadStats, loadVexorStatus]);
 
   return {
     stats,
     workerStatus,
-    vectorDbStatus,
+    vexorStatus,
     recentActivity,
     planStatus,
     gitInfo,

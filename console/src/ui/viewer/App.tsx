@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { DashboardLayout } from './layouts';
 import { Router, useRouter } from './router';
 import { DashboardView, MemoriesView, SearchView, SessionsView, SpecView } from './views';
@@ -25,8 +25,6 @@ export function App() {
   const { resolvedTheme, setThemePreference } = useTheme();
   const { workerStatus } = useStats();
 
-  const [projects, setProjects] = useState<{ name: string; observationCount: number }[]>([]);
-  const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
     if (isMobile) return true;
@@ -38,36 +36,6 @@ export function App() {
   });
   const [showLogs, setShowLogs] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
-
-  useEffect(() => {
-    async function fetchProjects() {
-      try {
-        const projectsRes = await fetch('/api/projects');
-        const projectsData = await projectsRes.json();
-        const projectNames = (projectsData.projects || [])
-          .filter((p: string) => p && p.trim() && !p.startsWith('.') && !p.startsWith('-'))
-          .slice(0, 30);
-
-        setProjects(projectNames.map((name: string) => ({ name, observationCount: 0 })));
-      } catch (error) {
-        console.error('Failed to fetch projects:', error);
-      }
-    }
-
-    fetchProjects();
-  }, []);
-
-  const handleSelectProject = useCallback(
-    (projectName: string | null) => {
-      setSelectedProject(projectName);
-      if (projectName) {
-        navigate(`/memories?project=${encodeURIComponent(projectName)}`);
-      } else {
-        navigate('/memories');
-      }
-    },
-    [navigate]
-  );
 
   const handleToggleTheme = useCallback(() => {
     setThemePreference(resolvedTheme === 'light' ? 'dark' : 'light');
@@ -114,9 +82,6 @@ export function App() {
     <ToastProvider>
       <DashboardLayout
         currentPath={`#${path}`}
-        projects={projects}
-        selectedProject={selectedProject}
-        onSelectProject={handleSelectProject}
         workerStatus={workerStatus.status}
         queueDepth={workerStatus.queueDepth}
         theme={resolvedTheme as 'light' | 'dark'}
@@ -134,8 +99,6 @@ export function App() {
         onNavigate={navigate}
         onToggleTheme={handleToggleTheme}
         onToggleSidebar={handleToggleSidebar}
-        projects={projects}
-        onSelectProject={handleSelectProject}
       />
     </ToastProvider>
   );

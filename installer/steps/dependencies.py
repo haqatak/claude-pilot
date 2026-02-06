@@ -405,7 +405,6 @@ def install_mcp_cli() -> bool:
 def install_sx() -> bool:
     """Install sx (sleuth.io skills exchange) for team skill sharing."""
     if command_exists("sx"):
-        _run_bash_with_retry("sx update")
         return True
 
     return _run_bash_with_retry("curl -fsSL https://raw.githubusercontent.com/sleuth-io/sx/main/install.sh | bash")
@@ -431,28 +430,33 @@ def install_typescript_lsp() -> bool:
     return _run_bash_with_retry("npm install -g @vtsls/language-server typescript")
 
 
+def _get_playwright_cache_dirs() -> list[Path]:
+    """Get possible Playwright cache directories for the current platform."""
+    import platform
+
+    dirs = []
+    if platform.system() == "Darwin":
+        dirs.append(Path.home() / "Library" / "Caches" / "ms-playwright")
+    dirs.append(Path.home() / ".cache" / "ms-playwright")
+    return dirs
+
+
 def _is_agent_browser_ready() -> bool:
     """Check if agent-browser is installed and Chromium is available."""
     if not command_exists("agent-browser"):
         return False
 
-    cache_dir = Path.home() / ".cache" / "ms-playwright"
-    if not cache_dir.exists():
-        return False
+    for cache_dir in _get_playwright_cache_dirs():
+        if not cache_dir.exists():
+            continue
 
-    for chromium_dir in cache_dir.glob("chromium-*"):
-        if (chromium_dir / "chrome-linux" / "chrome").exists():
-            return True
-        if (chromium_dir / "chrome-mac" / "Chromium.app").exists():
-            return True
-        if (chromium_dir / "chrome-linux" / "headless_shell").exists():
-            return True
-        if (chromium_dir / "chrome-headless-shell-linux").exists():
-            return True
+        for chromium_dir in cache_dir.glob("chromium-*"):
+            if (chromium_dir / "INSTALLATION_COMPLETE").exists():
+                return True
 
-    for headless_dir in cache_dir.glob("chromium-headless-shell-*"):
-        if any(headless_dir.iterdir()):
-            return True
+        for chromium_dir in cache_dir.glob("chromium_headless_shell-*"):
+            if (chromium_dir / "INSTALLATION_COMPLETE").exists():
+                return True
 
     return False
 

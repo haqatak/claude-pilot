@@ -2,6 +2,7 @@
 """Hook to redirect built-in tools to better MCP/CLI alternatives.
 
 Blocks or redirects tools to better alternatives:
+- Bash (background) → Synchronous execution (no run_in_background)
 - WebSearch/WebFetch → MCP web tools (full content, no truncation)
 - Grep (semantic) → vexor (intent-based search)
 - Task/Explore → vexor (semantic search with better results)
@@ -89,6 +90,16 @@ EXPLORE_REDIRECT = {
 }
 
 REDIRECTS = {
+    "Bash": {
+        "message": "Background Bash tasks are BANNED",
+        "alternative": "Run commands synchronously (remove run_in_background). Use timeout parameter if needed (up to 600000ms)",
+        "example": "Bash(command='vexor search ...', timeout=60000)",
+        "condition": lambda data: (
+            data.get("tool_input", {}).get("run_in_background", False) is True
+            if isinstance(data.get("tool_input"), dict)
+            else False
+        ),
+    },
     "WebSearch": {
         "message": "WebSearch is blocked",
         "alternative": "Use ToolSearch to load mcp__web-search__search, then call it directly",

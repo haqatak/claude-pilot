@@ -51,6 +51,12 @@ export class PlanRoutes extends BaseRouteHandler {
     this.sseBroadcaster = sseBroadcaster ?? null;
   }
 
+  private static VALID_PLAN_STATUSES = new Set(["PENDING", "COMPLETE", "VERIFIED"]);
+
+  private isValidPlanStatus(status: unknown): status is PlanInfo["status"] {
+    return typeof status === "string" && PlanRoutes.VALID_PLAN_STATUSES.has(status);
+  }
+
   setupRoutes(app: express.Application): void {
     app.get("/api/plan", this.handleGetActivePlan.bind(this));
     app.get("/api/plans", this.handleGetAllPlans.bind(this));
@@ -206,6 +212,10 @@ export class PlanRoutes extends BaseRouteHandler {
     const sessionDbId = this.parseIntParam(req, res, "sessionDbId");
     if (sessionDbId === null) return;
     if (!this.validateRequired(req, res, ["planPath", "status"])) return;
+    if (!this.isValidPlanStatus(req.body.status)) {
+      this.badRequest(res, `Invalid status: ${req.body.status}. Must be PENDING, COMPLETE, or VERIFIED`);
+      return;
+    }
     const db = this.getDb(res);
     if (!db) return;
 
@@ -221,6 +231,10 @@ export class PlanRoutes extends BaseRouteHandler {
       return;
     }
     if (!this.validateRequired(req, res, ["planPath", "status"])) return;
+    if (!this.isValidPlanStatus(req.body.status)) {
+      this.badRequest(res, `Invalid status: ${req.body.status}. Must be PENDING, COMPLETE, or VERIFIED`);
+      return;
+    }
     const db = this.getDb(res);
     if (!db) return;
 
@@ -275,6 +289,10 @@ export class PlanRoutes extends BaseRouteHandler {
     const sessionDbId = this.parseIntParam(req, res, "sessionDbId");
     if (sessionDbId === null) return;
     if (!this.validateRequired(req, res, ["status"])) return;
+    if (!this.isValidPlanStatus(req.body.status)) {
+      this.badRequest(res, `Invalid status: ${req.body.status}. Must be PENDING, COMPLETE, or VERIFIED`);
+      return;
+    }
     const db = this.getDb(res);
     if (!db) return;
 

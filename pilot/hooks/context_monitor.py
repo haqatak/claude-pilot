@@ -15,7 +15,7 @@ THRESHOLD_STOP = 90
 THRESHOLD_CRITICAL = 95
 LEARN_THRESHOLDS = [40, 60, 80]
 
-CACHE_TTL = 30
+CACHE_TTL = 15
 
 
 def _sessions_base() -> Path:
@@ -231,6 +231,12 @@ def save_cache(
         pass
 
 
+def _get_continuation_path() -> str:
+    """Get the absolute continuation file path for the current Pilot session."""
+    pilot_session_id = os.environ.get("PILOT_SESSION_ID", "").strip() or "default"
+    return str(Path.home() / ".pilot" / "sessions" / pilot_session_id / "continuation.md")
+
+
 def run_context_monitor() -> int:
     """Run context monitoring and return exit code."""
     session_id = get_current_session_id()
@@ -289,13 +295,15 @@ def run_context_monitor() -> int:
             new_learn_shown.append(threshold)
             break
 
+    continuation_path = _get_continuation_path()
+
     if percentage >= THRESHOLD_CRITICAL:
         save_cache(total_tokens, session_id, new_learn_shown if new_learn_shown else None)
         print("", file=sys.stderr)
         print(f"{RED}🚨 CONTEXT {percentage:.0f}% - CRITICAL: HANDOFF NOW IN THIS TURN{NC}", file=sys.stderr)
         print(f"{RED}Do NOT write code, fix errors, or run commands.{NC}", file=sys.stderr)
         print(f"{RED}Execute BOTH steps below in THIS SINGLE TURN (no stopping between):{NC}", file=sys.stderr)
-        print(f"{RED}  1. Write ~/.pilot/sessions/$PILOT_SESSION_ID/continuation.md{NC}", file=sys.stderr)
+        print(f"{RED}  1. Write {continuation_path}{NC}", file=sys.stderr)
         print(f"{RED}  2. Run: ~/.pilot/bin/pilot send-clear [plan-path|--general]{NC}", file=sys.stderr)
         print(
             f"{RED}Do NOT output a summary and stop. Do NOT wait for user. Execute send-clear NOW.{NC}", file=sys.stderr
@@ -314,7 +322,7 @@ def run_context_monitor() -> int:
 
         print(f"{RED}⚠️  CONTEXT {percentage:.0f}% - MANDATORY HANDOFF{NC}", file=sys.stderr)
         print(f"{RED}Do NOT start new tasks or fix cycles. Execute handoff in a SINGLE TURN:{NC}", file=sys.stderr)
-        print(f"{RED}  1. Write ~/.pilot/sessions/$PILOT_SESSION_ID/continuation.md{NC}", file=sys.stderr)
+        print(f"{RED}  1. Write {continuation_path}{NC}", file=sys.stderr)
         print(f"{RED}  2. Run: ~/.pilot/bin/pilot send-clear [plan-path|--general]{NC}", file=sys.stderr)
         print(
             f"{RED}Do NOT summarize and stop. The send-clear command triggers automatic restart.{NC}", file=sys.stderr

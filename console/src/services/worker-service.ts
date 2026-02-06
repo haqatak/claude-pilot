@@ -63,7 +63,9 @@ import { RetentionRoutes } from "./worker/http/routes/RetentionRoutes.js";
 import { MetricsRoutes } from "./worker/http/routes/MetricsRoutes.js";
 import { AuthRoutes } from "./worker/http/routes/AuthRoutes.js";
 import { PlanRoutes } from "./worker/http/routes/PlanRoutes.js";
+import { VexorRoutes } from "./worker/http/routes/VexorRoutes.js";
 import { MetricsService } from "./worker/MetricsService.js";
+import { startRetentionScheduler, stopRetentionScheduler } from "./worker/RetentionScheduler.js";
 
 /**
  * Build JSON status output for hook framework communication.
@@ -131,6 +133,7 @@ export class WorkerService {
 
   private searchRoutes: SearchRoutes | null = null;
   private metricsService: MetricsService | null = null;
+  private vexorRoutes: VexorRoutes | null = null;
 
   private initializationComplete: Promise<void>;
   private resolveInitialization!: () => void;
@@ -220,6 +223,11 @@ export class WorkerService {
 
     this.metricsService = new MetricsService(this.dbManager, this.sessionManager, this.startTime);
     this.server.registerRoutes(new MetricsRoutes(this.metricsService));
+
+    this.vexorRoutes = new VexorRoutes();
+    this.server.registerRoutes(this.vexorRoutes);
+
+    startRetentionScheduler(this.dbManager);
 
     this.server.app.get("/api/context/inject", async (req, res, next) => {
       const timeoutMs = 300000;
@@ -549,6 +557,12 @@ export class WorkerService {
       clearInterval(this.cleanupInterval);
       this.cleanupInterval = null;
       logger.info("SYSTEM", "Stopped periodic orphan cleanup");
+    }
+
+    stopRetentionScheduler();
+
+    if (this.vexorRoutes) {
+      this.vexorRoutes.dispose();
     }
 
     await performGracefulShutdown({

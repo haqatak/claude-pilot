@@ -25,7 +25,15 @@
 
 ## Session Identity
 
-Continuation files are stored under `~/.pilot/sessions/$PILOT_SESSION_ID/` where `PILOT_SESSION_ID` is an environment variable set by the Pilot wrapper (defaults to `"default"` if not set). This ensures parallel sessions don't interfere with each other's continuation state.
+Continuation files are stored under `~/.pilot/sessions/<session-id>/` where `<session-id>` comes from the `PILOT_SESSION_ID` environment variable (defaults to `"default"` if not set). This ensures parallel sessions don't interfere with each other's continuation state.
+
+**⚠️ CRITICAL: The context monitor hook prints the EXACT absolute path to use.** Copy the path from the hook output — do NOT try to resolve `$PILOT_SESSION_ID` yourself. If you need the path before the hook fires, resolve it explicitly:
+
+```bash
+echo $PILOT_SESSION_ID
+```
+
+Then construct the path: `~/.pilot/sessions/<resolved-id>/continuation.md`
 
 ## How It Works
 
@@ -84,7 +92,9 @@ Then check the Status field in the most recent plan file(s). An **active plan** 
 
 **Step 3: Write Session Summary to File (GUARANTEED BACKUP)**
 
-Write the summary to `~/.pilot/sessions/$PILOT_SESSION_ID/continuation.md` using the Write tool. Include VERIFIED status with actual command output.
+Write the summary using the Write tool to the **exact path printed by the context monitor hook** (Step 1 in the hook output). The path is an absolute path like `/Users/you/.pilot/sessions/12345/continuation.md`. **Do NOT use `$PILOT_SESSION_ID` as a literal string in the file path — the Write tool cannot resolve shell variables.**
+
+Include VERIFIED status with actual command output.
 
 ```markdown
 # Session Continuation
@@ -154,26 +164,42 @@ The new session receives:
 - Pilot Memory context injection (including your Session End Summary)
 - A continuation prompt instructing you to resume
 
+## ⛔ MANDATORY: Clean Up Stale Continuation Files at Session Start
+
+**At the START of EVERY session (not just continuation sessions), delete any stale continuation file:**
+
+```bash
+rm -f ~/.pilot/sessions/$PILOT_SESSION_ID/continuation.md
+```
+
+**Why this is critical:** Stale continuation files from previous sessions cause the Write tool to fail (it requires reading before writing). If the stale file contains old context, it can corrupt the handoff. This cleanup MUST happen before any work begins — even in quick-mode sessions that aren't continuations.
+
+**When to clean up:**
+- At the very start of every new session
+- Before writing a new continuation file (as a safety net)
+- The `send-clear` command does NOT guarantee the file is deleted
+
 ## Resuming After Session Restart
 
 When a new session starts with a continuation prompt:
 
-1. **Check for continuation file first:**
+1. **Resolve session ID and read continuation file:**
    ```bash
-   cat ~/.pilot/sessions/$PILOT_SESSION_ID/continuation.md 2>/dev/null
+   # Resolve the actual session ID first
+   echo $PILOT_SESSION_ID
    ```
-   If it exists, read it and use it as your source of truth.
+   Then use the Read tool with the resolved absolute path (e.g., `~/.pilot/sessions/12345/continuation.md`). **Do NOT pass `$PILOT_SESSION_ID` to the Read tool — resolve it first.**
 
-2. **Also check Pilot Memory** for injected context about "Session Continuation"
-
-3. **Acknowledge the continuation** - Tell user: "Continuing from previous session..."
-
-4. **Resume the work** - Execute the "Next Steps" immediately
-
-5. **Clean up** - After resuming, delete the continuation file:
+2. **Delete the continuation file after reading it:**
    ```bash
    rm -f ~/.pilot/sessions/$PILOT_SESSION_ID/continuation.md
    ```
+
+3. **Also check Pilot Memory** for injected context about "Session Continuation"
+
+4. **Acknowledge the continuation** - Tell user: "Continuing from previous session..."
+
+5. **Resume the work** - Execute the "Next Steps" from the continuation file immediately
 
 ## Integration with /spec
 

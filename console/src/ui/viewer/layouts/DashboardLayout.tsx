@@ -2,17 +2,9 @@ import React from 'react';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 
-interface Project {
-  name: string;
-  observationCount: number;
-}
-
 interface DashboardLayoutProps {
   children: React.ReactNode;
   currentPath: string;
-  projects: Project[];
-  selectedProject: string | null;
-  onSelectProject: (name: string | null) => void;
   workerStatus: 'online' | 'offline' | 'processing';
   queueDepth?: number;
   theme: 'light' | 'dark';
@@ -25,9 +17,6 @@ interface DashboardLayoutProps {
 export function DashboardLayout({
   children,
   currentPath,
-  projects,
-  selectedProject,
-  onSelectProject,
   workerStatus,
   queueDepth,
   theme,
@@ -42,9 +31,6 @@ export function DashboardLayout({
     <div className="dashboard-layout flex min-h-screen" data-theme={themeName}>
       <Sidebar
         currentPath={currentPath}
-        projects={projects}
-        selectedProject={selectedProject}
-        onSelectProject={onSelectProject}
         workerStatus={workerStatus}
         queueDepth={queueDepth}
         collapsed={sidebarCollapsed}

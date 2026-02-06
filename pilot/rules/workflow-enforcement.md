@@ -27,11 +27,11 @@
 
 ---
 
-## ⭐ MANDATORY: Task Management for Non-Spec Work
+## ⭐ MANDATORY: Task Management for ALL Work
 
-**Outside of /spec workflows, ALWAYS use task management tools to track work.**
+**ALWAYS use task management tools to track non-trivial work, including /spec workflows.**
 
-This prevents forgetting steps, manages dependencies, and shows the user clear progress.
+This prevents forgetting steps, manages dependencies, shows the user real-time progress in their terminal (Ctrl+T), and persists across session handoffs.
 
 ### When to Create Tasks (DO IT!)
 
@@ -42,20 +42,21 @@ This prevents forgetting steps, manages dependencies, and shows the user clear p
 | Complex investigation | Create tasks for each area to explore |
 | Bug fix with verification | Task for fix, task for test, task for verify |
 | Any non-trivial request | Break it down into tasks FIRST |
+| `/spec` implementation phase | Create tasks from plan (see Step 2.2 in spec-implement) |
 
 ### Task Management Tools
 
 | Tool | Purpose | Use When |
 |------|---------|----------|
 | `TaskCreate` | Create new task | Starting any piece of work |
-| `TaskList` | See all tasks | Check progress, find next task |
+| `TaskList` | See all tasks | Check progress, find next task, resume after handoff |
 | `TaskGet` | Full task details | Need description/context |
 | `TaskUpdate` | Change status/deps | Starting, completing, or blocking tasks |
 
 ### Task Workflow
 
 ```
-1. User makes request
+1. User makes request (or /spec enters implement phase)
 2. IMMEDIATELY create tasks (before any other work)
 3. Set up dependencies with addBlockedBy
 4. Mark task in_progress when starting
@@ -63,6 +64,28 @@ This prevents forgetting steps, manages dependencies, and shows the user clear p
 6. Check TaskList for next task
 7. Repeat until all tasks completed
 ```
+
+### Session Start: Clean Up Stale Tasks
+
+**At the start of every session, clean up leftover tasks from previous sessions.**
+
+1. Run `TaskList` to see all existing tasks
+2. **Delete tasks that are no longer relevant** — tasks from old sessions that don't relate to the current user request. Use `TaskUpdate` with `status: "deleted"` to remove them.
+3. Only keep tasks that are actively relevant to the current work
+4. Then create new tasks for the current request
+
+**Why:** Stale tasks from previous sessions clutter the task list, confuse progress tracking, and waste the user's attention. A clean task list = clear focus.
+
+### Session Continuations
+
+**Tasks persist across session handoffs via `CLAUDE_CODE_TASK_LIST_ID`.**
+
+When resuming in a new session:
+1. Run `TaskList` first - existing tasks from the prior session are already there
+2. **Delete stale tasks** that are no longer relevant to current work
+3. Do NOT recreate tasks that already exist and are still relevant
+4. Review statuses to find where the previous session left off
+5. Resume the first uncompleted task
 
 ### Dependencies - Don't Forget Them!
 
@@ -92,9 +115,9 @@ Tasks 3 and 4 won't show as ready until Task 2 completes.
 ### Why This Matters
 
 - **Never forget a step** - Tasks are your checklist
-- **User sees progress** - Clear status visibility
+- **User sees progress** - Real-time status spinners in terminal (Ctrl+T)
 - **Dependencies prevent mistakes** - Can't skip ahead
-- **Context handoffs work** - Tasks persist across sessions
+- **Context handoffs work** - Tasks persist across sessions via `~/.claude/tasks/`
 - **Accountability** - Clear record of what was done
 
 ## ⛔ ABSOLUTE BANS
@@ -139,9 +162,11 @@ Even if:
 Note: Task management tools (TaskCreate, TaskList, etc.) are ALWAYS allowed.
 
 ### No Background Tasks
-**NEVER use `run_in_background=true`.**
-- Run commands synchronously
+**NEVER use `run_in_background=true` on Bash or any other tool.**
+- Run ALL commands synchronously — no exceptions
 - Use `timeout` parameter if needed (up to 600000ms)
+- Background tasks lose visibility, create orphan processes, and waste context on polling
+- This is enforced by the `tool_redirect` hook — background Bash calls are blocked with exit code 2
 
 ### No Built-in Plan Mode
 **NEVER use `EnterPlanMode` or `ExitPlanMode` tools.**
@@ -229,6 +254,21 @@ The user approved the plan. Verification fixes are part of that approval.
 - Never skip tests or cut corners when context allows
 - A clean handoff beats rushed completion
 - **At 90%+ context: HANDOFF IS THE PRIORITY.** Do not start new fix cycles (linting, type checking, error fixing). Document remaining work and hand off immediately. The "fix all errors" mandate is suspended - the next session will handle them.
+
+## Phase Transition Context Guard
+
+**⛔ Before EVERY `Skill()` call that transitions to another /spec phase, check context:**
+
+```bash
+~/.pilot/bin/pilot check-context --json
+```
+
+- **< 70%:** Proceed with phase transition.
+- **>= 70%:** Do NOT start the next phase. Hand off instead.
+
+Each phase needs significant context headroom. Starting a new phase above 70% risks hitting the hard context limit — the worst-case scenario where all progress in the current turn is lost. The next session dispatches automatically based on plan status.
+
+**Applies to:** plan→implement, implement→verify, verify→implement (feedback loop), dispatcher→any phase. See spec.md Section 0.3 for details.
 
 ## No Stopping - Automatic Continuation
 

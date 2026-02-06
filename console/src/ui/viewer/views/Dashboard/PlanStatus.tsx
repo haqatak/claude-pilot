@@ -8,6 +8,7 @@ interface PlanInfo {
   phase: 'plan' | 'implement' | 'verify';
   iterations: number;
   approved: boolean;
+  filePath?: string;
 }
 
 export interface PlanStatusProps {
@@ -73,8 +74,8 @@ export function PlanStatus({ plans }: PlanStatusProps) {
           <Badge variant="info">{plans.length} active</Badge>
         </div>
         <div className="space-y-2">
-          {plans.map((plan) => (
-            <PlanRow key={plan.name} plan={plan} />
+          {plans.map((plan, idx) => (
+            <PlanRow key={plan.filePath ?? `${plan.name}-${idx}`} plan={plan} />
           ))}
         </div>
       </CardBody>

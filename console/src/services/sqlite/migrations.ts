@@ -523,34 +523,10 @@ export const migration009: Migration = {
 };
 
 /**
- * Migration 010 - Add session_plans table for session→plan associations
- * Tracks which session is working on which plan file
- */
-export const migration010: Migration = {
-  version: 10,
-  up: (db: Database) => {
-    db.run(`
-      CREATE TABLE IF NOT EXISTS session_plans (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        session_db_id INTEGER NOT NULL UNIQUE,
-        plan_path TEXT NOT NULL,
-        plan_status TEXT DEFAULT 'PENDING',
-        created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL,
-        FOREIGN KEY (session_db_id) REFERENCES sdk_sessions(id) ON DELETE CASCADE
-      )
-    `);
-
-    console.log("✅ Created session_plans table for plan associations");
-  },
-
-  down: (db: Database) => {
-    db.run(`DROP TABLE IF EXISTS session_plans`);
-  },
-};
-
-/**
- * All migrations in order
+ * All migrations in order.
+ * Note: session_plans table is created by SessionStore.ensureSessionPlansTable()
+ * (version 21) since SessionStore is the authoritative schema owner and tests
+ * instantiate it directly without MigrationRunner.
  */
 export const migrations: Migration[] = [
   migration001,
@@ -562,5 +538,4 @@ export const migrations: Migration[] = [
   migration007,
   migration008,
   migration009,
-  migration010,
 ];

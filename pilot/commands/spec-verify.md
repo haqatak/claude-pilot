@@ -73,7 +73,7 @@ aws <service> get-<resource> --output json
 | Bug Type | Action |
 |----------|--------|
 | **Minor** (typo, off-by-one, missing import) | Fix immediately, re-run, continue verification |
-| **Major** (logic error, missing function, architectural issue) | Add task to plan, set PENDING, loop back via `Skill(skill='spec-implement', args='<plan-path>')` |
+| **Major** (logic error, missing function, architectural issue) | Add task to plan, set PENDING, **⛔ Context Guard** (spec.md 0.3), then `Skill(skill='spec-implement', args='<plan-path>')` |
 
 **Rule of thumb:** If you can fix it in < 5 minutes without writing new tests, fix inline. Otherwise, add a task.
 
@@ -116,7 +116,8 @@ This is a serious issue - the implementation is incomplete.
    The plan has been updated with [N] new tasks.
    ```
 
-4. **Invoke implementation phase:** `Skill(skill='spec-implement', args='<plan-path>')`
+4. **⛔ Phase Transition Context Guard:** Run `~/.pilot/bin/pilot check-context --json`. If >= 70%, hand off instead (see spec.md Section 0.3).
+5. **Invoke implementation phase:** `Skill(skill='spec-implement', args='<plan-path>')`
 
 ### Step 3.4: Rules Compliance Audit
 
@@ -305,7 +306,7 @@ This is part of the automated /spec workflow. The user approved the plan - verif
 **After all fixes:**
 1. Re-run verification (spawn new verifier) to catch any regressions
 2. Repeat until no must_fix or should_fix issues remain (max 3 iterations)
-3. If iterations exhausted with remaining issues, add them to plan and invoke `Skill(skill='spec-implement', args='<plan-path>')`
+3. If iterations exhausted with remaining issues, add them to plan. **⛔ Phase Transition Context Guard** (spec.md Section 0.3) before invoking `Skill(skill='spec-implement', args='<plan-path>')`
 
 **The only stopping point in /spec is plan approval. Everything else is automatic.**
 
@@ -372,7 +373,8 @@ Use `agent-browser` to verify UI renders and workflows complete. See `~/.claude/
    Iterations: N     →  Iterations: N+1
    ```
 3. Inform user: "🔄 Iteration N+1: Issues found, fixing and re-verifying..."
-4. **Invoke implementation phase:** `Skill(skill='spec-implement', args='<plan-path>')`
+4. **⛔ Phase Transition Context Guard:** Run `~/.pilot/bin/pilot check-context --json`. If >= 70%, hand off instead (see spec.md Section 0.3).
+5. **Invoke implementation phase:** `Skill(skill='spec-implement', args='<plan-path>')`
 
 ---
 

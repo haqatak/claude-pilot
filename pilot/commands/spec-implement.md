@@ -20,11 +20,12 @@ model: opus
 |---|------|
 | 1 | **NO sub-agents during implementation** - Use direct tools only. |
 | 2 | **TDD is MANDATORY** - No production code without failing test first |
-| 3 | **Update plan checkboxes after EACH task** - Not at the end |
+| 3 | **Update plan checkboxes AND task status after EACH task** - Not at the end |
 | 4 | **NEVER SKIP TASKS** - Every task MUST be fully implemented |
 | 5 | **Quality over speed** - Never rush due to context pressure |
 | 6 | **Plan file is source of truth** - Survives session clears |
 | 7 | **NEVER assume - verify by reading files** |
+| 8 | **Task management is MANDATORY** - Use TaskCreate/TaskUpdate for progress tracking |
 
 ---
 
@@ -76,7 +77,56 @@ spec-implement → spec-verify → issues found → spec-implement → spec-veri
 
 ---
 
-### Step 2.2: Per-Task TDD Loop
+### Step 2.2: Set Up Task List (MANDATORY)
+
+**After reading the plan, set up task tracking using the Task management tools.**
+
+This makes implementation progress visible in the terminal (Ctrl+T), enables dependency tracking, and persists across session handoffs via `CLAUDE_CODE_TASK_LIST_ID`.
+
+**Process:**
+
+1. **Check for existing tasks first:** Run `TaskList` to see if a previous session already created tasks
+2. **Branch based on result:**
+
+**If TaskList returns tasks (continuation session):**
+- Tasks already exist from a prior session - do NOT recreate them
+- Review existing task statuses to understand where the previous session left off
+- Cross-reference with plan checkboxes (`[x]` = done, `[ ]` = remaining)
+- If a task is `in_progress` but the session that started it is gone, it was interrupted - keep it `in_progress` and resume it
+- Proceed to Step 2.3 starting with the first uncompleted task
+
+**If TaskList is empty (fresh start):**
+- Create one task per uncompleted plan task (`[ ]` items):
+  ```
+  TaskCreate(
+    subject="Task N: <title from plan>",
+    description="<objective + implementation steps from plan>",
+    activeForm="Implementing <short description>"
+  )
+  ```
+- Set up dependencies if tasks have ordering requirements:
+  ```
+  TaskUpdate(taskId="<task3_id>", addBlockedBy=["<task2_id>"])
+  ```
+- Skip already-completed plan tasks (`[x]` items) - don't create tasks for them
+
+**Example for a fresh start with 4 tasks:**
+```
+TaskCreate: "Task 1: Create user model"           → id=1
+TaskCreate: "Task 2: Add API endpoints"            → id=2, addBlockedBy: [1]
+TaskCreate: "Task 3: Write integration tests"      → id=3, addBlockedBy: [2]
+TaskCreate: "Task 4: Add documentation"            → id=4, addBlockedBy: [2]
+```
+
+**Why this matters:**
+- User sees real-time progress in their terminal via status spinners
+- Dependencies prevent skipping ahead when tasks have ordering requirements
+- Tasks persist across session handoffs (stored in `~/.claude/tasks/`)
+- Continuation sessions pick up exactly where the previous session left off
+
+---
+
+### Step 2.3: Per-Task TDD Loop
 
 **TDD is MANDATORY. No production code without a failing test first.**
 
@@ -94,7 +144,7 @@ spec-implement → spec-verify → issues found → spec-implement → spec-veri
    - **Trace Upwards (Callers):** Identify what calls the code you're modifying
    - **Trace Downwards (Callees):** Identify what the modified code calls
    - **Side Effects:** Check for database, cache, external system impacts
-3. **Mark task as in_progress** in TodoWrite
+3. **Mark task as `in_progress`** - `TaskUpdate(taskId="<id>", status="in_progress")`
 4. **Execute TDD Flow (RED → GREEN → REFACTOR):**
    - Write failing test first, **verify it fails**
    - Implement minimal code to pass
@@ -103,8 +153,8 @@ spec-implement → spec-verify → issues found → spec-implement → spec-veri
 6. **Run actual program** - Show real output with sample data
 7. **Check diagnostics** - Must be zero errors
 8. **Validate Definition of Done** - Check all criteria from plan
-9. **Mark task completed** in TodoWrite
-10. **UPDATE PLAN FILE IMMEDIATELY** (see Step 2.3)
+9. **Mark task as `completed`** - `TaskUpdate(taskId="<id>", status="completed")`
+10. **UPDATE PLAN FILE IMMEDIATELY** (see Step 2.4)
 11. **Check context usage** - Run `~/.pilot/bin/pilot check-context --json`
 
 **⚠️ NEVER SKIP TASKS:**
@@ -115,7 +165,7 @@ spec-implement → spec-verify → issues found → spec-implement → spec-veri
 
 ---
 
-### Step 2.3: Update Plan After EACH Task
+### Step 2.4: Update Plan After EACH Task
 
 **⛔ CRITICAL: Task Completion Tracking is MANDATORY**
 
@@ -137,7 +187,7 @@ Update counts:
 
 ---
 
-### Step 2.4: All Tasks Complete → Verification
+### Step 2.5: All Tasks Complete → Verification
 
 **⚠️ CRITICAL: Follow these steps exactly:**
 
@@ -152,7 +202,8 @@ Update counts:
    Edit the plan file and change the Status line:
    Status: PENDING  →  Status: COMPLETE
    ```
-4. **Invoke verification phase:** `Skill(skill='spec-verify', args='<plan-path>')`
+4. **⛔ Phase Transition Context Guard:** Run `~/.pilot/bin/pilot check-context --json`. If >= 70%, hand off instead (see spec.md Section 0.3).
+5. **Invoke verification phase:** `Skill(skill='spec-verify', args='<plan-path>')`
 
 ---
 

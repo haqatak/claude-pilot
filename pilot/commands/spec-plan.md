@@ -443,6 +443,7 @@ After verification completes, fix all issues by severity:
 
    **If user selects "Yes, proceed with implementation":**
    - Edit the plan file to change `Approved: No` to `Approved: Yes`
+   - **⛔ Phase Transition Context Guard:** Run `~/.pilot/bin/pilot check-context --json`. If >= 70%, hand off instead (see spec.md Section 0.3).
    - **Invoke implementation phase:** `Skill(skill='spec-implement', args='<plan-path>')`
 
    **If user selects "No, I need to make changes":**

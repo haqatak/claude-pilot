@@ -637,7 +637,7 @@ export class SessionStore {
       .run(20, new Date().toISOString());
   }
 
-  /** Ensure session_plans table exists (also created by migration010). */
+  /** Ensure session_plans table exists (version 21, also created by migration010). */
   private ensureSessionPlansTable(): void {
     const applied = this.db.prepare("SELECT version FROM schema_versions WHERE version = ?").get(21) as
       | SchemaVersion
