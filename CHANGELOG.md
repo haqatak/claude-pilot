@@ -2,6 +2,30 @@
 
 All notable changes to Claude Pilot will be documented in this file.
 
+## [6.2.1] - 2026-02-07
+
+### Bug Fixes
+
+- Move project selector to sidebar and add clear scope indicators across all views
+- Restore emojis and add missing launcher features to docs
+
+### Documentation
+
+- Transform website and README with comprehensive system documentation
+
+### Miscellaneous
+
+- Add /vault and /learn to install section, remove remaining count, add custom LSP note
+- Remove hardcoded counts and improve quality-focused messaging
+- Add /vault to installer post-install and statusline tips, remove language servers stat
+- Update branding to new slogan across entire codebase
+- Restructure README and website to eliminate duplicate content
+- Convert favicon from JPG to PNG for browser compatibility
+- Reorder README sections
+- Simplify license section in README
+- Add license and changelog links to README and website footer
+- Update license support contact and remove version line
+
 ## [6.2.0] - 2026-02-06
 
 ### Bug Fixes
