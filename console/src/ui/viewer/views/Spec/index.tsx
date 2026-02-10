@@ -13,6 +13,7 @@ interface PlanInfo {
   phase: 'plan' | 'implement' | 'verify';
   iterations: number;
   approved: boolean;
+  worktree: boolean;
   filePath: string;
   modifiedAt: string;
 }
@@ -349,6 +350,17 @@ export function SpecView() {
                   )}
                   {!currentSpec.approved && currentSpec.status === 'PENDING' && (
                     <Badge variant="warning" size="xs">Awaiting Approval</Badge>
+                  )}
+                  {currentSpec.worktree ? (
+                    <div className="flex items-center gap-1">
+                      <Icon icon="lucide:git-branch" size={12} />
+                      <span>Worktree</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1">
+                      <Icon icon="lucide:git-commit" size={12} />
+                      <span>Direct</span>
+                    </div>
                   )}
                   {currentSpec.modifiedAt && (
                     <div className="flex items-center gap-1">

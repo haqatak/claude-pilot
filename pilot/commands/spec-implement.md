@@ -77,9 +77,16 @@ spec-implement → spec-verify → issues found → spec-implement → spec-veri
 
 ---
 
-### Step 2.1b: Create or Resume Worktree
+### Step 2.1b: Create or Resume Worktree (Conditional)
 
-**All implementation happens in an isolated git worktree.** This keeps the main branch clean until verification passes and the user approves sync.
+**Check the plan's `Worktree:` header field to determine isolation mode.**
+
+0. **Read the `Worktree:` header from the plan file:**
+   - Parse `Worktree: Yes` or `Worktree: No` from the plan content (regex: `/^Worktree:\s*(\w+)/m`)
+   - If the field is missing, default to `Yes` (backward compatibility with older plans)
+   - **If `Worktree: No`:** Skip the rest of Step 2.1b entirely. Implementation happens directly on the current branch. Proceed to Step 2.2.
+
+**If `Worktree: Yes` (or missing/default):** All implementation happens in an isolated git worktree. This keeps the main branch clean until verification passes and the user approves sync.
 
 1. **Extract plan slug** from the plan file path:
    - `docs/plans/2026-02-09-add-auth.md` → plan_slug = `add-auth` (strip date prefix and `.md`)
@@ -119,7 +126,7 @@ spec-implement → spec-verify → issues found → spec-implement → spec-veri
 
 7. **Verify worktree is active:** Run `git branch --show-current` in the worktree to confirm you're on the `spec/<plan_slug>` branch.
 
-**⚠️ All subsequent implementation steps happen inside the worktree directory.** The plan file exists at the same relative path in the worktree (e.g., `docs/plans/...`). Commits within the worktree are expected and allowed.
+**⚠️ All subsequent implementation steps happen inside the worktree directory (when worktree is active).** The plan file exists at the same relative path in the worktree (e.g., `docs/plans/...`). Commits within the worktree are expected and allowed.
 
 ---
 

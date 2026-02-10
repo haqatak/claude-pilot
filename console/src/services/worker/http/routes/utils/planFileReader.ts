@@ -15,6 +15,7 @@ export interface PlanInfo {
   phase: "plan" | "implement" | "verify";
   iterations: number;
   approved: boolean;
+  worktree: boolean;
   filePath: string;
   modifiedAt: string;
 }
@@ -42,6 +43,9 @@ export function parsePlanContent(
   const iterMatch = content.match(/^Iterations:\s*(\d+)/m);
   const iterations = iterMatch ? parseInt(iterMatch[1], 10) : 0;
 
+  const worktreeMatch = content.match(/^Worktree:\s*(\w+)/m);
+  const worktree = worktreeMatch ? worktreeMatch[1].toLowerCase() !== "no" : true;
+
   let phase: "plan" | "implement" | "verify";
   if (status === "PENDING" && !approved) {
     phase = "plan";
@@ -64,6 +68,7 @@ export function parsePlanContent(
     phase,
     iterations,
     approved,
+    worktree,
     filePath,
     modifiedAt: modifiedAt.toISOString(),
   };

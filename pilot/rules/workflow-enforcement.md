@@ -223,7 +223,7 @@ spec-verify finds issues → Status: PENDING → spec-implement fixes → COMPLE
 
 **⛔ Both verification steps are NON-NEGOTIABLE. Skipping is FORBIDDEN.**
 
-**⛔ CRITICAL: Only TWO user interaction points exist: Plan Approval (in `spec-plan`) and Worktree Sync Approval (in `spec-verify`).**
+**⛔ CRITICAL: Only TWO user interaction points exist: Plan Approval (in `spec-plan`) and Worktree Sync Approval (in `spec-verify`, only when `Worktree: Yes`).**
 
 Everything else is automatic:
 - Plan verification findings are fixed automatically before showing to user
@@ -241,21 +241,27 @@ The user approved the plan. Verification fixes are part of that approval.
 - `COMPLETE` - All tasks done, ready for verification
 - `VERIFIED` - All checks passed, workflow complete
 
-### Worktree Isolation
+### Worktree Isolation (Optional)
 
-`/spec` implementation runs in an isolated git worktree on a dedicated branch (`spec/<plan-slug>`). This keeps the main branch clean while work is in progress.
+Worktree isolation is controlled by the `Worktree:` field in the plan header (default: `Yes`). The user chooses during plan approval whether to use isolation.
 
-**How it works:**
+**When `Worktree: Yes` (default):**
 1. After plan approval, a worktree is created at `.worktrees/spec-<slug>-<hash>/`
 2. All implementation happens in the worktree — the main branch is untouched
 3. After verification passes, the user reviews changed files and approves sync
 4. Sync performs a squash merge back to the base branch, then cleans up the worktree
+
+**When `Worktree: No`:**
+- Implementation happens directly on the current branch
+- No worktree creation, sync, or cleanup steps
+- spec-verify Step 3.11b is skipped automatically
 
 **Key details:**
 - `.worktrees/` is auto-added to `.gitignore`
 - Worktree state is tracked per-session and survives Endless Mode restarts
 - `pilot worktree status` shows current worktree state
 - If the user discards changes, the worktree is removed without merging
+- Plans missing the `Worktree:` field default to `Yes` for backward compatibility
 
 ## Task Completion Tracking
 
@@ -288,7 +294,7 @@ Each phase needs significant context headroom. Starting a new phase above 80% ri
 
 ## No Stopping - Automatic Continuation
 
-**The ONLY user interaction points are plan approval and worktree sync approval.**
+**The ONLY user interaction points are plan approval and worktree sync approval (when `Worktree: Yes`).**
 
 - Never stop after writing continuation file - trigger clear immediately
 - Never wait for user acknowledgment before session handoff

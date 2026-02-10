@@ -88,7 +88,7 @@ Read the plan file and dispatch based on Status and Approved fields:
 | Status | Approved | Action |
 |--------|----------|--------|
 | PENDING | No | `Skill(skill='spec-plan', args='<plan-path>')` |
-| PENDING | Yes | `Skill(skill='spec-implement', args='<plan-path>')` (creates/resumes worktree) |
+| PENDING | Yes | `Skill(skill='spec-implement', args='<plan-path>')` (worktree if `Worktree: Yes` in plan) |
 | COMPLETE | * | `Skill(skill='spec-verify', args='<plan-path>')` |
 | VERIFIED | * | Report completion, workflow done |
 

@@ -122,4 +122,4 @@ If user explicitly says "checkout branch X" or "switch to branch Y", you may exe
 
 ### Exception: Worktree During /spec
 
-During `/spec` implementation, code runs in an isolated git worktree on a dedicated branch. Git commits ARE allowed within this worktree context because the worktree branch is isolated from the main branch. The worktree branch is not pushed to remote — changes are synced back via squash merge after verification.
+During `/spec` implementation with `Worktree: Yes` (the default), code runs in an isolated git worktree on a dedicated branch. Git commits ARE allowed within this worktree context because the worktree branch is isolated from the main branch. The worktree branch is not pushed to remote — changes are synced back via squash merge after verification. When `Worktree: No` is set in the plan, implementation happens directly on the current branch and normal git rules apply.

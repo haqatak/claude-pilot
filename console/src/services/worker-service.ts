@@ -263,10 +263,6 @@ export class WorkerService {
     await this.server.listen(port, bind);
     logger.info("SYSTEM", "Worker started", { bind, host, port, pid: process.pid });
 
-    const projectRoot = process.env.CLAUDE_PROJECT_ROOT || process.cwd();
-    const projectName = path.basename(projectRoot);
-    this.dbManager.getSessionStore().upsertProjectRoot(projectName, projectRoot);
-
     this.initializeBackground().catch((error) => {
       logger.error("SYSTEM", "Background initialization failed", {}, error as Error);
     });
@@ -290,6 +286,10 @@ export class WorkerService {
       logger.info("SYSTEM", `Mode loaded: ${modeId}`);
 
       await this.dbManager.initialize();
+
+      const projectRoot = process.env.CLAUDE_PROJECT_ROOT || process.cwd();
+      const projectName = path.basename(projectRoot);
+      this.dbManager.getSessionStore().upsertProjectRoot(projectName, projectRoot);
 
       const { PendingMessageStore } = await import("./sqlite/PendingMessageStore.js");
       const pendingStore = new PendingMessageStore(this.dbManager.getSessionStore().db, 3);

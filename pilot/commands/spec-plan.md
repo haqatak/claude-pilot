@@ -152,6 +152,7 @@ model: opus
    Status: PENDING
    Approved: No
    Iterations: 0
+   Worktree: Yes
 
    > Planning in progress...
 
@@ -299,6 +300,7 @@ Created: [Date]
 Status: PENDING
 Approved: No
 Iterations: 0
+Worktree: Yes
 
 > **Status Lifecycle:** PENDING → COMPLETE → VERIFIED
 > **Iterations:** Tracks implement→verify cycles (incremented by verify phase)
@@ -307,6 +309,7 @@ Iterations: 0
 > - VERIFIED: All checks passed
 >
 > **Approval Gate:** Implementation CANNOT proceed until `Approved: Yes`
+> **Worktree:** `Yes` (default) uses git worktree isolation; `No` works directly on current branch
 
 ## Summary
 **Goal:** [One sentence describing what this builds]
@@ -465,19 +468,26 @@ After verification completes, fix all issues by severity:
    - Key tasks (numbered list)
    - Tech stack / approach
 
-2. **Use AskUserQuestion to request approval:**
+2. **Use AskUserQuestion to request approval (batch both questions):**
    ```
-   Question: "Do you approve this plan for implementation?"
+   Question 1: "Do you approve this plan for implementation?"
    Header: "Plan Review"
    Options:
    - "Yes, proceed with implementation" - I've reviewed the plan and it looks good
    - "No, I need to make changes" - I want to edit the plan first
+
+   Question 2: "Use git worktree isolation for this spec?"
+   Header: "Worktree"
+   Options:
+   - "Yes (Recommended)" - Isolate work on a dedicated branch; safe to experiment, easy to discard or squash merge
+   - "No" - Work directly on the current branch without worktree isolation
    ```
 
 3. **Based on user response:**
 
    **If user selects "Yes, proceed with implementation":**
    - Edit the plan file to change `Approved: No` to `Approved: Yes`
+   - Edit the plan file `Worktree:` field to match the user's worktree choice (`Yes` or `No`)
    - **⛔ Phase Transition Context Guard:** Run `~/.pilot/bin/pilot check-context --json`. If >= 80%, hand off instead (see spec.md Section 0.3).
    - **Invoke implementation phase:** `Skill(skill='spec-implement', args='<plan-path>')`
 
