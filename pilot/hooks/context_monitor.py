@@ -238,7 +238,10 @@ def _get_continuation_path() -> str:
 
 
 def _read_statusline_context_pct() -> float | None:
-    """Read authoritative context percentage from statusline cache."""
+    """Read authoritative context percentage from statusline cache.
+
+    Returns None if cache is missing, corrupt, or stale (>60s old).
+    """
     pilot_session_id = os.environ.get("PILOT_SESSION_ID", "").strip()
     if not pilot_session_id:
         return None
@@ -247,9 +250,12 @@ def _read_statusline_context_pct() -> float | None:
         return None
     try:
         data = json.loads(cache_file.read_text())
+        ts = data.get("ts")
+        if ts is None or time.time() - ts > 60:
+            return None
         pct = data.get("pct")
         return float(pct) if pct is not None else None
-    except (json.JSONDecodeError, OSError, ValueError):
+    except (json.JSONDecodeError, OSError, ValueError, TypeError):
         return None
 
 
