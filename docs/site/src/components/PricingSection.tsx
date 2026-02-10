@@ -10,6 +10,7 @@ const TEAM_CHECKOUT_URL = import.meta.env.VITE_POLAR_CHECKOUT_TEAM
   || "https://buy.polar.sh/polar_cl_y5uSffkVLnESyfzfOSJ1M9YmMd8sIpcT7bza82oFv4C";
 const PORTAL_URL = import.meta.env.VITE_POLAR_PORTAL_URL
   || "https://polar.sh/max-ritter/portal";
+const IS_PRODUCTION = import.meta.env.PROD && !import.meta.env.VITE_POLAR_PORTAL_URL?.includes("sandbox");
 
 const PricingSection = () => {
   const [headerRef, headerInView] = useInView<HTMLDivElement>();
@@ -17,7 +18,9 @@ const PricingSection = () => {
   const [valueRef, valueInView] = useInView<HTMLDivElement>();
 
   useEffect(() => {
-    PolarEmbedCheckout.init();
+    if (IS_PRODUCTION) {
+      PolarEmbedCheckout.init();
+    }
   }, []);
 
   return (
@@ -118,7 +121,7 @@ const PricingSection = () => {
             </ul>
 
             <Button asChild className="w-full">
-              <a href={SOLO_CHECKOUT_URL} data-polar-checkout data-polar-checkout-theme="dark">
+              <a href={SOLO_CHECKOUT_URL} {...(IS_PRODUCTION ? { "data-polar-checkout": true, "data-polar-checkout-theme": "dark" } : { target: "_blank", rel: "noopener" })}>
                 Subscribe
               </a>
             </Button>
@@ -165,7 +168,7 @@ const PricingSection = () => {
             </ul>
 
             <Button asChild variant="outline" className="w-full border-indigo-500/50 hover:bg-indigo-500/10">
-              <a href={TEAM_CHECKOUT_URL} data-polar-checkout data-polar-checkout-theme="dark">
+              <a href={TEAM_CHECKOUT_URL} {...(IS_PRODUCTION ? { "data-polar-checkout": true, "data-polar-checkout-theme": "dark" } : { target: "_blank", rel: "noopener" })}>
                 Subscribe
               </a>
             </Button>

@@ -227,7 +227,7 @@ CLAUDE.md
 .playwright-*/
 .vercel
 .mcp.json
-.env*
+.env**
 playwright/
 .claude.backup.*
 *.backup
