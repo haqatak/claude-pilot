@@ -245,24 +245,44 @@ TaskCreate: "Task 4: Add documentation"            → id=4, addBlockedBy: [2]
 
 #### For each wave with 2+ independent tasks:
 
-**1. Prepare task context** for each implementer:
+**1. Prepare rich context** for each implementer by extracting these sections from the plan:
 
-```
-Task number, full task definition (objective, files, key decisions, DoD),
-plan summary (goal, tech stack, scope), project root path
-```
+- **Task definition:** The full task section (objective, files, key decisions, DoD, verify commands)
+- **Plan path:** Absolute path to the plan file (so the implementer can read full context)
+- **Project root:** Absolute path to working directory (worktree or main repo)
+- **Context for Implementer:** The plan's "Context for Implementer" section verbatim (conventions, patterns, gotchas, domain context)
+- **Runtime Environment:** The plan's "Runtime Environment" section verbatim (exact commands for tests, lint, typecheck)
+- **Sibling tasks:** One-line summary of each OTHER task in this wave (task number, objective, file list — so the implementer knows boundaries)
 
 **2. Spawn parallel implementers** using a single message with multiple Task tool calls:
 
 ```
 Task(
   subagent_type="pilot:spec-implementer",
-  prompt="Execute Task N from the plan...\n\nTask Definition:\n{task_def}\n\nPlan Context:\n{plan_summary}\n\nProject Root: {project_root}",
+  prompt="""Execute Task N from the plan using TDD.
+
+**Task Definition:**
+{full_task_section_from_plan}
+
+**Plan Path:** {absolute_plan_path}
+**Project Root:** {project_root}
+
+**Context for Implementer:**
+{context_for_implementer_section}
+
+**Runtime Environment:**
+{runtime_environment_section}
+
+**Sibling Tasks in This Wave (DO NOT modify their files):**
+{sibling_task_summaries}
+""",
   description="Spec implementer: Task N"
 )
 ```
 
 **Send ALL implementer calls in ONE message** for true parallelism.
+
+**Why rich context matters:** Implementers run in fresh context windows with no access to the orchestrator's conversation. They need the plan's conventions, gotchas, and verification commands to produce quality output. The plan file path lets them read additional context if needed.
 
 **3. Collect results** from each implementer:
 
