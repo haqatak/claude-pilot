@@ -145,7 +145,7 @@ const PricingSection = () => {
 
             <div className="mb-6">
               <span className="text-4xl font-bold text-foreground">$35</span>
-              <span className="text-muted-foreground">/month</span>
+              <span className="text-muted-foreground">/seat/month</span>
             </div>
 
             <ul className="space-y-3 mb-8">
@@ -155,7 +155,7 @@ const PricingSection = () => {
               </li>
               <li className="flex items-start gap-3">
                 <Check className="h-5 w-5 text-indigo-500 flex-shrink-0 mt-0.5" />
-                <span className="text-muted-foreground text-sm group-hover:text-foreground/80 transition-colors">Multiple seats — one key per team member</span>
+                <span className="text-muted-foreground text-sm group-hover:text-foreground/80 transition-colors">Seat-based — each member gets their own key</span>
               </li>
               <li className="flex items-start gap-3">
                 <Check className="h-5 w-5 text-indigo-500 flex-shrink-0 mt-0.5" />
@@ -163,7 +163,7 @@ const PricingSection = () => {
               </li>
               <li className="flex items-start gap-3">
                 <Check className="h-5 w-5 text-indigo-500 flex-shrink-0 mt-0.5" />
-                <span className="text-muted-foreground text-sm group-hover:text-foreground/80 transition-colors">Priority feature requests</span>
+                <span className="text-muted-foreground text-sm group-hover:text-foreground/80 transition-colors">Manage seats via portal — add, reassign, revoke</span>
               </li>
             </ul>
 

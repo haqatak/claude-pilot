@@ -4,6 +4,7 @@ argument-hint: "<path/to/plan.md>"
 user-invocable: false
 model: opus
 ---
+
 # /spec-implement - Implementation Phase
 
 **Phase 2 of the /spec workflow.** Reads the approved plan and implements each task using TDD (Red → Green → Refactor).
@@ -16,16 +17,16 @@ model: opus
 
 ## ⛔ KEY CONSTRAINTS (Rules Summary)
 
-| # | Rule |
-|---|------|
-| 1 | **NO ad-hoc sub-agents** (exploration, research, general-purpose) - Use direct tools only. Exception: `pilot:spec-executor` agents for parallel wave execution (see Step 2.2b). |
-| 2 | **TDD is MANDATORY** - No production code without failing test first |
-| 3 | **Update plan checkboxes AND task status after EACH task** - Not at the end |
-| 4 | **NEVER SKIP TASKS** - Every task MUST be fully implemented |
-| 5 | **Quality over speed** - Never rush due to context pressure |
-| 6 | **Plan file is source of truth** - Survives session clears |
-| 7 | **NEVER assume - verify by reading files** |
-| 8 | **Task management is MANDATORY** - Use TaskCreate/TaskUpdate for progress tracking |
+| #   | Rule                                                                                                                                                                               |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **NO ad-hoc sub-agents** (exploration, research, general-purpose) - Use direct tools only. Exception: `pilot:spec-implementer` agents for parallel wave execution (see Step 2.3a). |
+| 2   | **TDD is MANDATORY** - No production code without failing test first                                                                                                               |
+| 3   | **Update plan checkboxes AND task status after EACH task** - Not at the end                                                                                                        |
+| 4   | **NEVER SKIP TASKS** - Every task MUST be fully implemented                                                                                                                        |
+| 5   | **Quality over speed** - Never rush due to context pressure                                                                                                                        |
+| 6   | **Plan file is source of truth** - Survives session clears                                                                                                                         |
+| 7   | **NEVER assume - verify by reading files**                                                                                                                                         |
+| 8   | **Task management is MANDATORY** - Use TaskCreate/TaskUpdate for progress tracking                                                                                                 |
 
 ---
 
@@ -48,6 +49,7 @@ spec-implement → spec-verify → issues found → spec-implement → spec-veri
 ```
 
 **When called after verification found issues:**
+
 1. Read the plan - verification will have added fix tasks (marked with `[MISSING]` or similar)
 2. Check the `Iterations` field in the plan header
 3. **Report iteration start:** "🔄 Starting Iteration N implementation..."
@@ -69,11 +71,11 @@ spec-implement → spec-verify → issues found → spec-implement → spec-veri
 
 #### 🔧 Tools for Implementation
 
-| Tool | When to Use | Example |
-|------|-------------|---------|
-| **Context7** | Library API lookup | `resolve-library-id(query="how to use fixtures", libraryName="pytest")` then `query-docs(libraryId, query)` |
-| **Vexor** | Find similar patterns | `vexor search "query" --mode code` |
-| **grep-mcp** | Production code examples | `searchGitHub(query="useEffect cleanup", language=["TypeScript"])` |
+| Tool         | When to Use              | Example                                                                                                     |
+| ------------ | ------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| **Context7** | Library API lookup       | `resolve-library-id(query="how to use fixtures", libraryName="pytest")` then `query-docs(libraryId, query)` |
+| **Vexor**    | Find similar patterns    | `vexor search "query" --mode code`                                                                          |
+| **grep-mcp** | Production code examples | `searchGitHub(query="useEffect cleanup", language=["TypeScript"])`                                          |
 
 ---
 
@@ -92,6 +94,7 @@ spec-implement → spec-verify → issues found → spec-implement → spec-veri
    - `docs/plans/2026-02-09-add-auth.md` → plan_slug = `add-auth` (strip date prefix and `.md`)
 
 2. **Check for existing worktree** (continuation session or verify→implement feedback loop):
+
    ```bash
    # Use the worktree module to detect an existing worktree
    uv run python -c "
@@ -104,12 +107,15 @@ spec-implement → spec-verify → issues found → spec-implement → spec-veri
    ```
 
 3. **If worktree exists:** Resume it — set CWD to the worktree path via wrapper pipe command:
+
    ```bash
    ~/.pilot/bin/pilot pipe set-worktree <worktree_path>
    ```
+
    Then `cd` to the worktree path for all subsequent commands.
 
 4. **If no worktree exists:** Create one:
+
    ```bash
    uv run python -c "
    from launcher.worktree import create_worktree
@@ -118,6 +124,7 @@ spec-implement → spec-verify → issues found → spec-implement → spec-veri
    print(f'CREATED:{info.path}:{info.branch}:{info.base_branch}')
    "
    ```
+
    Then set CWD via wrapper pipe command and `cd` to the worktree path.
 
 5. **If creation fails due to dirty working tree:** Report to user and ask them to stash or commit changes first. Do NOT proceed with implementation until the worktree is created.
@@ -142,6 +149,7 @@ This makes implementation progress visible in the terminal (Ctrl+T), enables dep
 2. **Branch based on result:**
 
 **If TaskList returns tasks (continuation session):**
+
 - Tasks already exist from a prior session - do NOT recreate them
 - Review existing task statuses to understand where the previous session left off
 - Cross-reference with plan checkboxes (`[x]` = done, `[ ]` = remaining)
@@ -149,6 +157,7 @@ This makes implementation progress visible in the terminal (Ctrl+T), enables dep
 - Proceed to Step 2.3 starting with the first uncompleted task
 
 **If TaskList is empty (fresh start):**
+
 - Create one task per uncompleted plan task (`[ ]` items):
   ```
   TaskCreate(
@@ -164,6 +173,7 @@ This makes implementation progress visible in the terminal (Ctrl+T), enables dep
 - Skip already-completed plan tasks (`[x]` items) - don't create tasks for them
 
 **Example for a fresh start with 4 tasks:**
+
 ```
 TaskCreate: "Task 1: Create user model"           → id=1
 TaskCreate: "Task 2: Add API endpoints"            → id=2, addBlockedBy: [1]
@@ -172,6 +182,7 @@ TaskCreate: "Task 4: Add documentation"            → id=4, addBlockedBy: [2]
 ```
 
 **Why this matters:**
+
 - User sees real-time progress in their terminal via status spinners
 - Dependencies prevent skipping ahead when tasks have ordering requirements
 - Tasks persist across session handoffs (stored in `~/.claude/tasks/`)
@@ -179,21 +190,35 @@ TaskCreate: "Task 4: Add documentation"            → id=4, addBlockedBy: [2]
 
 ---
 
-### Step 2.2b: Wave Detection and Parallel Execution (Optional)
+### Step 2.3: Detect Execution Mode — Parallel or Sequential
 
-**After setting up the task list, detect if independent tasks can run in parallel.**
+**⚠️ ALWAYS analyze the task graph before starting implementation.** Independent tasks run in parallel via `pilot:spec-implementer` subagents, each with a fresh context window. Dependent tasks run sequentially in the main context. This is the primary execution strategy — not an optional optimization.
 
-Wave-based execution spawns `pilot:spec-executor` subagents for independent tasks, each with a fresh context window. This is inspired by GSD's parallel plan execution model, adapted to Pilot's single-plan architecture.
+```
+┌─────────────────────────────────────────────────────┐
+│                  Task Graph Analysis                 │
+│                                                     │
+│  Parse Dependencies + Modify file lists per task    │
+│                       ↓                             │
+│            ┌─────────────────────┐                  │
+│            │ Independent tasks?  │                  │
+│            └──────┬──────┬──────┘                  │
+│              YES  │      │  NO                      │
+│                   ↓      ↓                          │
+│         Parallel Waves   Sequential TDD Loop        │
+│         (Step 2.3a)      (Step 2.3b)                │
+└─────────────────────────────────────────────────────┘
+```
 
-#### When to Use Parallel Waves
+#### Execution Mode Decision Table
 
-| Condition | Execution Mode |
-|-----------|---------------|
-| Plan has `Wave:` markers on tasks | Follow wave grouping from plan |
-| Tasks have `Dependencies:` fields | Auto-detect waves from dependency graph |
-| Tasks share files in "Modify" lists | Run those tasks **sequentially** (conflict risk) |
-| Only 1 task remaining | Run directly (no parallelism benefit) |
-| All tasks depend on each other | Run sequentially as normal (Step 2.3) |
+| Condition                           | Execution Mode                                       |
+| ----------------------------------- | ---------------------------------------------------- |
+| Plan has `Wave:` markers on tasks   | **Parallel** — follow wave grouping from plan        |
+| Tasks have no shared files or deps  | **Parallel** — auto-detect waves from dependency graph |
+| Tasks share files in "Modify" lists | **Sequential** — conflict risk                       |
+| Only 1 task remaining               | **Sequential** — no parallelism benefit              |
+| All tasks depend on each other      | **Sequential** — linear dependency chain             |
 
 #### Wave Detection Algorithm
 
@@ -206,66 +231,73 @@ Wave-based execution spawns `pilot:spec-executor` subagents for independent task
    - Wave 1: Tasks with no dependencies and no file conflicts
    - Wave 2: Tasks that depend only on Wave 1 tasks
    - Wave N: Tasks that depend only on Wave 1..N-1 tasks
-4. If a wave has only 1 task → run directly (no subagent overhead)
-5. If a wave has 2+ tasks → spawn parallel spec-executor subagents
+4. If a wave has only 1 task → run directly in main context (no subagent overhead)
+5. If a wave has 2+ tasks → spawn parallel spec-implementer subagents
 ```
-
-#### Parallel Execution Protocol
-
-**For each wave with 2+ independent tasks:**
-
-1. **Prepare task context** for each executor:
-   ```
-   Task number, full task definition (objective, files, key decisions, DoD),
-   plan summary (goal, tech stack, scope), project root path
-   ```
-
-2. **Spawn parallel executors** using a single message with multiple Task tool calls:
-   ```
-   Task(
-     subagent_type="pilot:spec-executor",
-     prompt="Execute Task N from the plan...\n\nTask Definition:\n{task_def}\n\nPlan Context:\n{plan_summary}\n\nProject Root: {project_root}",
-     description="Spec executor: Task N"
-   )
-   ```
-   **Send ALL executor calls in ONE message** for true parallelism.
-
-3. **Collect results** from each executor:
-   - Parse the JSON output for status, files_changed, dod_checklist
-   - Verify each task's DoD criteria are met
-   - If any executor reports `failed` or `blocked`, handle before proceeding
-
-4. **After all executors complete:**
-   - Run the full test suite to check for cross-task conflicts
-   - Update plan checkboxes for all completed tasks (Step 2.4)
-   - Mark completed tasks in the task list
-   - Proceed to next wave
-
-#### Sequential Fallback
-
-**If wave detection finds all tasks are dependent (no parallelism possible), skip this step entirely and proceed to Step 2.3 (sequential TDD loop).** This is the default behavior — parallel waves are an optimization, not a requirement.
-
-#### Error Handling
-
-| Situation | Action |
-|-----------|--------|
-| Executor returns `failed` | Read the failure reason, fix directly (don't re-spawn), continue |
-| Executor returns `blocked` | Check if blocker is another task, reorder if needed |
-| Cross-task test failures after wave | Fix conflicts directly before next wave |
-| Executor times out | Run task directly in main context |
 
 ---
 
-### Step 2.3: Per-Task TDD Loop
+### Step 2.3a: Parallel Wave Execution
+
+**When independent tasks exist, execute them in parallel waves using `pilot:spec-implementer` subagents.** Each subagent gets a fresh context window, implements its task with TDD, and returns a structured JSON result.
+
+#### For each wave with 2+ independent tasks:
+
+**1. Prepare task context** for each implementer:
+
+```
+Task number, full task definition (objective, files, key decisions, DoD),
+plan summary (goal, tech stack, scope), project root path
+```
+
+**2. Spawn parallel implementers** using a single message with multiple Task tool calls:
+
+```
+Task(
+  subagent_type="pilot:spec-implementer",
+  prompt="Execute Task N from the plan...\n\nTask Definition:\n{task_def}\n\nPlan Context:\n{plan_summary}\n\nProject Root: {project_root}",
+  description="Spec implementer: Task N"
+)
+```
+
+**Send ALL implementer calls in ONE message** for true parallelism.
+
+**3. Collect results** from each implementer:
+- Parse the JSON output for status, files_changed, dod_checklist
+- Verify each task's DoD criteria are met
+- If any implementer reports `failed` or `blocked`, handle before proceeding
+
+**4. After all implementers in a wave complete:**
+- Run the full test suite to check for cross-task conflicts
+- Update plan checkboxes for all completed tasks (Step 2.4)
+- Mark completed tasks in the task list
+- Proceed to next wave
+
+#### Error Handling
+
+| Situation                           | Action                                                           |
+| ----------------------------------- | ---------------------------------------------------------------- |
+| Implementer returns `failed`        | Read the failure reason, fix directly (don't re-spawn), continue |
+| Implementer returns `blocked`       | Check if blocker is another task, reorder if needed              |
+| Cross-task test failures after wave | Fix conflicts directly before next wave                          |
+| Implementer times out               | Run task directly in main context                                |
+
+#### Single-task waves
+
+When a wave contains only 1 task, execute it directly in the main context using the sequential TDD loop (Step 2.3b) instead of spawning a subagent. The subagent overhead isn't worth it for a single task.
+
+---
+
+### Step 2.3b: Sequential TDD Loop
 
 **TDD is MANDATORY. No production code without a failing test first.**
 
-| Requires TDD | Skip TDD |
-|--------------|----------|
-| New functions/methods | Documentation changes |
-| API endpoints | Config file updates |
-| Business logic | IaC code (CDK, Terraform, Pulumi) |
-| Bug fixes | Formatting/style changes |
+| Requires TDD          | Skip TDD                          |
+| --------------------- | --------------------------------- |
+| New functions/methods | Documentation changes             |
+| API endpoints         | Config file updates               |
+| Business logic        | IaC code (CDK, Terraform, Pulumi) |
+| Bug fixes             | Formatting/style changes          |
 
 **For EVERY task, follow this exact sequence:**
 
@@ -294,6 +326,7 @@ Wave-based execution spawns `pilot:spec-executor` subagents for independent task
 12. **Check context usage** - Run `~/.pilot/bin/pilot check-context --json`
 
 **⚠️ NEVER SKIP TASKS:**
+
 - EVERY task MUST be fully implemented
 - NO exceptions for "MVP scope" or complexity
 - If blocked: STOP and report specific blockers
@@ -314,6 +347,7 @@ Wave-based execution spawns `pilot:spec-executor` subagents for independent task
 **This is NON-NEGOTIABLE.**
 
 **Example - After completing Task 5:**
+
 ```
 Edit the plan file:
 - [ ] Task 5: Implement X  →  - [x] Task 5: Implement X
@@ -392,6 +426,7 @@ After each major operation, check context:
 ```
 
 **Between iterations:**
+
 1. If context >= 90%: hand off cleanly (don't rush!)
 2. If context 80-89%: continue but wrap up current task with quality
 3. If context < 80%: continue the loop freely
@@ -412,12 +447,15 @@ Write to `~/.pilot/sessions/$PILOT_SESSION_ID/continuation.md`:
 **Current Task:** Task N - [description]
 
 **Completed This Session:**
+
 - [x] [What was finished]
 
 **Next Steps:**
+
 1. [What to do immediately when resuming]
 
 **Context:**
+
 - [Key decisions or blockers]
 ```
 

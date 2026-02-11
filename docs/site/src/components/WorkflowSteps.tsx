@@ -18,10 +18,10 @@ const planDetails = [
 ];
 
 const implementDetails = [
-  { icon: GitBranch, text: "Independent tasks run in parallel waves, each with fresh context" },
-  { icon: Bug, text: "Writes a failing test first (RED phase of TDD)" },
-  { icon: Code2, text: "Implements code to make the test pass (GREEN phase)" },
-  { icon: RefreshCw, text: "Refactors while keeping tests green (REFACTOR phase)" },
+  { icon: GitBranch, text: "Analyzes task graph and spawns parallel sub-agents for independent tasks" },
+  { icon: Code2, text: "Each sub-agent runs TDD in its own context window (RED → GREEN → REFACTOR)" },
+  { icon: RefreshCw, text: "After each wave, runs full test suite to catch cross-task conflicts" },
+  { icon: Bug, text: "Falls back to sequential execution only when tasks share files or depend on each other" },
   { icon: Shield, text: "Quality hooks auto-lint, format, and type-check every edit" },
 ];
 

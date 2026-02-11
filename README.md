@@ -63,9 +63,9 @@ There are other AI coding frameworks out there. I tried them. They add complexit
 
 **Pilot optimizes for output quality, not system complexity.** The rules are minimal and focused. There's no big learning curve, no project scaffolding to set up, no state files to manage. You install it, run `pilot`, and the quality guardrails are just there — hooks, TDD, type checking, formatting — enforced automatically on every edit, in every session.
 
-This isn't a vibe coding tool. It's built for developers who ship to production and need code that actually works. Every rule in the system comes from daily professional use: real bugs caught, real regressions prevented, real sessions where the AI cut corners and the hooks stopped it. The rules are continuously refined based on what measurably improves output — not what looks impressive in a README.
+This isn't a vibe coding tool. It's built for developers who ship to production and need code that actually works. Every rule in the system comes from daily professional use: real bugs caught, real regressions prevented, real sessions where the AI cut corners and the hooks stopped it. The rules are continuously refined based on what measurably improves output.
 
-The system stays fast because it stays simple. Quick mode is direct execution with zero overhead — no sub-agents, no plan files, no directory scaffolding. You describe the task and it gets done. `/spec` adds structure only when you need it: plan verification, TDD enforcement, independent code review, parallel execution. Both modes share the same quality hooks. Both modes hand off cleanly across sessions with Endless Mode. The difference is how much planning wraps the work, not whether the work is done right.
+The system stays fast because it stays simple. Quick mode is direct execution with zero overhead — no sub-agents, no plan files, no directory scaffolding. You describe the task and it gets done. `/spec` adds structure only when you need it: plan verification, TDD enforcement, independent code review, parallel execution. Both modes share the same quality hooks. Both modes hand off cleanly across sessions with Endless Mode.
 
 ---
 
@@ -187,10 +187,12 @@ Discuss  →  Plan  →  Approve  →  Implement  →  Verify  →  Done
 <summary><b>Implement Phase</b></summary>
 
 1. Creates an isolated git worktree on a dedicated branch — main branch stays clean
-2. Writes a failing test first (RED phase of TDD)
-3. Implements code to make the test pass (GREEN phase)
-4. Refactors while keeping tests green (REFACTOR phase)
-5. Quality hooks auto-lint, format, and type-check every file edit
+2. Analyzes task graph to detect independent tasks — groups them into parallel waves
+3. Spawns `spec-implementer` sub-agents for each independent task in a wave, executing TDD in parallel with fresh context windows
+4. Falls back to sequential execution only when tasks share files or have linear dependencies
+5. Each task follows strict TDD: write failing test (RED), implement to pass (GREEN), refactor (REFACTOR)
+6. Quality hooks auto-lint, format, and type-check every file edit
+7. After each wave, runs the full test suite to catch cross-task conflicts before proceeding
 
 </details>
 

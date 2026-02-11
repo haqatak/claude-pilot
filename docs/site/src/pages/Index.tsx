@@ -1,10 +1,14 @@
 import NavBar from "@/components/NavBar";
 import HeroSection from "@/components/HeroSection";
-import ComparisonSection from "@/components/ComparisonSection";
-import WorkflowSteps from "@/components/WorkflowSteps";
-import WhatsInside from "@/components/WhatsInside";
-import DeepDiveSection from "@/components/DeepDiveSection";
 import InstallSection from "@/components/InstallSection";
+import ComparisonSection from "@/components/ComparisonSection";
+import AgentRoster from "@/components/AgentRoster";
+import WorkflowSteps from "@/components/WorkflowSteps";
+import DeploymentFlow from "@/components/DeploymentFlow";
+import WhatsInside from "@/components/WhatsInside";
+import TechStack from "@/components/TechStack";
+import DeepDiveSection from "@/components/DeepDiveSection";
+import QualifierSection from "@/components/QualifierSection";
 import PricingSection from "@/components/PricingSection";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import Footer from "@/components/Footer";
@@ -78,9 +82,13 @@ const Index = () => {
         <HeroSection />
         <InstallSection />
         <ComparisonSection />
+        <AgentRoster />
         <WorkflowSteps />
+        <DeploymentFlow />
         <WhatsInside />
+        <TechStack />
         <DeepDiveSection />
+        <QualifierSection />
         <PricingSection />
         <TestimonialsSection />
         <Footer />

@@ -124,7 +124,7 @@ REDIRECTS = {
         "example": "TaskCreate(subject='...') or Read/Grep/Glob for exploration",
         "condition": lambda data: (
             data.get("tool_input", {}).get("subagent_type", "")
-            not in ("pilot:spec-verifier", "pilot:plan-verifier", "pilot:spec-executor")
+            not in ("pilot:spec-verifier", "pilot:plan-verifier", "pilot:spec-implementer")
             if isinstance(data.get("tool_input"), dict)
             else True
         ),
