@@ -2,6 +2,16 @@
 
 All notable changes to Claude Pilot will be documented in this file.
 
+## [6.3.3] - 2026-02-11
+
+### Bug Fixes
+
+- Auto-start trial when no license found instead of prompting for key
+
+### Miscellaneous
+
+- Updated changelog for 6.3.2
+
 ## [6.3.2] - 2026-02-11
 
 ### Bug Fixes
