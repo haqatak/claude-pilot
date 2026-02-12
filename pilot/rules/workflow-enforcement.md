@@ -194,16 +194,15 @@ Even if:
 
 Note: Task management tools (TaskCreate, TaskList, etc.) are ALWAYS allowed.
 
-### No Background Tasks
+### Background Bash Tasks
 
-**NEVER use `run_in_background=true` on Bash.**
+**Use `run_in_background=true` on Bash only for long-running processes** like dev servers, watchers, or builds that don't terminate on their own. Use `TaskOutput` to check results later.
 
-- Run ALL Bash commands synchronously — no exceptions
-- Use `timeout` parameter if needed (up to 600000ms)
-- Background Bash tasks lose visibility, create orphan processes, and waste context on polling
-- This is enforced by the `tool_redirect` hook — background Bash calls are blocked with exit code 2
+- **Prefer synchronous** for commands that complete quickly (tests, linting, git, installs)
+- **Use background** for servers (`npm run dev`, `uvicorn app:app`), watchers, and long builds
+- Use `timeout` parameter (up to 600000ms) as an alternative for commands that just need more time
 
-**Exception:** Task tool may use `run_in_background=true` for parallel review agents in /spec verification steps (Steps 1.7 and 3.0). These agents persist findings to session files for reliable retrieval.
+**Task tool** may also use `run_in_background=true` for parallel review agents in /spec verification steps (Steps 1.7 and 3.0).
 
 ### No Built-in Plan Mode
 
