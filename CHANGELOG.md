@@ -2,6 +2,18 @@
 
 All notable changes to Claude Pilot will be documented in this file.
 
+## [6.4.1] - 2026-02-12
+
+### Bug Fixes
+
+- Improve License Activation during Trial
+
+### Miscellaneous
+
+- Add DataFast analytics tracking script
+- Restore STANDARDS in agent roster, remove from hero, add sessions command to docs
+- Remove STANDARDS from hero section, consolidate footer links, restore lightweight website deploy
+
 ## [6.4.0] - 2026-02-12
 
 ### Bug Fixes
