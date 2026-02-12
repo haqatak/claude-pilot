@@ -2,6 +2,12 @@
 
 All notable changes to Claude Pilot will be documented in this file.
 
+## [6.4.2] - 2026-02-12
+
+### Bug Fixes
+
+- Add cryptography dependency to pilot wrapper for trial activation
+
 ## [6.4.1] - 2026-02-12
 
 ### Bug Fixes
