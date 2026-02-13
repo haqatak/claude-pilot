@@ -2,6 +2,12 @@
 
 All notable changes to Claude Pilot will be documented in this file.
 
+## [6.5.1] - 2026-02-13
+
+### Bug Fixes
+
+- Clean up orphaned pending messages to prevent unbounded queue growth
+
 ## [6.5.0] - 2026-02-13
 
 ### Features
