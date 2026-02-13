@@ -251,6 +251,26 @@ pilot
 - **Push** — Share your custom rules and skills with teammates
 - **Version** — Assets are versioned automatically (v1, v2, v3...)
 
+### /ollama — Ollama & Local Models
+
+Use local open-source models with Claude Code via Ollama:
+
+```bash
+pilot
+> /ollama
+```
+
+1. Checks if Ollama is running (`http://localhost:11434`)
+2. Lists available models
+3. Configures Claude Code to use your chosen model
+
+**Requirements:**
+- [Ollama](https://ollama.com/) installed and running
+- A model pulled (e.g., `ollama pull qwen2.5-coder:32b`)
+- Recommended context window: 64k+
+
+To switch back to Anthropic models, run `/ollama` again and choose **Disable**.
+
 ### Pilot CLI
 
 The `pilot` binary (`~/.pilot/bin/pilot`) manages sessions, worktrees, licensing, and context. Run `pilot` or `ccp` with no arguments to start Claude with Endless Mode.
